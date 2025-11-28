@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTasks } from '@/context/TaskContext';
 import { loadTasksFromGist, createNewGist } from '@/services/gistSync';
@@ -19,6 +19,14 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Sync local state with persisted settings when modal opens or settings change
+  useEffect(() => {
+    if (isOpen) {
+      setGistId(gistSettings.gistId);
+      setToken(gistSettings.githubToken);
+    }
+  }, [isOpen, gistSettings.gistId, gistSettings.githubToken]);
 
   if (!isOpen) return null;
 

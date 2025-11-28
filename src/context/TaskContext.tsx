@@ -50,6 +50,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const isLoadingFromGistRef = useRef(false);
   const isSyncingToGistRef = useRef(false);
   const syncFromGistTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousGistIdRef = useRef<string>('');
+  const hasRunMountEffectRef = useRef(false);
 
   // Function to load from Gist (debounced to prevent overwriting new tasks)
   const syncFromGist = useCallback(async () => {
@@ -132,18 +134,47 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }, 2000); // 2 second debounce to allow local changes to sync first
   }, [isGistConfigured, gistSettings, setTasks]);
 
-  // Load from Gist on mount if configured - always check on page load/refresh
+  // Load from Gist on mount if configured - only on initial mount or when Gist ID actually changes
   useEffect(() => {
     // Prevent multiple simultaneous loads
     if (isLoadingFromGistRef.current) return;
+    
+    // Get current Gist ID for comparison
+    const currentGistId = gistSettings.gistId || '';
+    
+    // Only run if:
+    // 1. This is the first time (hasRunMountEffectRef is false), OR
+    // 2. The Gist ID actually changed (not just object reference)
+    const shouldRun = !hasRunMountEffectRef.current || 
+                     (previousGistIdRef.current !== currentGistId && currentGistId !== '');
+    
+    if (!shouldRun) {
+      // If Gist not configured and we haven't loaded yet, mark as loaded
+      if (!isGistConfigured && !hasLoadedFromGistRef.current) {
+        setIsLoaded(true);
+        hasLoadedFromGistRef.current = true;
+      }
+      return;
+    }
     
     const loadFromGistOnMount = async () => {
       if (!isGistConfigured) {
         // If Gist not configured, just use local storage
         setIsLoaded(true);
         hasLoadedFromGistRef.current = true; // Allow local saves to work
+        previousGistIdRef.current = '';
+        hasRunMountEffectRef.current = true;
         return;
       }
+      
+      // Check if this is a Gist ID change (settings update) vs initial mount
+      const isGistIdChange = previousGistIdRef.current !== '' && 
+                             previousGistIdRef.current !== currentGistId;
+      const isInitialMount = !hasRunMountEffectRef.current;
+      
+      // Update the previous Gist ID and mark that we've run
+      previousGistIdRef.current = currentGistId;
+      hasRunMountEffectRef.current = true;
       
       isLoadingFromGistRef.current = true;
       
@@ -169,13 +200,29 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           
           const currentTasksJson = JSON.stringify(currentLocalTasks);
           
-          // If local tasks match what we last synced, use Gist as source of truth (refresh scenario)
-          if (currentTasksJson === lastSyncedRef.current || lastSyncedRef.current === '') {
+          // On initial mount with no previous sync, only use Gist as source of truth if local is empty
+          // Otherwise, always merge to preserve local tasks
+          if (isInitialMount && currentLocalTasks.length === 0 && lastSyncedRef.current === '') {
+            // True initial mount with no local tasks - use Gist as source of truth
+            console.log('Initial mount: using Gist as source of truth', cleanedTasks.length, 'tasks');
             lastSyncedRef.current = gistTasksJson;
             return cleanedTasks;
           }
           
-          // Otherwise, merge: Gist tasks + local tasks that aren't in Gist (preserve unsynced local tasks)
+          // If local tasks match what we last synced, use Gist as source of truth (refresh scenario)
+          // BUT: if this is a Gist ID change, always merge to preserve local tasks
+          if (currentTasksJson === lastSyncedRef.current && !isGistIdChange && lastSyncedRef.current !== '') {
+            console.log('Using Gist as source of truth (refresh scenario)', cleanedTasks.length, 'tasks');
+            lastSyncedRef.current = gistTasksJson;
+            return cleanedTasks;
+          }
+          
+          // If settings changed (Gist ID change), always merge to preserve local tasks
+          if (isGistIdChange) {
+            console.log('Gist ID changed: merging to preserve local tasks', currentLocalTasks.length, 'local tasks');
+          }
+          
+          // Otherwise, always merge: Gist tasks + local tasks that aren't in Gist (preserve unsynced local tasks)
           // Prioritize local tasks that are newer (created more recently)
           const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
           const mergedTasks = [...cleanedTasks];
@@ -198,6 +245,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
           
           // Don't update lastSyncedRef yet since we have unsynced local changes
+          console.log('Merged tasks:', mergedTasks.length, 'total (', cleanedTasks.length, 'from Gist,', mergedTasks.length - cleanedTasks.length, 'local)');
           return mergedTasks;
         });
         
@@ -214,20 +262,31 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadFromGistOnMount();
-  }, [isGistConfigured, gistSettings, setTasks]);
+  }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
 
   // Removed automatic sync from Gist on focus/visibility - only sync on initial load and when manually triggered
 
   // Auto-sync to gist when tasks change (but not on initial load from Gist)
   useEffect(() => {
-    if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) return;
+    if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) {
+      console.log('Auto-sync skipped:', { isLoaded, isGistConfigured, hasLoadedFromGist: hasLoadedFromGistRef.current });
+      return;
+    }
     
     const tasksJson = JSON.stringify(tasks);
     // Skip if nothing changed
-    if (tasksJson === lastSyncedRef.current) return;
+    if (tasksJson === lastSyncedRef.current) {
+      console.log('Auto-sync skipped: no changes');
+      return;
+    }
     
     // Skip if we're currently loading from Gist (to avoid race conditions)
-    if (isLoadingFromGistRef.current) return;
+    if (isLoadingFromGistRef.current) {
+      console.log('Auto-sync skipped: loading from Gist');
+      return;
+    }
+    
+    console.log('Auto-sync triggered:', tasks.length, 'tasks, syncing in 1 second...');
     
     // Debounce the sync
     if (syncTimeoutRef.current) {
@@ -237,19 +296,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     syncTimeoutRef.current = setTimeout(async () => {
       // Double-check we're not loading from Gist before syncing
       if (isLoadingFromGistRef.current) {
+        console.log('Auto-sync: waiting for Gist load to complete...');
         // Wait a bit and try again
         await new Promise(resolve => setTimeout(resolve, 500));
         if (isLoadingFromGistRef.current) {
           // Still loading, skip this sync - it will retry on next change
+          console.log('Auto-sync: still loading, skipping');
           return;
         }
       }
       
       isSyncingToGistRef.current = true;
       try {
+        console.log('Syncing', tasks.length, 'tasks to Gist...');
         await saveTasksToGist(tasks, gistSettings);
         lastSyncedRef.current = tasksJson;
-        console.log('Tasks synced to Gist');
+        console.log('Tasks synced to Gist successfully');
       } catch (error) {
         console.error('Failed to sync to Gist:', error);
       } finally {
@@ -277,7 +339,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       completed: false,
       completedAt: null,
     };
-    setTasks((prev) => [...prev, newTask]);
+    console.log('Adding new task:', newTask);
+    setTasks((prev) => {
+      const updated = [...prev, newTask];
+      console.log('Tasks after adding:', updated.length, 'tasks');
+      return updated;
+    });
   }, [setTasks]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
