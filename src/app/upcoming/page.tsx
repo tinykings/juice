@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { format, addDays, isSameDay, isAfter, endOfDay, startOfDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -52,11 +53,11 @@ export default function UpcomingPage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)', padding: '16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <a href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', textDecoration: 'none' }}>
+            <Link href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', textDecoration: 'none' }}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M15 19l-7-7 7-7" />
               </svg>
-            </a>
+            </Link>
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Upcoming</h1>
           </div>
           <button onClick={toggleTheme} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>

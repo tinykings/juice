@@ -4,8 +4,10 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useSettings } from '@/context/SettingsContext';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
+import SettingsModal from '@/components/SettingsModal';
 
 interface TaskGroup {
   label: string;
@@ -18,7 +20,9 @@ interface TaskGroup {
 export default function HomePage() {
   const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
+  const { isGistConfigured } = useSettings();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
@@ -154,32 +158,66 @@ export default function HomePage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Juice</h1>
-          {/* Theme Toggle */}
-          <button 
-            onClick={toggleTheme}
-            style={{ 
-              width: 32, 
-              height: 32, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: 'var(--accent)', 
-              background: 'none', 
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            {theme === 'dark' ? (
-              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              style={{ 
+                width: 32, 
+                height: 32, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--accent)', 
+                background: 'none', 
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {theme === 'dark' ? (
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              )}
+            </button>
+            {/* Settings Button */}
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              style={{ 
+                width: 32, 
+                height: 32, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--muted)', 
+                background: 'none', 
+                border: 'none',
+                cursor: 'pointer',
+                position: 'relative'
+              }}
+            >
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <circle cx="12" cy="12" r="3"/>
               </svg>
-            ) : (
-              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="5"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-              </svg>
-            )}
-          </button>
+              {isGistConfigured && (
+                <div style={{
+                  position: 'absolute',
+                  top: 4,
+                  right: 4,
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: 'var(--green)',
+                }} />
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -320,6 +358,11 @@ export default function HomePage() {
           setEditingTask(null);
         }}
         editTask={editingTask}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </div>
   );

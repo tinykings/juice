@@ -2,14 +2,14 @@
   "name": "Juice - Task Management",
   "short_name": "Juice",
   "description": "A beautiful task management app",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#147EFB",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

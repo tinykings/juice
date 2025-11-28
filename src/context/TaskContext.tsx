@@ -1,10 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { addDays, addWeeks, addMonths, addYears, format, startOfDay, subDays } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useSettings } from '@/context/SettingsContext';
+import { saveTasksToGist } from '@/services/gistSync';
 
 interface TaskContextType {
   tasks: Task[];
@@ -16,6 +18,7 @@ interface TaskContextType {
   getTodayTasks: () => Task[];
   getUpcomingTasks: () => Task[];
   getCompletedTasks: () => Task[];
+  loadFromGist: (tasks: Task[]) => void;
   isLoaded: boolean;
 }
 
@@ -40,6 +43,9 @@ function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceTy
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<Task[]>('juice-tasks', []);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { gistSettings, isGistConfigured } = useSettings();
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncedRef = useRef<string>('');
 
   // Clean up old completed tasks (older than 30 days) on load
   useEffect(() => {
@@ -54,6 +60,41 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       })
     );
   }, []);
+
+  // Auto-sync to gist when tasks change
+  useEffect(() => {
+    if (!isLoaded || !isGistConfigured) return;
+    
+    const tasksJson = JSON.stringify(tasks);
+    // Skip if nothing changed
+    if (tasksJson === lastSyncedRef.current) return;
+    
+    // Debounce the sync
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    
+    syncTimeoutRef.current = setTimeout(async () => {
+      try {
+        await saveTasksToGist(tasks, gistSettings);
+        lastSyncedRef.current = tasksJson;
+        console.log('Tasks synced to Gist');
+      } catch (error) {
+        console.error('Failed to sync to Gist:', error);
+      }
+    }, 1000); // 1 second debounce
+    
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, [tasks, isLoaded, isGistConfigured, gistSettings]);
+
+  const loadFromGist = useCallback((loadedTasks: Task[]) => {
+    lastSyncedRef.current = JSON.stringify(loadedTasks);
+    setTasks(loadedTasks);
+  }, [setTasks]);
 
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completed' | 'completedAt'>) => {
     const newTask: Task = {
@@ -160,6 +201,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         getTodayTasks,
         getUpcomingTasks,
         getCompletedTasks,
+        loadFromGist,
         isLoaded,
       }}
     >

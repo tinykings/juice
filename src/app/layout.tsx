@@ -2,11 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { SettingsProvider } from "@/context/SettingsContext";
 
 export const metadata: Metadata = {
   title: "Juice",
   description: "A beautiful task management app",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -36,9 +36,11 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <TaskProvider>
-            {children}
-          </TaskProvider>
+          <SettingsProvider>
+            <TaskProvider>
+              {children}
+            </TaskProvider>
+          </SettingsProvider>
         </ThemeProvider>
       </body>
     </html>
