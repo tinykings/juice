@@ -6,7 +6,7 @@ import { addDays, addWeeks, addMonths, addYears, format, startOfDay, subDays } f
 import { Task, RecurrenceType } from '@/types/task';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSettings } from '@/context/SettingsContext';
-import { saveTasksToGist } from '@/services/gistSync';
+import { saveTasksToGist, loadTasksFromGist } from '@/services/gistSync';
 
 interface TaskContextType {
   tasks: Task[];
@@ -46,24 +46,91 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const { gistSettings, isGistConfigured } = useSettings();
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedRef = useRef<string>('');
+  const hasLoadedFromGistRef = useRef(false);
 
-  // Clean up old completed tasks (older than 30 days) on load
-  useEffect(() => {
-    setIsLoaded(true);
+  // Function to load from Gist
+  const syncFromGist = useCallback(async () => {
+    if (!isGistConfigured) return;
     
-    // Clean up tasks older than 30 days
-    const thirtyDaysAgo = subDays(new Date(), 30);
-    setTasks((prev) => 
-      prev.filter((task) => {
-        if (!task.completed || !task.completedAt) return true;
-        return new Date(task.completedAt) > thirtyDaysAgo;
-      })
-    );
-  }, []);
+    try {
+      const gistTasks = await loadTasksFromGist(gistSettings);
+      const gistTasksJson = JSON.stringify(gistTasks);
+      
+      // Only update if Gist has different data
+      if (gistTasksJson !== lastSyncedRef.current) {
+        // Clean up tasks older than 30 days before setting
+        const thirtyDaysAgo = subDays(new Date(), 30);
+        const cleanedTasks = gistTasks.filter((task) => {
+          if (!task.completed || !task.completedAt) return true;
+          return new Date(task.completedAt) > thirtyDaysAgo;
+        });
+        
+        setTasks(cleanedTasks);
+        lastSyncedRef.current = JSON.stringify(cleanedTasks);
+        console.log('Synced tasks from Gist');
+      }
+    } catch (error) {
+      console.error('Failed to sync from Gist:', error);
+    }
+  }, [isGistConfigured, gistSettings, setTasks]);
 
-  // Auto-sync to gist when tasks change
+  // Load from Gist on mount if configured
   useEffect(() => {
-    if (!isLoaded || !isGistConfigured) return;
+    const loadFromGistOnMount = async () => {
+      if (!isGistConfigured || hasLoadedFromGistRef.current) {
+        setIsLoaded(true);
+        return;
+      }
+      
+      try {
+        const gistTasks = await loadTasksFromGist(gistSettings);
+        if (gistTasks.length > 0) {
+          // Use Gist as source of truth on load
+          setTasks(gistTasks);
+          lastSyncedRef.current = JSON.stringify(gistTasks);
+          console.log('Loaded tasks from Gist on mount');
+        }
+        hasLoadedFromGistRef.current = true;
+      } catch (error) {
+        console.error('Failed to load from Gist on mount:', error);
+        // Continue with local storage if Gist load fails
+        hasLoadedFromGistRef.current = true;
+      }
+      
+      setIsLoaded(true);
+      
+      // Clean up tasks older than 30 days
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      setTasks((prev) => 
+        prev.filter((task) => {
+          if (!task.completed || !task.completedAt) return true;
+          return new Date(task.completedAt) > thirtyDaysAgo;
+        })
+      );
+    };
+
+    loadFromGistOnMount();
+  }, [isGistConfigured, gistSettings, setTasks]);
+
+  // Sync from Gist when page becomes visible (user switches back to tab)
+  useEffect(() => {
+    if (!isGistConfigured || !isLoaded) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncFromGist();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isGistConfigured, isLoaded, syncFromGist]);
+
+  // Auto-sync to gist when tasks change (but not on initial load from Gist)
+  useEffect(() => {
+    if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) return;
     
     const tasksJson = JSON.stringify(tasks);
     // Skip if nothing changed
