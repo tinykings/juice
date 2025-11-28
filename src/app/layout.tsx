@@ -4,9 +4,12 @@ import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 
+const basePath = process.env.NODE_ENV === 'production' ? '/juice' : '';
+
 export const metadata: Metadata = {
   title: "Juice",
   description: "A beautiful task management app",
+  manifest: `${basePath}/manifest.json`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -31,8 +34,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="icon" type="image/png" href={`${basePath}/icon-192.png`} />
+        <link rel="apple-touch-icon" href={`${basePath}/icon-192.png`} />
+        <link rel="apple-touch-icon" sizes="180x180" href={`${basePath}/icon-180.png`} />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
         <ThemeProvider>

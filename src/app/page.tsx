@@ -5,6 +5,7 @@ import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSa
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
@@ -21,6 +22,7 @@ export default function HomePage() {
   const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const { isGistConfigured } = useSettings();
+  useServiceWorker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
