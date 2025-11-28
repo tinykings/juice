@@ -47,45 +47,81 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedRef = useRef<string>('');
   const hasLoadedFromGistRef = useRef(false);
+  const isLoadingFromGistRef = useRef(false);
+  const isSyncingToGistRef = useRef(false);
+  const syncFromGistTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Function to load from Gist
+  // Function to load from Gist (debounced to prevent overwriting new tasks)
   const syncFromGist = useCallback(async () => {
-    if (!isGistConfigured) return;
+    if (!isGistConfigured || isSyncingToGistRef.current || isLoadingFromGistRef.current) return;
     
-    try {
-      const gistTasks = await loadTasksFromGist(gistSettings);
-      const gistTasksJson = JSON.stringify(gistTasks);
-      
-      // Only update if Gist has different data
-      if (gistTasksJson !== lastSyncedRef.current) {
-        // Clean up tasks older than 30 days before setting
-        const thirtyDaysAgo = subDays(new Date(), 30);
-        const cleanedTasks = gistTasks.filter((task) => {
-          if (!task.completed || !task.completedAt) return true;
-          return new Date(task.completedAt) > thirtyDaysAgo;
-        });
-        
-        setTasks(cleanedTasks);
-        lastSyncedRef.current = JSON.stringify(cleanedTasks);
-        console.log('Synced tasks from Gist');
-      }
-    } catch (error) {
-      console.error('Failed to sync from Gist:', error);
+    // Debounce to prevent too frequent calls
+    if (syncFromGistTimeoutRef.current) {
+      clearTimeout(syncFromGistTimeoutRef.current);
     }
-  }, [isGistConfigured, gistSettings, setTasks]);
-
-  // Load from Gist on mount if configured - always check Gist on app open
-  useEffect(() => {
-    const loadFromGistOnMount = async () => {
-      if (!isGistConfigured) {
-        setIsLoaded(true);
-        return;
-      }
+    
+    syncFromGistTimeoutRef.current = setTimeout(async () => {
+      isLoadingFromGistRef.current = true;
       
-      // Always check Gist on mount, even if we've loaded before (for PWA opens)
       try {
         const gistTasks = await loadTasksFromGist(gistSettings);
         const gistTasksJson = JSON.stringify(gistTasks);
+        
+        // Only update if Gist has different data than what we last synced
+        if (gistTasksJson !== lastSyncedRef.current) {
+          // Clean up tasks older than 30 days before setting
+          const thirtyDaysAgo = subDays(new Date(), 30);
+          const cleanedTasks = gistTasks.filter((task) => {
+            if (!task.completed || !task.completedAt) return true;
+            return new Date(task.completedAt) > thirtyDaysAgo;
+          });
+          
+          // Merge with current local tasks to preserve any unsynced local changes
+          setTasks((currentLocalTasks) => {
+            const currentTasksJson = JSON.stringify(currentLocalTasks);
+            
+            // If local tasks match what we last synced, use Gist as source of truth
+            if (currentTasksJson === lastSyncedRef.current) {
+              lastSyncedRef.current = JSON.stringify(cleanedTasks);
+              return cleanedTasks;
+            }
+            
+            // Otherwise, merge: Gist tasks + local tasks that aren't in Gist
+            const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
+            const newLocalTasks = currentLocalTasks.filter(t => !gistTaskIds.has(t.id));
+            const merged = [...cleanedTasks, ...newLocalTasks];
+            
+            // Don't update lastSyncedRef yet since we have unsynced local changes
+            return merged;
+          });
+          
+          console.log('Synced tasks from Gist');
+        }
+      } catch (error) {
+        console.error('Failed to sync from Gist:', error);
+      } finally {
+        isLoadingFromGistRef.current = false;
+      }
+    }, 2000); // 2 second debounce to allow local changes to sync first
+  }, [isGistConfigured, gistSettings, setTasks]);
+
+  // Load from Gist on mount if configured - only once on initial load
+  useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (isLoadingFromGistRef.current || hasLoadedFromGistRef.current) return;
+    
+    const loadFromGistOnMount = async () => {
+      if (!isGistConfigured) {
+        // If Gist not configured, just use local storage
+        setIsLoaded(true);
+        hasLoadedFromGistRef.current = true; // Allow local saves to work
+        return;
+      }
+      
+      isLoadingFromGistRef.current = true;
+      
+      try {
+        const gistTasks = await loadTasksFromGist(gistSettings);
         
         // Clean up tasks older than 30 days
         const thirtyDaysAgo = subDays(new Date(), 30);
@@ -94,56 +130,37 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           return new Date(task.completedAt) > thirtyDaysAgo;
         });
         
-        // Use Gist as source of truth on load
-        setTasks(cleanedTasks);
-        lastSyncedRef.current = JSON.stringify(cleanedTasks);
+        // Use Gist as source of truth on load, but merge with any local tasks that were added before Gist loaded
+        setTasks((currentLocalTasks) => {
+          // Always merge: Gist tasks + local tasks that aren't in Gist
+          const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
+          const newLocalTasks = currentLocalTasks.filter(t => !gistTaskIds.has(t.id));
+          
+          // Merge: Gist tasks + new local tasks (preserve unsynced local tasks)
+          const merged = [...cleanedTasks, ...newLocalTasks];
+          
+          // Update lastSyncedRef with the merged result
+          lastSyncedRef.current = JSON.stringify(merged);
+          
+          return merged;
+        });
+        
         console.log('Loaded tasks from Gist on mount');
         hasLoadedFromGistRef.current = true;
       } catch (error) {
         console.error('Failed to load from Gist on mount:', error);
         // Continue with local storage if Gist load fails, but still mark as loaded
         hasLoadedFromGistRef.current = true;
+      } finally {
+        isLoadingFromGistRef.current = false;
+        setIsLoaded(true);
       }
-      
-      setIsLoaded(true);
     };
 
     loadFromGistOnMount();
   }, [isGistConfigured, gistSettings, setTasks]);
 
-  // Sync from Gist when page becomes visible, window gets focus, or page is shown (PWA opened, tab switched, back/forward cache, etc.)
-  useEffect(() => {
-    if (!isGistConfigured || !isLoaded) return;
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        syncFromGist();
-      }
-    };
-
-    const handleFocus = () => {
-      // Check Gist when window gets focus (PWA opened, browser tab focused, etc.)
-      syncFromGist();
-    };
-
-    const handlePageShow = (event: PageTransitionEvent) => {
-      // Check Gist when page is shown, especially if restored from back/forward cache
-      // This is important for PWAs that may be restored from cache
-      if (event.persisted || document.visibilityState === 'visible') {
-        syncFromGist();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('pageshow', handlePageShow);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('pageshow', handlePageShow);
-    };
-  }, [isGistConfigured, isLoaded, syncFromGist]);
+  // Removed automatic sync from Gist on focus/visibility - only sync on initial load and when manually triggered
 
   // Auto-sync to gist when tasks change (but not on initial load from Gist)
   useEffect(() => {
@@ -159,12 +176,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
     
     syncTimeoutRef.current = setTimeout(async () => {
+      isSyncingToGistRef.current = true;
       try {
         await saveTasksToGist(tasks, gistSettings);
         lastSyncedRef.current = tasksJson;
         console.log('Tasks synced to Gist');
       } catch (error) {
         console.error('Failed to sync to Gist:', error);
+      } finally {
+        isSyncingToGistRef.current = false;
       }
     }, 1000); // 1 second debounce
     
