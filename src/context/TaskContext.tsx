@@ -74,45 +74,44 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isGistConfigured, gistSettings, setTasks]);
 
-  // Load from Gist on mount if configured
+  // Load from Gist on mount if configured - always check Gist on app open
   useEffect(() => {
     const loadFromGistOnMount = async () => {
-      if (!isGistConfigured || hasLoadedFromGistRef.current) {
+      if (!isGistConfigured) {
         setIsLoaded(true);
         return;
       }
       
+      // Always check Gist on mount, even if we've loaded before (for PWA opens)
       try {
         const gistTasks = await loadTasksFromGist(gistSettings);
-        if (gistTasks.length > 0) {
-          // Use Gist as source of truth on load
-          setTasks(gistTasks);
-          lastSyncedRef.current = JSON.stringify(gistTasks);
-          console.log('Loaded tasks from Gist on mount');
-        }
+        const gistTasksJson = JSON.stringify(gistTasks);
+        
+        // Clean up tasks older than 30 days
+        const thirtyDaysAgo = subDays(new Date(), 30);
+        const cleanedTasks = gistTasks.filter((task) => {
+          if (!task.completed || !task.completedAt) return true;
+          return new Date(task.completedAt) > thirtyDaysAgo;
+        });
+        
+        // Use Gist as source of truth on load
+        setTasks(cleanedTasks);
+        lastSyncedRef.current = JSON.stringify(cleanedTasks);
+        console.log('Loaded tasks from Gist on mount');
         hasLoadedFromGistRef.current = true;
       } catch (error) {
         console.error('Failed to load from Gist on mount:', error);
-        // Continue with local storage if Gist load fails
+        // Continue with local storage if Gist load fails, but still mark as loaded
         hasLoadedFromGistRef.current = true;
       }
       
       setIsLoaded(true);
-      
-      // Clean up tasks older than 30 days
-      const thirtyDaysAgo = subDays(new Date(), 30);
-      setTasks((prev) => 
-        prev.filter((task) => {
-          if (!task.completed || !task.completedAt) return true;
-          return new Date(task.completedAt) > thirtyDaysAgo;
-        })
-      );
     };
 
     loadFromGistOnMount();
   }, [isGistConfigured, gistSettings, setTasks]);
 
-  // Sync from Gist when page becomes visible (user switches back to tab)
+  // Sync from Gist when page becomes visible, window gets focus, or page is shown (PWA opened, tab switched, back/forward cache, etc.)
   useEffect(() => {
     if (!isGistConfigured || !isLoaded) return;
 
@@ -122,9 +121,27 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    const handleFocus = () => {
+      // Check Gist when window gets focus (PWA opened, browser tab focused, etc.)
+      syncFromGist();
+    };
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // Check Gist when page is shown, especially if restored from back/forward cache
+      // This is important for PWAs that may be restored from cache
+      if (event.persisted || document.visibilityState === 'visible') {
+        syncFromGist();
+      }
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
+    
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
     };
   }, [isGistConfigured, isLoaded, syncFromGist]);
 
