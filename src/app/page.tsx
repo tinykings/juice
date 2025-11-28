@@ -158,8 +158,7 @@ export default function HomePage() {
         padding: '16px 20px',
         transition: 'background 0.2s'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Juice</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {/* Theme Toggle */}
             <button 
@@ -336,21 +335,28 @@ export default function HomePage() {
           right: 24,
           width: 56,
           height: 56,
-          background: 'var(--accent)',
+          background: 'transparent',
           borderRadius: '50%',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
           border: 'none',
           cursor: 'pointer',
-          zIndex: 20
+          zIndex: 20,
+          padding: 0,
+          overflow: 'hidden'
         }}
       >
-        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        <img 
+          src="./icon-192.png" 
+          alt="Add task" 
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover'
+          }}
+        />
       </button>
 
       <TaskModal
