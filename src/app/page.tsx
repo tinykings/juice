@@ -1,17 +1,27 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 
+interface TaskGroup {
+  label: string;
+  tasks: Task[];
+  isToday?: boolean;
+  date?: Date;
+  dropTarget?: boolean;
+}
+
 export default function HomePage() {
-  const { tasks, completeTask, getCompletedTasks, isLoaded } = useTasks();
+  const { tasks, completeTask, updateTask, getCompletedTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
 
   // Get all incomplete tasks
   const incompleteTasks = useMemo(() => {
@@ -28,28 +38,24 @@ export default function HomePage() {
     const today = startOfDay(new Date());
     const weekEnd = endOfDay(addDays(today, 7));
     
-    const groups: { label: string; tasks: Task[]; isToday?: boolean }[] = [];
+    const groups: TaskGroup[] = [];
     
-    // Today's tasks
+    // Today's tasks (always show as drop target)
     const todayTasks = incompleteTasks.filter(t => {
       const d = new Date(t.dueDate);
       return isToday(d) || isBefore(d, today);
     });
-    if (todayTasks.length > 0) {
-      groups.push({ label: 'Today', tasks: todayTasks, isToday: true });
-    }
+    groups.push({ label: 'Today', tasks: todayTasks, isToday: true, date: today, dropTarget: true });
 
-    // Next 7 days (by day of week)
+    // Next 7 days (by day of week) - always show as drop targets
     for (let i = 1; i <= 7; i++) {
       const date = addDays(today, i);
       const dayTasks = incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), date));
-      if (dayTasks.length > 0) {
-        const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
-        groups.push({ label, tasks: dayTasks });
-      }
+      const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
+      groups.push({ label, tasks: dayTasks, date, dropTarget: true });
     }
 
-    // Beyond this week - group by month
+    // Beyond this week - group by month (not drop targets)
     const futureTasks = incompleteTasks.filter(t => isAfter(new Date(t.dueDate), weekEnd));
     const monthGroups: { [key: string]: Task[] } = {};
     
@@ -60,11 +66,50 @@ export default function HomePage() {
     });
 
     Object.entries(monthGroups).forEach(([month, monthTasks]) => {
-      groups.push({ label: month, tasks: monthTasks });
+      groups.push({ label: month, tasks: monthTasks, dropTarget: false });
     });
 
     return groups;
   }, [incompleteTasks]);
+
+  // Filter to only show groups with tasks or that are drop targets during drag
+  const visibleGroups = useMemo(() => {
+    if (draggedTaskId) {
+      // During drag, show all week days as potential drop targets
+      return groupedTasks.filter(g => g.tasks.length > 0 || g.dropTarget);
+    }
+    return groupedTasks.filter(g => g.tasks.length > 0);
+  }, [groupedTasks, draggedTaskId]);
+
+  // Drag handlers
+  const handleDragStart = useCallback((taskId: string) => {
+    setDraggedTaskId(taskId);
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedTaskId(null);
+    setDragOverGroup(null);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, groupLabel: string) => {
+    e.preventDefault();
+    setDragOverGroup(groupLabel);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverGroup(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, group: TaskGroup) => {
+    e.preventDefault();
+    if (draggedTaskId && group.date) {
+      updateTask(draggedTaskId, {
+        dueDate: group.date.toISOString()
+      });
+    }
+    setDraggedTaskId(null);
+    setDragOverGroup(null);
+  }, [draggedTaskId, updateTask]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -128,8 +173,14 @@ export default function HomePage() {
         {/* Task Groups */}
         {isLoaded && (
           <div>
-            {groupedTasks.map((group) => (
-              <section key={group.label} style={{ marginBottom: 24 }}>
+            {visibleGroups.map((group) => (
+              <section 
+                key={group.label} 
+                style={{ marginBottom: 24 }}
+                onDragOver={group.dropTarget ? (e) => handleDragOver(e, group.label) : undefined}
+                onDragLeave={group.dropTarget ? handleDragLeave : undefined}
+                onDrop={group.dropTarget ? (e) => handleDrop(e, group) : undefined}
+              >
                 <h2 style={{ 
                   fontSize: 13, 
                   fontWeight: 600, 
@@ -140,7 +191,20 @@ export default function HomePage() {
                 }}>
                   {group.label}
                 </h2>
-                <div style={{ borderTop: '1px solid var(--border)' }}>
+                <div style={{ 
+                  borderTop: '1px solid var(--border)',
+                  background: dragOverGroup === group.label ? 'var(--accent-light)' : 'transparent',
+                  borderRadius: dragOverGroup === group.label ? 8 : 0,
+                  transition: 'background 0.15s',
+                  minHeight: group.tasks.length === 0 && draggedTaskId ? 60 : undefined,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: group.tasks.length === 0 ? 'center' : 'flex-start',
+                  alignItems: group.tasks.length === 0 ? 'center' : 'stretch'
+                }}>
+                  {group.tasks.length === 0 && draggedTaskId && group.dropTarget && (
+                    <p style={{ color: 'var(--muted)', fontSize: 13 }}>Drop here</p>
+                  )}
                   {group.tasks.map((task) => (
                     <TaskItem 
                       key={task.id} 
@@ -150,7 +214,10 @@ export default function HomePage() {
                         setEditingTask(task);
                         setIsModalOpen(true);
                       }}
-                      showDate={!group.isToday}
+                      showDate={!group.isToday && !group.dropTarget}
+                      onDragStart={() => handleDragStart(task.id)}
+                      onDragEnd={handleDragEnd}
+                      isDragging={draggedTaskId === task.id}
                     />
                   ))}
                 </div>
@@ -247,12 +314,18 @@ function TaskItem({
   task, 
   onComplete, 
   onEdit,
-  showDate 
+  showDate,
+  onDragStart,
+  onDragEnd,
+  isDragging
 }: { 
   task: Task; 
   onComplete: () => void; 
   onEdit: () => void;
   showDate?: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  isDragging: boolean;
 }) {
   const [isCompleting, setIsCompleting] = useState(false);
 
@@ -266,6 +339,13 @@ function TaskItem({
 
   return (
     <div 
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', task.id);
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
       onClick={onEdit}
       style={{
         display: 'flex',
@@ -273,11 +353,30 @@ function TaskItem({
         gap: 12,
         padding: '12px 0',
         borderBottom: '1px solid var(--border)',
-        opacity: isCompleting ? 0.3 : 1,
+        opacity: isCompleting ? 0.3 : isDragging ? 0.5 : 1,
         transition: 'opacity 0.3s',
-        cursor: 'pointer'
+        cursor: 'grab',
+        background: 'var(--background)'
       }}
     >
+      {/* Drag Handle */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        color: 'var(--muted-light)',
+        cursor: 'grab',
+        marginTop: 4
+      }}>
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+          <circle cx="9" cy="6" r="1.5"/>
+          <circle cx="15" cy="6" r="1.5"/>
+          <circle cx="9" cy="12" r="1.5"/>
+          <circle cx="15" cy="12" r="1.5"/>
+          <circle cx="9" cy="18" r="1.5"/>
+          <circle cx="15" cy="18" r="1.5"/>
+        </svg>
+      </div>
+
       {/* Checkbox */}
       <button
         onClick={(e) => {
@@ -385,7 +484,8 @@ function CompletedTaskItem({ task }: { task: Task }) {
         alignItems: 'center',
         justifyContent: 'center',
         flexShrink: 0,
-        marginTop: 2
+        marginTop: 2,
+        marginLeft: 28 // Align with task items that have drag handle
       }}>
         <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
           <path d="M5 12l5 5L20 7" />
