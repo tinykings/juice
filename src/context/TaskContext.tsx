@@ -61,6 +61,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
     
     syncFromGistTimeoutRef.current = setTimeout(async () => {
+      // Double-check we're not syncing to Gist before proceeding
+      if (isSyncingToGistRef.current) {
+        return;
+      }
+      
       isLoadingFromGistRef.current = true;
       
       try {
@@ -78,6 +83,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           
           // Merge with current local tasks to preserve any unsynced local changes
           setTasks((currentLocalTasks) => {
+            // Check again if we're syncing to Gist (race condition protection)
+            if (isSyncingToGistRef.current) {
+              // Don't overwrite if we're in the middle of syncing to Gist
+              return currentLocalTasks;
+            }
+            
             const currentTasksJson = JSON.stringify(currentLocalTasks);
             
             // If local tasks match what we last synced, use Gist as source of truth
@@ -87,12 +98,28 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             }
             
             // Otherwise, merge: Gist tasks + local tasks that aren't in Gist
+            // Prioritize local tasks that are newer (created more recently)
             const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
-            const newLocalTasks = currentLocalTasks.filter(t => !gistTaskIds.has(t.id));
-            const merged = [...cleanedTasks, ...newLocalTasks];
+            const mergedTasks = [...cleanedTasks];
+            for (const localTask of currentLocalTasks) {
+              if (gistTaskIds.has(localTask.id)) {
+                // Task exists in both - check if local is newer
+                const gistTask = cleanedTasks.find(t => t.id === localTask.id);
+                if (gistTask && new Date(localTask.createdAt) > new Date(gistTask.createdAt)) {
+                  // Local task is newer, replace the Gist version
+                  const index = mergedTasks.findIndex(t => t.id === localTask.id);
+                  if (index !== -1) {
+                    mergedTasks[index] = localTask;
+                  }
+                }
+              } else {
+                // New local task not in Gist - add it
+                mergedTasks.push(localTask);
+              }
+            }
             
             // Don't update lastSyncedRef yet since we have unsynced local changes
-            return merged;
+            return mergedTasks;
           });
           
           console.log('Synced tasks from Gist');
@@ -134,6 +161,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         
         // Use Gist as source of truth on load, but merge with any local tasks that were added before Gist loaded
         setTasks((currentLocalTasks) => {
+          // Check if we're syncing to Gist (race condition protection)
+          if (isSyncingToGistRef.current) {
+            // Don't overwrite if we're in the middle of syncing to Gist
+            return currentLocalTasks;
+          }
+          
           const currentTasksJson = JSON.stringify(currentLocalTasks);
           
           // If local tasks match what we last synced, use Gist as source of truth (refresh scenario)
@@ -143,12 +176,29 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
           
           // Otherwise, merge: Gist tasks + local tasks that aren't in Gist (preserve unsynced local tasks)
+          // Prioritize local tasks that are newer (created more recently)
           const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
-          const newLocalTasks = currentLocalTasks.filter(t => !gistTaskIds.has(t.id));
-          const merged = [...cleanedTasks, ...newLocalTasks];
+          const mergedTasks = [...cleanedTasks];
+          
+          for (const localTask of currentLocalTasks) {
+            if (gistTaskIds.has(localTask.id)) {
+              // Task exists in both - check if local is newer
+              const gistTask = cleanedTasks.find(t => t.id === localTask.id);
+              if (gistTask && new Date(localTask.createdAt) > new Date(gistTask.createdAt)) {
+                // Local task is newer, replace the Gist version
+                const index = mergedTasks.findIndex(t => t.id === localTask.id);
+                if (index !== -1) {
+                  mergedTasks[index] = localTask;
+                }
+              }
+            } else {
+              // New local task not in Gist - add it
+              mergedTasks.push(localTask);
+            }
+          }
           
           // Don't update lastSyncedRef yet since we have unsynced local changes
-          return merged;
+          return mergedTasks;
         });
         
         console.log('Loaded tasks from Gist on mount');
@@ -176,12 +226,25 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // Skip if nothing changed
     if (tasksJson === lastSyncedRef.current) return;
     
+    // Skip if we're currently loading from Gist (to avoid race conditions)
+    if (isLoadingFromGistRef.current) return;
+    
     // Debounce the sync
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
     
     syncTimeoutRef.current = setTimeout(async () => {
+      // Double-check we're not loading from Gist before syncing
+      if (isLoadingFromGistRef.current) {
+        // Wait a bit and try again
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (isLoadingFromGistRef.current) {
+          // Still loading, skip this sync - it will retry on next change
+          return;
+        }
+      }
+      
       isSyncingToGistRef.current = true;
       try {
         await saveTasksToGist(tasks, gistSettings);
