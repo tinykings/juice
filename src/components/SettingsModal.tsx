@@ -108,10 +108,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 20px',
+          padding: '20px 24px',
           borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Settings</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Settings</h2>
           <button
             onClick={onClose}
             style={{
@@ -119,7 +119,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               border: 'none',
               cursor: 'pointer',
               color: 'var(--muted)',
-              padding: 4,
+              padding: 8,
+              minWidth: 44,
+              minHeight: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -129,20 +134,20 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Content */}
-        <div style={{ padding: 20 }}>
-          <div style={{ marginBottom: 20 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>
+        <div style={{ padding: 24 }}>
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>
               GitHub Gist Sync
             </h3>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>
               Sync your tasks across devices using a GitHub Gist as storage. 
-              You need a GitHub personal access token with <code style={{ background: 'var(--border)', padding: '2px 4px', borderRadius: 4 }}>gist</code> scope.
+              You need a GitHub personal access token with <code style={{ background: 'var(--border)', padding: '4px 6px', borderRadius: 6, fontSize: 14 }}>gist</code> scope.
             </p>
           </div>
 
           {/* GitHub Token */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6 }}>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
               GitHub Token
             </label>
             <input
@@ -152,21 +157,22 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               placeholder="ghp_xxxxxxxxxxxx"
               style={{
                 width: '100%',
-                padding: '10px 12px',
-                fontSize: 14,
+                padding: '14px 16px',
+                fontSize: 16,
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 12,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 outline: 'none',
                 boxSizing: 'border-box',
+                minHeight: 48
               }}
             />
           </div>
 
           {/* Gist ID */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 6 }}>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
               Gist ID
             </label>
             <input
@@ -176,14 +182,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               placeholder="abc123def456..."
               style={{
                 width: '100%',
-                padding: '10px 12px',
-                fontSize: 14,
+                padding: '14px 16px',
+                fontSize: 16,
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 12,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 outline: 'none',
                 boxSizing: 'border-box',
+                minHeight: 48
               }}
             />
           </div>
@@ -191,10 +198,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Message */}
           {message && (
             <div style={{
-              padding: '10px 12px',
-              borderRadius: 8,
-              marginBottom: 16,
-              fontSize: 13,
+              padding: '14px 16px',
+              borderRadius: 12,
+              marginBottom: 20,
+              fontSize: 15,
               background: message.type === 'success' ? 'var(--green)' : 'var(--red)',
               color: 'white',
             }}>
@@ -207,14 +214,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <button
               onClick={handleSave}
               style={{
-                padding: '12px 16px',
-                fontSize: 14,
+                padding: '14px 20px',
+                fontSize: 16,
                 fontWeight: 500,
                 border: 'none',
-                borderRadius: 8,
+                borderRadius: 12,
                 background: 'var(--accent)',
                 color: 'white',
                 cursor: 'pointer',
+                minHeight: 48
               }}
             >
               Save Settings
@@ -224,15 +232,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onClick={handleLoadFromGist}
               disabled={isLoading || !gistId || !token}
               style={{
-                padding: '12px 16px',
-                fontSize: 14,
+                padding: '14px 20px',
+                fontSize: 16,
                 fontWeight: 500,
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 12,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
                 opacity: isLoading || !gistId || !token ? 0.5 : 1,
+                minHeight: 48
               }}
             >
               {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
@@ -255,15 +264,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onClick={handleCreateGist}
               disabled={isCreating || !token}
               style={{
-                padding: '12px 16px',
-                fontSize: 14,
+                padding: '14px 20px',
+                fontSize: 16,
                 fontWeight: 500,
                 border: '1px solid var(--border)',
-                borderRadius: 8,
+                borderRadius: 12,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 cursor: isCreating || !token ? 'not-allowed' : 'pointer',
                 opacity: isCreating || !token ? 0.5 : 1,
+                minHeight: 48
               }}
             >
               {isCreating ? 'Creating...' : 'Create New Gist'}
@@ -272,25 +282,25 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Sync Status */}
           <div style={{ 
-            marginTop: 20, 
-            padding: '12px', 
+            marginTop: 24, 
+            padding: '16px', 
             background: 'var(--accent-light)', 
-            borderRadius: 8,
-            fontSize: 13,
+            borderRadius: 12,
+            fontSize: 15,
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
-                width: 8,
-                height: 8,
+                width: 10,
+                height: 10,
                 borderRadius: '50%',
                 background: isGistConfigured ? 'var(--green)' : 'var(--muted)',
               }} />
-              <span style={{ color: 'var(--foreground)' }}>
+              <span style={{ color: 'var(--foreground)', fontSize: 16 }}>
                 {isGistConfigured ? 'Auto-sync enabled' : 'Auto-sync disabled'}
               </span>
             </div>
             {isGistConfigured && (
-              <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 12 }}>
+              <p style={{ margin: '10px 0 0', color: 'var(--muted)', fontSize: 14 }}>
                 Tasks will automatically sync to your Gist when changed.
               </p>
             )}

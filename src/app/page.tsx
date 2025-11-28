@@ -155,32 +155,33 @@ export default function HomePage() {
         top: 0, 
         zIndex: 10, 
         background: 'var(--background)', 
-        padding: '16px 20px',
+        padding: '20px 24px',
         transition: 'background 0.2s'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme}
               style={{ 
-                width: 32, 
-                height: 32, 
+                width: 44, 
+                height: 44, 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 color: 'var(--accent)', 
                 background: 'none', 
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                padding: 0
               }}
             >
               {theme === 'dark' ? (
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
                 </svg>
               ) : (
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="5"/>
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
@@ -190,8 +191,8 @@ export default function HomePage() {
             <button 
               onClick={() => setIsSettingsOpen(true)}
               style={{ 
-                width: 32, 
-                height: 32, 
+                width: 44, 
+                height: 44, 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center', 
@@ -199,20 +200,21 @@ export default function HomePage() {
                 background: 'none', 
                 border: 'none',
                 cursor: 'pointer',
-                position: 'relative'
+                position: 'relative',
+                padding: 0
               }}
             >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
               {isGistConfigured && (
                 <div style={{
                   position: 'absolute',
-                  top: 4,
-                  right: 4,
-                  width: 8,
-                  height: 8,
+                  top: 6,
+                  right: 6,
+                  width: 10,
+                  height: 10,
                   borderRadius: '50%',
                   background: 'var(--green)',
                 }} />
@@ -223,25 +225,25 @@ export default function HomePage() {
       </header>
 
       {/* Main Content */}
-      <main style={{ padding: '0 20px 96px' }}>
+      <main style={{ padding: '0 24px 120px' }}>
         {/* Task Groups */}
         {isLoaded && (
           <div>
             {visibleGroups.map((group) => (
               <section 
                 key={group.label} 
-                style={{ marginBottom: 24 }}
+                style={{ marginBottom: 32 }}
                 onDragOver={group.dropTarget ? (e) => handleDragOver(e, group.label) : undefined}
                 onDragLeave={group.dropTarget ? handleDragLeave : undefined}
                 onDrop={group.dropTarget ? (e) => handleDrop(e, group) : undefined}
               >
                 <h2 style={{ 
-                  fontSize: 13, 
+                  fontSize: 15, 
                   fontWeight: 600, 
                   color: group.isToday ? 'var(--foreground)' : 'var(--muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  marginBottom: 8
+                  marginBottom: 12
                 }}>
                   {group.label}
                 </h2>
@@ -257,7 +259,7 @@ export default function HomePage() {
                   alignItems: group.tasks.length === 0 ? 'center' : 'stretch'
                 }}>
                   {group.tasks.length === 0 && isDragging && group.dropTarget && (
-                    <p style={{ color: 'var(--muted)', fontSize: 13 }}>Drop here</p>
+                    <p style={{ color: 'var(--muted)', fontSize: 16, padding: '20px 0' }}>Drop here</p>
                   )}
                   {group.tasks.map((task) => (
                     <TaskItem 
@@ -279,24 +281,24 @@ export default function HomePage() {
             ))}
             
             {incompleteTasks.length === 0 && completedTasks.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <div style={{ textAlign: 'center', padding: '80px 0' }}>
                 <div style={{ 
-                  width: 80, 
-                  height: 80, 
+                  width: 100, 
+                  height: 100, 
                   borderRadius: '50%', 
                   background: 'var(--accent-light)', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
-                  margin: '0 auto 16px'
+                  margin: '0 auto 24px'
                 }}>
-                  <svg width="40" height="40" fill="none" stroke="var(--accent)" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <svg width="50" height="50" fill="none" stroke="var(--accent)" strokeWidth="1.5" viewBox="0 0 24 24">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                     <polyline points="22,4 12,14.01 9,11.01"/>
                   </svg>
                 </div>
-                <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>All Done</h3>
-                <p style={{ color: 'var(--muted)', fontSize: 14 }}>
+                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>All Done</h3>
+                <p style={{ color: 'var(--muted)', fontSize: 16 }}>
                   No tasks yet. Tap + to add one.
           </p>
         </div>
@@ -304,14 +306,14 @@ export default function HomePage() {
 
             {/* Completed Section */}
             {completedTasks.length > 0 && (
-              <section style={{ marginTop: 40 }}>
+              <section style={{ marginTop: 48 }}>
                 <h2 style={{ 
-                  fontSize: 13, 
+                  fontSize: 15, 
                   fontWeight: 600, 
                   color: 'var(--muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  marginBottom: 8
+                  marginBottom: 12
                 }}>
                   Completed (30 days)
                 </h2>
@@ -331,13 +333,13 @@ export default function HomePage() {
         onClick={() => setIsModalOpen(true)}
         style={{
           position: 'fixed',
-          bottom: 24,
+          bottom: 32,
           right: 24,
-          width: 56,
-          height: 56,
+          width: 64,
+          height: 64,
           background: 'transparent',
           borderRadius: '50%',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -412,8 +414,8 @@ function TaskItem({
       style={{
         display: 'flex',
         alignItems: 'flex-start',
-        gap: 12,
-        padding: '12px 0',
+        gap: 16,
+        padding: '16px 0',
         borderBottom: '1px solid var(--border)',
         opacity: isCompleting ? 0.3 : isDragging ? 0.5 : 1,
         transition: 'opacity 0.15s',
@@ -428,10 +430,10 @@ function TaskItem({
         alignItems: 'center', 
         color: 'var(--muted-light)',
         cursor: 'grab',
-        marginTop: 4,
+        marginTop: 6,
         touchAction: 'none'
       }}>
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
           <circle cx="9" cy="6" r="1.5"/>
           <circle cx="15" cy="6" r="1.5"/>
           <circle cx="9" cy="12" r="1.5"/>
@@ -450,18 +452,20 @@ function TaskItem({
         draggable={false}
         style={{ 
           flexShrink: 0, 
-          marginTop: 2, 
+          marginTop: 4, 
           background: 'none', 
           border: 'none', 
           padding: 0,
-          cursor: 'pointer'
+          cursor: 'pointer',
+          minWidth: 28,
+          minHeight: 28
         }}
       >
         <div style={{
-          width: 22,
-          height: 22,
+          width: 28,
+          height: 28,
           borderRadius: '50%',
-          border: isCompleting ? 'none' : '2px solid var(--muted-light)',
+          border: isCompleting ? 'none' : '2.5px solid var(--muted-light)',
           background: isCompleting ? 'var(--accent)' : 'transparent',
           display: 'flex',
           alignItems: 'center',
@@ -469,7 +473,7 @@ function TaskItem({
           transition: 'all 0.2s'
         }}>
           {isCompleting && (
-            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+            <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
               <path d="M5 12l5 5L20 7" />
             </svg>
           )}
@@ -482,17 +486,18 @@ function TaskItem({
           <div style={{ flex: 1 }}>
             <p style={{ 
               margin: 0, 
-              fontSize: 16, 
+              fontSize: 18, 
+              lineHeight: 1.4,
               textDecoration: isCompleting ? 'line-through' : 'none',
               color: isCompleting ? 'var(--muted)' : 'var(--foreground)'
             }}>
               {task.title}
             </p>
             {task.notes && (
-              <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>{task.notes}</p>
+              <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{task.notes}</p>
             )}
             {task.isRecurring && (
-              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--accent)' }}>
+              <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--accent)' }}>
                 ↻ {task.recurrenceType}
               </p>
             )}
@@ -501,7 +506,7 @@ function TaskItem({
           {/* Date/Flag */}
           {showDate && (
             <span style={{ 
-              fontSize: 12, 
+              fontSize: 14, 
               color: isOverdue ? 'var(--red)' : 'var(--muted)',
               flexShrink: 0
             }}>
@@ -526,8 +531,8 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
     <div style={{
       display: 'flex',
       alignItems: 'flex-start',
-      gap: 12,
-      padding: '12px 0',
+      gap: 16,
+      padding: '16px 0',
       borderBottom: '1px solid var(--border)',
       opacity: isUncompleting ? 0.3 : 1,
       transition: 'opacity 0.15s',
@@ -536,24 +541,26 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
       <button
         onClick={handleUncomplete}
         style={{
-          width: 22,
-          height: 22,
+          width: 28,
+          height: 28,
           borderRadius: '50%',
           background: isUncompleting ? 'transparent' : 'var(--green)',
-          border: isUncompleting ? '2px solid var(--muted-light)' : 'none',
+          border: isUncompleting ? '2.5px solid var(--muted-light)' : 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          marginTop: 2,
-          marginLeft: 28, // Align with task items that have drag handle
+          marginTop: 4,
+          marginLeft: 36, // Align with task items that have drag handle
           cursor: 'pointer',
           padding: 0,
-          transition: 'all 0.2s'
+          transition: 'all 0.2s',
+          minWidth: 28,
+          minHeight: 28
         }}
       >
         {!isUncompleting && (
-          <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+          <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
             <path d="M5 12l5 5L20 7" />
           </svg>
         )}
@@ -563,7 +570,8 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ 
           margin: 0, 
-          fontSize: 16, 
+          fontSize: 18, 
+          lineHeight: 1.4,
           textDecoration: isUncompleting ? 'none' : 'line-through',
           color: isUncompleting ? 'var(--foreground)' : 'var(--muted)',
           transition: 'all 0.2s'
@@ -571,7 +579,7 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
           {task.title}
         </p>
         {task.completedAt && (
-          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
+          <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--muted)' }}>
             {format(new Date(task.completedAt), 'MMM d, h:mm a')}
           </p>
         )}

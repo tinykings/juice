@@ -105,19 +105,19 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
       {/* Modal */}
       <div style={{
         position: 'absolute',
-        left: 16,
-        right: 16,
-        top: '15%',
-        maxWidth: 400,
+        left: 20,
+        right: 20,
+        top: '10%',
+        maxWidth: 500,
         margin: '0 auto',
         background: 'var(--card)',
-        borderRadius: 16,
+        borderRadius: 20,
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
         overflow: 'hidden'
       }}>
         <form onSubmit={handleSubmit}>
           {/* Inputs */}
-          <div style={{ padding: 20 }}>
+          <div style={{ padding: 24 }}>
             <input
               ref={titleRef}
               type="text"
@@ -125,13 +125,14 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
               placeholder="New To-Do"
               style={{
                 width: '100%',
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: 500,
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
                 color: 'var(--foreground)',
-                marginBottom: 8
+                marginBottom: 12,
+                padding: '4px 0'
               }}
             />
             <input
@@ -141,28 +142,30 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
               placeholder="Notes"
               style={{
                 width: '100%',
-                fontSize: 14,
+                fontSize: 17,
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                color: 'var(--muted)'
+                color: 'var(--muted)',
+                padding: '4px 0'
               }}
             />
           </div>
 
           {/* Options */}
-          <div style={{ padding: '0 20px 20px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ padding: '0 24px 24px', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
             <label style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              padding: '8px 12px',
+              gap: 10,
+              padding: '12px 16px',
               background: 'var(--background)',
-              borderRadius: 8,
-              fontSize: 14,
-              cursor: 'pointer'
+              borderRadius: 12,
+              fontSize: 16,
+              cursor: 'pointer',
+              minHeight: 48
             }}>
-              <svg width="16" height="16" fill="none" stroke="var(--red)" strokeWidth="2" viewBox="0 0 24 24">
+              <svg width="20" height="20" fill="none" stroke="var(--red)" strokeWidth="2" viewBox="0 0 24 24">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <path d="M16 2v4M8 2v4M3 10h18"/>
               </svg>
@@ -175,7 +178,7 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
                   border: 'none',
                   outline: 'none',
                   color: 'var(--foreground)',
-                  fontSize: 14
+                  fontSize: 16
                 }}
               />
             </label>
@@ -186,17 +189,18 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                padding: '8px 12px',
+                gap: 8,
+                padding: '12px 16px',
                 background: isRecurring ? 'var(--accent)' : 'var(--background)',
                 color: isRecurring ? 'white' : 'var(--muted)',
-                borderRadius: 8,
-                fontSize: 14,
+                borderRadius: 12,
+                fontSize: 16,
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: 48
               }}
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
               </svg>
               Repeat
@@ -205,22 +209,23 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
 
           {/* Recurrence options */}
           {isRecurring && (
-            <div style={{ padding: '0 20px 20px', display: 'flex', gap: 6 }}>
+            <div style={{ padding: '0 24px 24px', display: 'flex', gap: 10 }}>
               {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setRecurrenceType(type)}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: 16,
-                    fontSize: 12,
+                    padding: '10px 18px',
+                    borderRadius: 20,
+                    fontSize: 15,
                     fontWeight: 500,
                     textTransform: 'capitalize',
                     background: recurrenceType === type ? 'var(--accent)' : 'var(--background)',
                     color: recurrenceType === type ? 'white' : 'var(--muted)',
                     border: 'none',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    minHeight: 44
                   }}
                 >
                   {type}
@@ -234,21 +239,22 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '12px 20px',
+            padding: '16px 24px',
             background: 'var(--background)',
             borderTop: '1px solid var(--border)'
           }}>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
               <button
                 type="button"
                 onClick={onClose}
                 style={{
-                  padding: '8px 16px',
-                  fontSize: 14,
+                  padding: '12px 20px',
+                  fontSize: 16,
                   color: 'var(--muted)',
                   background: 'none',
                   border: 'none',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  minHeight: 48
                 }}
               >
                 Cancel
@@ -258,12 +264,13 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
                   type="button"
                   onClick={handleDelete}
                   style={{
-                    padding: '8px 16px',
-                    fontSize: 14,
+                    padding: '12px 20px',
+                    fontSize: 16,
                     color: 'var(--red)',
                     background: 'none',
                     border: 'none',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    minHeight: 48
                   }}
                 >
                   Delete
@@ -273,14 +280,15 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
             <button
               type="submit"
               style={{
-                padding: '8px 20px',
-                fontSize: 14,
+                padding: '12px 24px',
+                fontSize: 16,
                 fontWeight: 500,
                 color: 'white',
                 background: 'var(--accent)',
-                borderRadius: 8,
+                borderRadius: 12,
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: 48
               }}
             >
               {editTask ? 'Save' : 'Add'}
