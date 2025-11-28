@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -20,8 +20,9 @@ export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
+  const draggedTaskIdRef = useRef<string | null>(null);
 
   // Get all incomplete tasks
   const incompleteTasks = useMemo(() => {
@@ -74,42 +75,56 @@ export default function HomePage() {
 
   // Filter to only show groups with tasks or that are drop targets during drag
   const visibleGroups = useMemo(() => {
-    if (draggedTaskId) {
+    if (isDragging) {
       // During drag, show all week days as potential drop targets
       return groupedTasks.filter(g => g.tasks.length > 0 || g.dropTarget);
     }
     return groupedTasks.filter(g => g.tasks.length > 0);
-  }, [groupedTasks, draggedTaskId]);
+  }, [groupedTasks, isDragging]);
 
   // Drag handlers
-  const handleDragStart = useCallback((taskId: string) => {
-    setDraggedTaskId(taskId);
-  }, []);
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    draggedTaskIdRef.current = taskId;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', taskId);
+    // Use setTimeout to allow the drag image to be captured before changing state
+    setTimeout(() => setIsDragging(true), 0);
+  };
 
-  const handleDragEnd = useCallback(() => {
-    setDraggedTaskId(null);
+  const handleDragEnd = () => {
+    draggedTaskIdRef.current = null;
+    setIsDragging(false);
     setDragOverGroup(null);
-  }, []);
+  };
 
-  const handleDragOver = useCallback((e: React.DragEvent, groupLabel: string) => {
+  const handleDragOver = (e: React.DragEvent, groupLabel: string) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     setDragOverGroup(groupLabel);
-  }, []);
+  };
 
-  const handleDragLeave = useCallback(() => {
-    setDragOverGroup(null);
-  }, []);
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're actually leaving the drop zone (not entering a child)
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!e.currentTarget.contains(relatedTarget)) {
+      setDragOverGroup(null);
+    }
+  };
 
-  const handleDrop = useCallback((e: React.DragEvent, group: TaskGroup) => {
+  const handleDrop = (e: React.DragEvent, group: TaskGroup) => {
     e.preventDefault();
-    if (draggedTaskId && group.date) {
-      updateTask(draggedTaskId, {
+    const taskId = e.dataTransfer.getData('text/plain') || draggedTaskIdRef.current;
+    
+    if (taskId && group.date) {
+      updateTask(taskId, {
         dueDate: group.date.toISOString()
       });
     }
-    setDraggedTaskId(null);
+    
+    draggedTaskIdRef.current = null;
+    setIsDragging(false);
     setDragOverGroup(null);
-  }, [draggedTaskId, updateTask]);
+  };
 
   // Keyboard shortcut
   useEffect(() => {
@@ -196,13 +211,13 @@ export default function HomePage() {
                   background: dragOverGroup === group.label ? 'var(--accent-light)' : 'transparent',
                   borderRadius: dragOverGroup === group.label ? 8 : 0,
                   transition: 'background 0.15s',
-                  minHeight: group.tasks.length === 0 && draggedTaskId ? 60 : undefined,
+                  minHeight: group.tasks.length === 0 && isDragging ? 60 : undefined,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: group.tasks.length === 0 ? 'center' : 'flex-start',
                   alignItems: group.tasks.length === 0 ? 'center' : 'stretch'
                 }}>
-                  {group.tasks.length === 0 && draggedTaskId && group.dropTarget && (
+                  {group.tasks.length === 0 && isDragging && group.dropTarget && (
                     <p style={{ color: 'var(--muted)', fontSize: 13 }}>Drop here</p>
                   )}
                   {group.tasks.map((task) => (
@@ -215,9 +230,9 @@ export default function HomePage() {
                         setIsModalOpen(true);
                       }}
                       showDate={!group.isToday && !group.dropTarget}
-                      onDragStart={() => handleDragStart(task.id)}
+                      onDragStart={(e) => handleDragStart(e, task.id)}
                       onDragEnd={handleDragEnd}
-                      isDragging={draggedTaskId === task.id}
+                      isDragging={isDragging && draggedTaskIdRef.current === task.id}
                     />
                   ))}
                 </div>
@@ -244,8 +259,8 @@ export default function HomePage() {
                 <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>All Done</h3>
                 <p style={{ color: 'var(--muted)', fontSize: 14 }}>
                   No tasks yet. Tap + to add one.
-                </p>
-              </div>
+          </p>
+        </div>
             )}
 
             {/* Completed Section */}
@@ -323,7 +338,7 @@ function TaskItem({
   onComplete: () => void; 
   onEdit: () => void;
   showDate?: boolean;
-  onDragStart: () => void;
+  onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragging: boolean;
 }) {
@@ -339,12 +354,8 @@ function TaskItem({
 
   return (
     <div 
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', task.id);
-        onDragStart();
-      }}
+      draggable={true}
+      onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onEdit}
       style={{
@@ -354,9 +365,10 @@ function TaskItem({
         padding: '12px 0',
         borderBottom: '1px solid var(--border)',
         opacity: isCompleting ? 0.3 : isDragging ? 0.5 : 1,
-        transition: 'opacity 0.3s',
+        transition: 'opacity 0.15s',
         cursor: 'grab',
-        background: 'var(--background)'
+        background: 'var(--background)',
+        userSelect: 'none'
       }}
     >
       {/* Drag Handle */}
@@ -365,7 +377,8 @@ function TaskItem({
         alignItems: 'center', 
         color: 'var(--muted-light)',
         cursor: 'grab',
-        marginTop: 4
+        marginTop: 4,
+        touchAction: 'none'
       }}>
         <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
           <circle cx="9" cy="6" r="1.5"/>
@@ -383,6 +396,7 @@ function TaskItem({
           e.stopPropagation();
           handleComplete();
         }}
+        draggable={false}
         style={{ 
           flexShrink: 0, 
           marginTop: 2, 
@@ -412,7 +426,7 @@ function TaskItem({
       </button>
 
       {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0 }} draggable={false}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <div style={{ flex: 1 }}>
             <p style={{ 
