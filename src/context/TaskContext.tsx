@@ -12,6 +12,7 @@ interface TaskContextType {
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   completeTask: (id: string) => void;
+  uncompleteTask: (id: string) => void;
   getTodayTasks: () => Task[];
   getUpcomingTasks: () => Task[];
   getCompletedTasks: () => Task[];
@@ -111,6 +112,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     });
   }, [setTasks]);
 
+  const uncompleteTask = useCallback((id: string) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === id
+          ? { ...task, completed: false, completedAt: null }
+          : task
+      )
+    );
+  }, [setTasks]);
+
   const getTodayTasks = useCallback(() => {
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
@@ -145,6 +156,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         updateTask,
         deleteTask,
         completeTask,
+        uncompleteTask,
         getTodayTasks,
         getUpcomingTasks,
         getCompletedTasks,

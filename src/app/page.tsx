@@ -16,7 +16,7 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, updateTask, getCompletedTasks, isLoaded } = useTasks();
+  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -278,7 +278,7 @@ export default function HomePage() {
                 </h2>
                 <div style={{ borderTop: '1px solid var(--border)' }}>
                   {completedTasks.map((task) => (
-                    <CompletedTaskItem key={task.id} task={task} />
+                    <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
                   ))}
                 </div>
               </section>
@@ -457,29 +457,20 @@ function TaskItem({
               {format(taskDate, 'MMM d')}
             </span>
           )}
-          {!showDate && isToday(taskDate) && (
-            <span style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 4, 
-              fontSize: 12, 
-              fontWeight: 500, 
-              color: 'var(--red)',
-              flexShrink: 0
-            }}>
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M4 5v14l8-4 8 4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/>
-              </svg>
-              today
-            </span>
-          )}
         </div>
       </div>
     </div>
   );
 }
 
-function CompletedTaskItem({ task }: { task: Task }) {
+function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: () => void }) {
+  const [isUncompleting, setIsUncompleting] = useState(false);
+
+  const handleUncomplete = () => {
+    setIsUncompleting(true);
+    setTimeout(onUncomplete, 300);
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -487,32 +478,44 @@ function CompletedTaskItem({ task }: { task: Task }) {
       gap: 12,
       padding: '12px 0',
       borderBottom: '1px solid var(--border)',
+      opacity: isUncompleting ? 0.3 : 1,
+      transition: 'opacity 0.15s',
     }}>
-      {/* Completed checkmark */}
-      <div style={{
-        width: 22,
-        height: 22,
-        borderRadius: '50%',
-        background: 'var(--green)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        marginTop: 2,
-        marginLeft: 28 // Align with task items that have drag handle
-      }}>
-        <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
-          <path d="M5 12l5 5L20 7" />
-        </svg>
-      </div>
+      {/* Completed checkmark - clickable to uncomplete */}
+      <button
+        onClick={handleUncomplete}
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: '50%',
+          background: isUncompleting ? 'transparent' : 'var(--green)',
+          border: isUncompleting ? '2px solid var(--muted-light)' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          marginTop: 2,
+          marginLeft: 28, // Align with task items that have drag handle
+          cursor: 'pointer',
+          padding: 0,
+          transition: 'all 0.2s'
+        }}
+      >
+        {!isUncompleting && (
+          <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+            <path d="M5 12l5 5L20 7" />
+          </svg>
+        )}
+      </button>
 
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ 
           margin: 0, 
           fontSize: 16, 
-          textDecoration: 'line-through',
-          color: 'var(--muted)'
+          textDecoration: isUncompleting ? 'none' : 'line-through',
+          color: isUncompleting ? 'var(--foreground)' : 'var(--muted)',
+          transition: 'all 0.2s'
         }}>
           {task.title}
         </p>
