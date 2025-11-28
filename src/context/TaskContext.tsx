@@ -200,53 +200,64 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           
           const currentTasksJson = JSON.stringify(currentLocalTasks);
           
-          // On initial mount with no previous sync, only use Gist as source of truth if local is empty
-          // Otherwise, always merge to preserve local tasks
-          if (isInitialMount && currentLocalTasks.length === 0 && lastSyncedRef.current === '') {
-            // True initial mount with no local tasks - use Gist as source of truth
-            console.log('Initial mount: using Gist as source of truth', cleanedTasks.length, 'tasks');
-            lastSyncedRef.current = gistTasksJson;
-            return cleanedTasks;
+          // On page refresh/load, always use Gist as source of truth to respect deletions from other devices
+          // Only preserve local tasks that were created very recently (within last 5 seconds)
+          // to handle the edge case where a task was just added before refresh
+          // Exception: If this is a Gist ID change, we merge instead (handled below)
+          if (!isGistIdChange) {
+            const fiveSecondsAgo = new Date(Date.now() - 5000);
+            const recentLocalTasks = currentLocalTasks.filter(task => {
+              const createdAt = new Date(task.createdAt);
+              return createdAt > fiveSecondsAgo;
+            });
+            
+            // Use Gist as source of truth, but add any very recent local tasks
+            const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
+            const finalTasks = [...cleanedTasks];
+            
+            for (const recentTask of recentLocalTasks) {
+              if (!gistTaskIds.has(recentTask.id)) {
+                // Very recent local task not in Gist - preserve it
+                finalTasks.push(recentTask);
+              }
+            }
+            
+            console.log('Page refresh: using Gist as source of truth', cleanedTasks.length, 'tasks from Gist,', recentLocalTasks.length, 'recent local tasks preserved');
+            lastSyncedRef.current = JSON.stringify(finalTasks);
+            return finalTasks;
           }
           
-          // If local tasks match what we last synced, use Gist as source of truth (refresh scenario)
-          // BUT: if this is a Gist ID change, always merge to preserve local tasks
-          if (currentTasksJson === lastSyncedRef.current && !isGistIdChange && lastSyncedRef.current !== '') {
-            console.log('Using Gist as source of truth (refresh scenario)', cleanedTasks.length, 'tasks');
-            lastSyncedRef.current = gistTasksJson;
-            return cleanedTasks;
-          }
-          
-          // If settings changed (Gist ID change), always merge to preserve local tasks
+          // If settings changed (Gist ID change), merge to preserve local tasks
           if (isGistIdChange) {
             console.log('Gist ID changed: merging to preserve local tasks', currentLocalTasks.length, 'local tasks');
-          }
-          
-          // Otherwise, always merge: Gist tasks + local tasks that aren't in Gist (preserve unsynced local tasks)
-          // Prioritize local tasks that are newer (created more recently)
-          const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
-          const mergedTasks = [...cleanedTasks];
-          
-          for (const localTask of currentLocalTasks) {
-            if (gistTaskIds.has(localTask.id)) {
-              // Task exists in both - check if local is newer
-              const gistTask = cleanedTasks.find(t => t.id === localTask.id);
-              if (gistTask && new Date(localTask.createdAt) > new Date(gistTask.createdAt)) {
-                // Local task is newer, replace the Gist version
-                const index = mergedTasks.findIndex(t => t.id === localTask.id);
-                if (index !== -1) {
-                  mergedTasks[index] = localTask;
+            const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
+            const mergedTasks = [...cleanedTasks];
+            
+            for (const localTask of currentLocalTasks) {
+              if (gistTaskIds.has(localTask.id)) {
+                // Task exists in both - check if local is newer
+                const gistTask = cleanedTasks.find(t => t.id === localTask.id);
+                if (gistTask && new Date(localTask.createdAt) > new Date(gistTask.createdAt)) {
+                  // Local task is newer, replace the Gist version
+                  const index = mergedTasks.findIndex(t => t.id === localTask.id);
+                  if (index !== -1) {
+                    mergedTasks[index] = localTask;
+                  }
                 }
+              } else {
+                // New local task not in Gist - add it
+                mergedTasks.push(localTask);
               }
-            } else {
-              // New local task not in Gist - add it
-              mergedTasks.push(localTask);
             }
+            
+            console.log('Merged tasks:', mergedTasks.length, 'total (', cleanedTasks.length, 'from Gist,', mergedTasks.length - cleanedTasks.length, 'local)');
+            return mergedTasks;
           }
           
-          // Don't update lastSyncedRef yet since we have unsynced local changes
-          console.log('Merged tasks:', mergedTasks.length, 'total (', cleanedTasks.length, 'from Gist,', mergedTasks.length - cleanedTasks.length, 'local)');
-          return mergedTasks;
+          // Fallback: shouldn't reach here, but use Gist as source of truth
+          console.log('Fallback: using Gist as source of truth', cleanedTasks.length, 'tasks');
+          lastSyncedRef.current = gistTasksJson;
+          return cleanedTasks;
         });
         
         console.log('Loaded tasks from Gist on mount');
@@ -293,6 +304,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(syncTimeoutRef.current);
     }
     
+    // Capture the current tasks and tasksJson for the sync
+    const tasksToSync = tasks;
+    const tasksJsonToSync = tasksJson;
+    
     syncTimeoutRef.current = setTimeout(async () => {
       // Double-check we're not loading from Gist before syncing
       if (isLoadingFromGistRef.current) {
@@ -308,9 +323,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       
       isSyncingToGistRef.current = true;
       try {
-        console.log('Syncing', tasks.length, 'tasks to Gist...');
-        await saveTasksToGist(tasks, gistSettings);
-        lastSyncedRef.current = tasksJson;
+        console.log('Syncing', tasksToSync.length, 'tasks to Gist...');
+        await saveTasksToGist(tasksToSync, gistSettings);
+        lastSyncedRef.current = tasksJsonToSync;
         console.log('Tasks synced to Gist successfully');
       } catch (error) {
         console.error('Failed to sync to Gist:', error);
@@ -354,7 +369,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [setTasks]);
 
   const deleteTask = useCallback((id: string) => {
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    console.log('Deleting task:', id);
+    setTasks((prev) => {
+      const updated = prev.filter((task) => task.id !== id);
+      console.log('Tasks after delete:', updated.length, 'tasks (was', prev.length, ')');
+      return updated;
+    });
   }, [setTasks]);
 
   const completeTask = useCallback((id: string) => {
