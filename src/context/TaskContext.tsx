@@ -105,10 +105,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }, 2000); // 2 second debounce to allow local changes to sync first
   }, [isGistConfigured, gistSettings, setTasks]);
 
-  // Load from Gist on mount if configured - only once on initial load
+  // Load from Gist on mount if configured - always check on page load/refresh
   useEffect(() => {
     // Prevent multiple simultaneous loads
-    if (isLoadingFromGistRef.current || hasLoadedFromGistRef.current) return;
+    if (isLoadingFromGistRef.current) return;
     
     const loadFromGistOnMount = async () => {
       if (!isGistConfigured) {
@@ -130,18 +130,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           return new Date(task.completedAt) > thirtyDaysAgo;
         });
         
+        const gistTasksJson = JSON.stringify(cleanedTasks);
+        
         // Use Gist as source of truth on load, but merge with any local tasks that were added before Gist loaded
         setTasks((currentLocalTasks) => {
-          // Always merge: Gist tasks + local tasks that aren't in Gist
+          const currentTasksJson = JSON.stringify(currentLocalTasks);
+          
+          // If local tasks match what we last synced, use Gist as source of truth (refresh scenario)
+          if (currentTasksJson === lastSyncedRef.current || lastSyncedRef.current === '') {
+            lastSyncedRef.current = gistTasksJson;
+            return cleanedTasks;
+          }
+          
+          // Otherwise, merge: Gist tasks + local tasks that aren't in Gist (preserve unsynced local tasks)
           const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
           const newLocalTasks = currentLocalTasks.filter(t => !gistTaskIds.has(t.id));
-          
-          // Merge: Gist tasks + new local tasks (preserve unsynced local tasks)
           const merged = [...cleanedTasks, ...newLocalTasks];
           
-          // Update lastSyncedRef with the merged result
-          lastSyncedRef.current = JSON.stringify(merged);
-          
+          // Don't update lastSyncedRef yet since we have unsynced local changes
           return merged;
         });
         
