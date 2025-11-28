@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { format, addDays, isSameDay, isAfter, endOfDay, startOfDay, isBefore, isToday } from 'date-fns';
+import { format, addDays, isSameDay, isAfter, endOfDay, startOfDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Task } from '@/types/task';
@@ -49,14 +49,16 @@ export default function UpcomingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
-      <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)', padding: '16px 20px 8px' }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)', padding: '16px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', textDecoration: 'none' }}>
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-          </a>
-          <div style={{ width: 48, height: 4, background: 'var(--muted-light)', borderRadius: 2 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', textDecoration: 'none' }}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M15 19l-7-7 7-7" />
+              </svg>
+            </a>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Upcoming</h1>
+          </div>
           <button onClick={toggleTheme} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
             {theme === 'dark' ? (
               <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
@@ -68,14 +70,6 @@ export default function UpcomingPage() {
       </header>
 
       <main style={{ padding: '0 20px 96px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 24 }}>
-          <svg width="28" height="28" fill="none" stroke="var(--red)" strokeWidth="2" viewBox="0 0 24 24">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <path d="M16 2v4M8 2v4M3 10h18"/>
-          </svg>
-          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Upcoming</h1>
-        </div>
-
         {isLoaded && (
           <div>
             {groupedTasks.map((group) => (

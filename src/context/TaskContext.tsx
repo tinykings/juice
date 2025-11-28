@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDays, addWeeks, addMonths, addYears, format, startOfDay } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, format, startOfDay, subDays } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
@@ -40,8 +40,18 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<Task[]>('juice-tasks', []);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Clean up old completed tasks (older than 30 days) on load
   useEffect(() => {
     setIsLoaded(true);
+    
+    // Clean up tasks older than 30 days
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    setTasks((prev) => 
+      prev.filter((task) => {
+        if (!task.completed || !task.completedAt) return true;
+        return new Date(task.completedAt) > thirtyDaysAgo;
+      })
+    );
   }, []);
 
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completed' | 'completedAt'>) => {
@@ -119,8 +129,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [tasks]);
 
+  // Get all completed tasks from the last 30 days
   const getCompletedTasks = useCallback(() => {
-    return tasks.filter((task) => task.completed)
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    return tasks
+      .filter((task) => task.completed && task.completedAt && new Date(task.completedAt) > thirtyDaysAgo)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
@@ -150,4 +163,3 @@ export function useTasks() {
   }
   return context;
 }
-

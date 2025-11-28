@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { format, isToday, isTomorrow, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
+import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 
 export default function HomePage() {
-  const { tasks, completeTask, isLoaded } = useTasks();
+  const { tasks, completeTask, getCompletedTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -19,6 +19,9 @@ export default function HomePage() {
       new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
   }, [tasks]);
+
+  // Get completed tasks
+  const completedTasks = getCompletedTasks();
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
@@ -86,12 +89,11 @@ export default function HomePage() {
         top: 0, 
         zIndex: 10, 
         background: 'var(--background)', 
-        padding: '16px 20px 8px',
+        padding: '16px 20px',
         transition: 'background 0.2s'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ width: 32 }} />
-          <div style={{ width: 48, height: 4, background: 'var(--muted-light)', borderRadius: 2 }} />
+          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Juice</h1>
           {/* Theme Toggle */}
           <button 
             onClick={toggleTheme}
@@ -123,18 +125,10 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main style={{ padding: '0 20px 96px' }}>
-        {/* Title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 24 }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="#FFCC00" style={{ flexShrink: 0 }}>
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Today</h1>
-        </div>
-
         {/* Task Groups */}
         {isLoaded && (
           <div>
-            {groupedTasks.map((group, idx) => (
+            {groupedTasks.map((group) => (
               <section key={group.label} style={{ marginBottom: 24 }}>
                 <h2 style={{ 
                   fontSize: 13, 
@@ -163,7 +157,7 @@ export default function HomePage() {
               </section>
             ))}
             
-            {incompleteTasks.length === 0 && (
+            {incompleteTasks.length === 0 && completedTasks.length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
                 <div style={{ 
                   width: 80, 
@@ -185,6 +179,27 @@ export default function HomePage() {
                   No tasks yet. Tap + to add one.
                 </p>
               </div>
+            )}
+
+            {/* Completed Section */}
+            {completedTasks.length > 0 && (
+              <section style={{ marginTop: 40 }}>
+                <h2 style={{ 
+                  fontSize: 13, 
+                  fontWeight: 600, 
+                  color: 'var(--muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 8
+                }}>
+                  Completed (30 days)
+                </h2>
+                <div style={{ borderTop: '1px solid var(--border)' }}>
+                  {completedTasks.map((task) => (
+                    <CompletedTaskItem key={task.id} task={task} />
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         )}
@@ -346,6 +361,52 @@ function TaskItem({
             </span>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CompletedTaskItem({ task }: { task: Task }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 12,
+      padding: '12px 0',
+      borderBottom: '1px solid var(--border)',
+    }}>
+      {/* Completed checkmark */}
+      <div style={{
+        width: 22,
+        height: 22,
+        borderRadius: '50%',
+        background: 'var(--green)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        marginTop: 2
+      }}>
+        <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+          <path d="M5 12l5 5L20 7" />
+        </svg>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ 
+          margin: 0, 
+          fontSize: 16, 
+          textDecoration: 'line-through',
+          color: 'var(--muted)'
+        }}>
+          {task.title}
+        </p>
+        {task.completedAt && (
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)' }}>
+            {format(new Date(task.completedAt), 'MMM d, h:mm a')}
+          </p>
+        )}
       </div>
     </div>
   );
