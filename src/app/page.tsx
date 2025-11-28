@@ -1,0 +1,352 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { format, isToday, isTomorrow, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
+import { useTasks } from '@/context/TaskContext';
+import { useTheme } from '@/context/ThemeContext';
+import { Task } from '@/types/task';
+import TaskModal from '@/components/TaskModal';
+
+export default function HomePage() {
+  const { tasks, completeTask, isLoaded } = useTasks();
+  const { theme, toggleTheme } = useTheme();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Get all incomplete tasks
+  const incompleteTasks = useMemo(() => {
+    return tasks.filter(t => !t.completed).sort((a, b) => 
+      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+  }, [tasks]);
+
+  // Group tasks by day (for this week) and month (for later)
+  const groupedTasks = useMemo(() => {
+    const today = startOfDay(new Date());
+    const weekEnd = endOfDay(addDays(today, 7));
+    
+    const groups: { label: string; tasks: Task[]; isToday?: boolean }[] = [];
+    
+    // Today's tasks
+    const todayTasks = incompleteTasks.filter(t => {
+      const d = new Date(t.dueDate);
+      return isToday(d) || isBefore(d, today);
+    });
+    if (todayTasks.length > 0) {
+      groups.push({ label: 'Today', tasks: todayTasks, isToday: true });
+    }
+
+    // Next 7 days (by day of week)
+    for (let i = 1; i <= 7; i++) {
+      const date = addDays(today, i);
+      const dayTasks = incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), date));
+      if (dayTasks.length > 0) {
+        const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
+        groups.push({ label, tasks: dayTasks });
+      }
+    }
+
+    // Beyond this week - group by month
+    const futureTasks = incompleteTasks.filter(t => isAfter(new Date(t.dueDate), weekEnd));
+    const monthGroups: { [key: string]: Task[] } = {};
+    
+    futureTasks.forEach(task => {
+      const monthKey = format(new Date(task.dueDate), 'MMMM yyyy');
+      if (!monthGroups[monthKey]) monthGroups[monthKey] = [];
+      monthGroups[monthKey].push(task);
+    });
+
+    Object.entries(monthGroups).forEach(([month, monthTasks]) => {
+      groups.push({ label: month, tasks: monthTasks });
+    });
+
+    return groups;
+  }, [incompleteTasks]);
+
+  // Keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !isModalOpen) {
+        const el = document.activeElement;
+        if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          setIsModalOpen(true);
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
+      {/* Header */}
+      <header style={{ 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 10, 
+        background: 'var(--background)', 
+        padding: '16px 20px 8px',
+        transition: 'background 0.2s'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ width: 32 }} />
+          <div style={{ width: 48, height: 4, background: 'var(--muted-light)', borderRadius: 2 }} />
+          {/* Theme Toggle */}
+          <button 
+            onClick={toggleTheme}
+            style={{ 
+              width: 32, 
+              height: 32, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--accent)', 
+              background: 'none', 
+              border: 'none',
+              cursor: 'pointer'
+            }}
+          >
+            {theme === 'dark' ? (
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+              </svg>
+            ) : (
+              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="5"/>
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+              </svg>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main style={{ padding: '0 20px 96px' }}>
+        {/* Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 24 }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="#FFCC00" style={{ flexShrink: 0 }}>
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Today</h1>
+        </div>
+
+        {/* Task Groups */}
+        {isLoaded && (
+          <div>
+            {groupedTasks.map((group, idx) => (
+              <section key={group.label} style={{ marginBottom: 24 }}>
+                <h2 style={{ 
+                  fontSize: 13, 
+                  fontWeight: 600, 
+                  color: group.isToday ? 'var(--foreground)' : 'var(--muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 8
+                }}>
+                  {group.label}
+                </h2>
+                <div style={{ borderTop: '1px solid var(--border)' }}>
+                  {group.tasks.map((task) => (
+                    <TaskItem 
+                      key={task.id} 
+                      task={task} 
+                      onComplete={() => completeTask(task.id)}
+                      onEdit={() => {
+                        setEditingTask(task);
+                        setIsModalOpen(true);
+                      }}
+                      showDate={!group.isToday}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+            
+            {incompleteTasks.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px 0' }}>
+                <div style={{ 
+                  width: 80, 
+                  height: 80, 
+                  borderRadius: '50%', 
+                  background: 'var(--accent-light)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <svg width="40" height="40" fill="none" stroke="var(--accent)" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22,4 12,14.01 9,11.01"/>
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>All Done</h3>
+                <p style={{ color: 'var(--muted)', fontSize: 14 }}>
+                  No tasks yet. Tap + to add one.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Floating Add Button */}
+      <button
+        onClick={() => setIsModalOpen(true)}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          width: 56,
+          height: 56,
+          background: 'var(--accent)',
+          borderRadius: '50%',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          border: 'none',
+          cursor: 'pointer',
+          zIndex: 20
+        }}
+      >
+        <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+
+      <TaskModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingTask(null);
+        }}
+        editTask={editingTask}
+      />
+    </div>
+  );
+}
+
+function TaskItem({ 
+  task, 
+  onComplete, 
+  onEdit,
+  showDate 
+}: { 
+  task: Task; 
+  onComplete: () => void; 
+  onEdit: () => void;
+  showDate?: boolean;
+}) {
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleComplete = () => {
+    setIsCompleting(true);
+    setTimeout(onComplete, 300);
+  };
+
+  const taskDate = new Date(task.dueDate);
+  const isOverdue = isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate);
+
+  return (
+    <div 
+      onClick={onEdit}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 12,
+        padding: '12px 0',
+        borderBottom: '1px solid var(--border)',
+        opacity: isCompleting ? 0.3 : 1,
+        transition: 'opacity 0.3s',
+        cursor: 'pointer'
+      }}
+    >
+      {/* Checkbox */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleComplete();
+        }}
+        style={{ 
+          flexShrink: 0, 
+          marginTop: 2, 
+          background: 'none', 
+          border: 'none', 
+          padding: 0,
+          cursor: 'pointer'
+        }}
+      >
+        <div style={{
+          width: 22,
+          height: 22,
+          borderRadius: '50%',
+          border: isCompleting ? 'none' : '2px solid var(--muted-light)',
+          background: isCompleting ? 'var(--accent)' : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'all 0.2s'
+        }}>
+          {isCompleting && (
+            <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+              <path d="M5 12l5 5L20 7" />
+            </svg>
+          )}
+        </div>
+      </button>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ 
+              margin: 0, 
+              fontSize: 16, 
+              textDecoration: isCompleting ? 'line-through' : 'none',
+              color: isCompleting ? 'var(--muted)' : 'var(--foreground)'
+            }}>
+              {task.title}
+            </p>
+            {task.notes && (
+              <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>{task.notes}</p>
+            )}
+            {task.isRecurring && (
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--accent)' }}>
+                ↻ {task.recurrenceType}
+              </p>
+            )}
+          </div>
+          
+          {/* Date/Flag */}
+          {showDate && (
+            <span style={{ 
+              fontSize: 12, 
+              color: isOverdue ? 'var(--red)' : 'var(--muted)',
+              flexShrink: 0
+            }}>
+              {format(taskDate, 'MMM d')}
+            </span>
+          )}
+          {!showDate && isToday(taskDate) && (
+            <span style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 4, 
+              fontSize: 12, 
+              fontWeight: 500, 
+              color: 'var(--red)',
+              flexShrink: 0
+            }}>
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4 5v14l8-4 8 4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/>
+              </svg>
+              today
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

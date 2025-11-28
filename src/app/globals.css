@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+[data-theme="light"] {
+  --background: #FFFFFF;
+  --foreground: #000000;
+  --card: #FFFFFF;
+  --muted: #8E8E93;
+  --muted-light: #C7C7CC;
+  --border: #E5E5EA;
+  --accent: #007AFF;
+  --accent-light: #E3F2FF;
+  --yellow: #FFCC00;
+  --red: #FF3B30;
+  --green: #34C759;
+  --purple: #5856D6;
+}
+
+[data-theme="dark"] {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card: #1C1C1E;
+  --muted: #8E8E93;
+  --muted-light: #48484A;
+  --border: #38383A;
+  --accent: #0A84FF;
+  --accent-light: #1C3A5E;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  min-height: 100dvh;
+  transition: background 0.2s, color 0.2s;
+}
+
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+input, textarea, button {
+  font-family: inherit;
+}
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
