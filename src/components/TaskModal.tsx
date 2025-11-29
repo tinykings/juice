@@ -21,8 +21,25 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('daily');
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => titleRef.current?.focus(), 100);
+    if (isOpen && !editTask) {
+      // For mobile PWA, we need more time for the modal to render and be visible
+      // Use multiple animation frames to ensure the DOM is ready
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (titleRef.current) {
+              // Ensure the input is visible
+              titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+              // Focus the input
+              titleRef.current.focus();
+              // For mobile, sometimes we need to set selection to ensure keyboard appears
+              if (titleRef.current.setSelectionRange) {
+                titleRef.current.setSelectionRange(0, 0);
+              }
+            }
+          }, 400); // Increased delay for mobile PWA to ensure modal is fully rendered
+        });
+      });
     }
     
     if (editTask) {
@@ -123,6 +140,7 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
               type="text"
               name="title"
               placeholder="New To-Do"
+              autoFocus={!editTask}
               style={{
                 width: '100%',
                 fontSize: 22,
