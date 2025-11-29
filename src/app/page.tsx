@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -30,6 +30,7 @@ export default function HomePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
   const draggedTaskIdRef = useRef<string | null>(null);
+  const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
 
   // Get all incomplete tasks
   const incompleteTasks = useMemo(() => {
@@ -143,6 +144,28 @@ export default function HomePage() {
     setDragOverGroup(null);
   };
 
+  // Handle task completion with confirmation for future tasks
+  const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
+    if (isTodayOrOverdue) {
+      // No confirmation needed for Today or Overdue tasks
+      completeTask(taskId);
+    } else {
+      // Show confirmation for future tasks
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        setConfirmCompleteTask(task);
+      }
+    }
+  }, [tasks, completeTask]);
+
+  // Confirm completion
+  const handleConfirmComplete = useCallback(() => {
+    if (confirmCompleteTask) {
+      completeTask(confirmCompleteTask.id);
+      setConfirmCompleteTask(null);
+    }
+  }, [confirmCompleteTask, completeTask]);
+
   // Keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -153,10 +176,14 @@ export default function HomePage() {
           setIsModalOpen(true);
         }
       }
+      // Escape to close confirmation dialog
+      if (e.key === 'Escape' && confirmCompleteTask) {
+        setConfirmCompleteTask(null);
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen]);
+  }, [isModalOpen, confirmCompleteTask]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
@@ -276,7 +303,7 @@ export default function HomePage() {
                     <TaskItem 
                       key={task.id} 
                       task={task} 
-                      onComplete={() => completeTask(task.id)}
+                      onComplete={() => handleTaskComplete(task.id, !!(group.isToday || group.isOverdue))}
                       onEdit={() => {
                         setEditingTask(task);
                         setIsModalOpen(true);
@@ -415,6 +442,15 @@ export default function HomePage() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
+
+      {/* Confirmation Dialog */}
+      {confirmCompleteTask && (
+        <ConfirmCompleteDialog
+          task={confirmCompleteTask}
+          onConfirm={handleConfirmComplete}
+          onCancel={() => setConfirmCompleteTask(null)}
+        />
+      )}
     </div>
   );
 }
@@ -627,6 +663,150 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
             {format(new Date(task.completedAt), 'MMM d, h:mm a')}
           </p>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ConfirmCompleteDialog({ 
+  task, 
+  onConfirm, 
+  onCancel 
+}: { 
+  task: Task; 
+  onConfirm: () => void; 
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', handleEscape);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [onCancel]);
+
+  const taskDate = new Date(task.dueDate);
+  const formattedDate = format(taskDate, 'EEEE, MMMM d, yyyy');
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
+      {/* Backdrop */}
+      <div 
+        onClick={onCancel}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)'
+        }}
+      />
+
+      {/* Dialog */}
+      <div style={{
+        position: 'absolute',
+        left: 20,
+        right: 20,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        maxWidth: 400,
+        margin: '0 auto',
+        background: 'var(--card)',
+        borderRadius: 20,
+        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+        overflow: 'hidden'
+      }}>
+        <div style={{ padding: 24 }}>
+          <h3 style={{
+            fontSize: 20,
+            fontWeight: 600,
+            margin: '0 0 12px 0',
+            color: 'var(--foreground)'
+          }}>
+            Complete this task?
+          </h3>
+          <p style={{
+            fontSize: 16,
+            color: 'var(--muted)',
+            margin: '0 0 16px 0',
+            lineHeight: 1.5
+          }}>
+            This task is scheduled for <strong>{formattedDate}</strong>. Are you sure you want to mark it as complete?
+          </p>
+          <div style={{
+            background: 'var(--background)',
+            padding: 12,
+            borderRadius: 12,
+            marginBottom: 20
+          }}>
+            <p style={{
+              fontSize: 16,
+              fontWeight: 500,
+              margin: 0,
+              color: 'var(--foreground)'
+            }}>
+              {task.title}
+            </p>
+            {task.notes && (
+              <p style={{
+                fontSize: 14,
+                color: 'var(--muted)',
+                margin: '4px 0 0 0'
+              }}>
+                {task.notes}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div style={{
+          display: 'flex',
+          gap: 12,
+          padding: '16px 24px',
+          background: 'var(--background)',
+          borderTop: '1px solid var(--border)'
+        }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              flex: 1,
+              padding: '12px 20px',
+              fontSize: 16,
+              fontWeight: 500,
+              color: 'var(--muted)',
+              background: 'var(--card)',
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              minHeight: 48
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            style={{
+              flex: 1,
+              padding: '12px 20px',
+              fontSize: 16,
+              fontWeight: 500,
+              color: 'white',
+              background: 'var(--accent)',
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+              minHeight: 48
+            }}
+          >
+            Complete
+          </button>
+        </div>
       </div>
     </div>
   );
