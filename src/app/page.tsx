@@ -14,6 +14,7 @@ interface TaskGroup {
   label: string;
   tasks: Task[];
   isToday?: boolean;
+  isOverdue?: boolean;
   date?: Date;
   dropTarget?: boolean;
 }
@@ -47,10 +48,20 @@ export default function HomePage() {
     
     const groups: TaskGroup[] = [];
     
-    // Today's tasks (always show as drop target)
+    // Overdue tasks (due date is before today, not today)
+    const overdueTasks = incompleteTasks.filter(t => {
+      const d = startOfDay(new Date(t.dueDate));
+      return isBefore(d, today) && !isToday(d);
+    });
+    if (overdueTasks.length > 0) {
+      const yesterday = addDays(today, -1);
+      groups.push({ label: 'Overdue', tasks: overdueTasks, isOverdue: true, date: yesterday, dropTarget: true });
+    }
+    
+    // Today's tasks (only today, not overdue)
     const todayTasks = incompleteTasks.filter(t => {
       const d = new Date(t.dueDate);
-      return isToday(d) || isBefore(d, today);
+      return isToday(d);
     });
     groups.push({ label: 'Today', tasks: todayTasks, isToday: true, date: today, dropTarget: true });
 
@@ -240,7 +251,7 @@ export default function HomePage() {
                 <h2 style={{ 
                   fontSize: 15, 
                   fontWeight: 600, 
-                  color: group.isToday ? 'var(--foreground)' : 'var(--muted)',
+                  color: group.isOverdue ? 'var(--red)' : group.isToday ? 'var(--foreground)' : 'var(--muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   marginBottom: 12
@@ -270,7 +281,8 @@ export default function HomePage() {
                         setEditingTask(task);
                         setIsModalOpen(true);
                       }}
-                      showDate={!group.isToday && !group.dropTarget}
+                      showDate={!group.isToday && !group.isOverdue && !group.dropTarget}
+                      isOverdue={group.isOverdue || false}
                       onDragStart={(e) => handleDragStart(e, task.id)}
                       onDragEnd={handleDragEnd}
                       isDragging={isDragging && draggedTaskIdRef.current === task.id}
@@ -412,6 +424,7 @@ function TaskItem({
   onComplete, 
   onEdit,
   showDate,
+  isOverdue: isOverdueProp,
   onDragStart,
   onDragEnd,
   isDragging
@@ -420,6 +433,7 @@ function TaskItem({
   onComplete: () => void; 
   onEdit: () => void;
   showDate?: boolean;
+  isOverdue?: boolean;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragging: boolean;
@@ -432,7 +446,7 @@ function TaskItem({
   };
 
   const taskDate = new Date(task.dueDate);
-  const isOverdue = isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate);
+  const isOverdue = isOverdueProp || (isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate));
 
   return (
     <div 
@@ -518,7 +532,8 @@ function TaskItem({
               fontSize: 18, 
               lineHeight: 1.4,
               textDecoration: isCompleting ? 'line-through' : 'none',
-              color: isCompleting ? 'var(--muted)' : 'var(--foreground)'
+              color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : 'var(--foreground)',
+              fontWeight: isOverdue ? 500 : 400
             }}>
               {task.title}
             </p>
