@@ -21,14 +21,18 @@
 }
 
 [data-theme="dark"] {
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #1C1C1E;
-  --muted: #8E8E93;
-  --muted-light: #48484A;
-  --border: #38383A;
-  --accent: #0A84FF;
-  --accent-light: #1C3A5E;
+  --background: #282A36;
+  --foreground: #F8F8F2;
+  --card: #2E3440;
+  --muted: #6272A4;
+  --muted-light: #4C566A;
+  --border: #44475A;
+  --accent: #BD93F9;
+  --accent-light: #44475A;
+  --yellow: #F1FA8C;
+  --red: #FF5555;
+  --green: #50FA7B;
+  --purple: #BD93F9;
 }
 
 * {
