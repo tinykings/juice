@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { format } from 'date-fns';
+import { format, startOfDay, parse } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 
@@ -45,7 +45,12 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
     if (editTask) {
       if (titleRef.current) titleRef.current.value = editTask.title;
       if (notesRef.current) notesRef.current.value = editTask.notes;
-      setDueDate(format(new Date(editTask.dueDate), 'yyyy-MM-dd'));
+      // Extract date in UTC to avoid timezone shifts when displaying
+      const date = new Date(editTask.dueDate);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      setDueDate(`${year}-${month}-${day}`);
       setIsRecurring(editTask.isRecurring);
       setRecurrenceType(editTask.recurrenceType || 'daily');
     } else {
@@ -79,10 +84,15 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
     
     if (!title) return;
 
+    // Parse the date string (YYYY-MM-DD) as a local date at midnight
+    // This ensures the selected date is preserved regardless of timezone
+    const parsedDate = parse(dueDate, 'yyyy-MM-dd', new Date());
+    const dateAtMidnight = startOfDay(parsedDate);
+
     const taskData = {
       title,
       notes,
-      dueDate: new Date(dueDate).toISOString(),
+      dueDate: dateAtMidnight.toISOString(),
       isRecurring,
       recurrenceType: isRecurring ? recurrenceType : null,
       tags: [],
