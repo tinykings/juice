@@ -19,6 +19,7 @@ interface TaskContextType {
   getUpcomingTasks: () => Task[];
   getCompletedTasks: () => Task[];
   loadFromGist: (tasks: Task[]) => void;
+  syncFromGist: () => Promise<void>;
   isLoaded: boolean;
 }
 
@@ -275,8 +276,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     loadFromGistOnMount();
   }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
 
-  // Removed automatic sync from Gist on focus/visibility - only sync on initial load and when manually triggered
-
   // Auto-sync to gist when tasks change (but not on initial load from Gist)
   useEffect(() => {
     if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) {
@@ -449,6 +448,28 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
+  // Sync from Gist when app comes into focus
+  useEffect(() => {
+    if (!isGistConfigured) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // App came into focus - sync from Gist to get latest updates
+        syncFromGist();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also sync when the window regains focus (for cases where visibilitychange doesn't fire)
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [isGistConfigured, syncFromGist]);
+
   return (
     <TaskContext.Provider
       value={{
@@ -462,6 +483,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         getUpcomingTasks,
         getCompletedTasks,
         loadFromGist,
+        syncFromGist,
         isLoaded,
       }}
     >
