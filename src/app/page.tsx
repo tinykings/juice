@@ -367,35 +367,6 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Floating Refresh Button */}
-      <button
-        onClick={() => window.location.reload()}
-        style={{
-          position: 'fixed',
-          bottom: 112,
-          right: 24,
-          width: 56,
-          height: 56,
-          background: 'var(--card)',
-          borderRadius: '50%',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: 'none',
-          cursor: 'pointer',
-          zIndex: 20,
-          padding: 0,
-          color: 'var(--foreground)'
-        }}
-        aria-label="Refresh"
-      >
-        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-          <path d="M21 3v5h-5M3 21v-5h5"/>
-        </svg>
-      </button>
-
       {/* Floating Add Button */}
       <button
         onClick={() => setIsModalOpen(true)}
