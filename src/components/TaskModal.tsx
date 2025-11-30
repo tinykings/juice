@@ -237,7 +237,12 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
 
           {/* Recurrence options */}
           {isRecurring && (
-            <div style={{ padding: '0 24px 24px', display: 'flex', gap: 10 }}>
+            <div style={{ 
+              padding: '0 24px 24px', 
+              display: 'grid', 
+              gridTemplateColumns: '1fr 1fr',
+              gap: 10
+            }}>
               {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((type) => (
                 <button
                   key={type}
