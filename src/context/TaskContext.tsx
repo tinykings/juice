@@ -276,6 +276,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     loadFromGistOnMount();
   }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
 
+
   // Auto-sync to gist when tasks change (but not on initial load from Gist)
   useEffect(() => {
     if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) {
@@ -283,7 +284,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
-    const tasksJson = JSON.stringify(tasks);
+    // Clean up old tasks before syncing
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const cleanedTasks = tasks.filter((task) => {
+      if (!task.completed || !task.completedAt) return true;
+      return new Date(task.completedAt) > thirtyDaysAgo;
+    });
+    
+    const tasksJson = JSON.stringify(cleanedTasks);
     // Skip if nothing changed
     if (tasksJson === lastSyncedRef.current) {
       console.log('Auto-sync skipped: no changes');
@@ -296,15 +304,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
-    console.log('Auto-sync triggered:', tasks.length, 'tasks, syncing in 1 second...');
+    console.log('Auto-sync triggered:', cleanedTasks.length, 'tasks (after cleanup), syncing in 1 second...');
     
     // Debounce the sync
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
     
-    // Capture the current tasks and tasksJson for the sync
-    const tasksToSync = tasks;
+    // Capture the cleaned tasks for the sync
+    const tasksToSync = cleanedTasks;
     const tasksJsonToSync = tasksJson;
     
     syncTimeoutRef.current = setTimeout(async () => {
@@ -354,8 +362,20 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       completedAt: null,
     };
     console.log('Adding new task:', newTask);
+    
     setTasks((prev) => {
-      const updated = [...prev, newTask];
+      // Clean up old tasks when adding a new task
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      const cleaned = prev.filter((task) => {
+        if (!task.completed || !task.completedAt) return true;
+        return new Date(task.completedAt) > thirtyDaysAgo;
+      });
+      
+      if (cleaned.length < prev.length) {
+        console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks (older than 30 days)`);
+      }
+      
+      const updated = [...cleaned, newTask];
       console.log('Tasks after adding:', updated.length, 'tasks');
       return updated;
     });
