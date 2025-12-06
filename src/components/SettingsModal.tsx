@@ -5,6 +5,23 @@ import { useSettings } from '@/context/SettingsContext';
 import { useTasks } from '@/context/TaskContext';
 import { loadTasksFromGist, createNewGist } from '@/services/gistSync';
 
+async function clearCacheAndReload() {
+  // Unregister all service workers
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map(r => r.unregister()));
+  }
+  
+  // Clear all caches
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map(name => caches.delete(name)));
+  }
+  
+  // Force reload without cache
+  window.location.reload();
+}
+
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -304,6 +321,41 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 Tasks will automatically sync to your Gist when changed.
               </p>
             )}
+          </div>
+
+          {/* Update App Section */}
+          <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>
+              App Updates
+            </h3>
+            <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
+              Clear cached files and reload to get the latest version of the app.
+            </p>
+            <button
+              onClick={clearCacheAndReload}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                fontSize: 16,
+                fontWeight: 500,
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                minHeight: 48,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10
+              }}
+            >
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M1 4v6h6M23 20v-6h-6" />
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+              </svg>
+              Update App
+            </button>
           </div>
         </div>
       </div>
