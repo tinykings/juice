@@ -516,11 +516,11 @@ export default function HomePage() {
           position: 'fixed',
           bottom: 32,
           right: 24,
-          width: 64,
-          height: 64,
-          background: 'transparent',
+          width: 60,
+          height: 60,
+          background: 'var(--accent)',
           borderRadius: '50%',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -528,18 +528,20 @@ export default function HomePage() {
           cursor: 'pointer',
           zIndex: 20,
           padding: 0,
-          overflow: 'hidden'
+          transition: 'transform 0.15s, box-shadow 0.15s'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
         }}
       >
-        <img 
-          src="./icon-192.png" 
-          alt="Add task" 
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-        />
+        <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
       </button>
 
       <TaskModal
