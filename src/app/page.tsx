@@ -31,16 +31,34 @@ export default function HomePage() {
   const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
   const draggedTaskIdRef = useRef<string | null>(null);
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Get all incomplete tasks
+  // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
-    return tasks.filter(t => !t.completed).sort((a, b) => 
+    const filtered = tasks.filter(t => {
+      if (t.completed) return false;
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        t.title.toLowerCase().includes(query) ||
+        (t.notes && t.notes.toLowerCase().includes(query))
+      );
+    });
+    return filtered.sort((a, b) => 
       new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
-  }, [tasks]);
+  }, [tasks, searchQuery]);
 
-  // Get completed tasks
-  const completedTasks = getCompletedTasks();
+  // Get completed tasks (filtered by search if query exists)
+  const completedTasks = useMemo(() => {
+    const allCompleted = getCompletedTasks();
+    if (!searchQuery.trim()) return allCompleted;
+    const query = searchQuery.toLowerCase();
+    return allCompleted.filter(t => 
+      t.title.toLowerCase().includes(query) ||
+      (t.notes && t.notes.toLowerCase().includes(query))
+    );
+  }, [getCompletedTasks, searchQuery]);
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
@@ -176,14 +194,23 @@ export default function HomePage() {
           setIsModalOpen(true);
         }
       }
-      // Escape to close confirmation dialog
-      if (e.key === 'Escape' && confirmCompleteTask) {
-        setConfirmCompleteTask(null);
+      // Escape to close confirmation dialog or clear search
+      if (e.key === 'Escape') {
+        if (confirmCompleteTask) {
+          setConfirmCompleteTask(null);
+        } else if (searchQuery) {
+          setSearchQuery('');
+          // Also blur the search input if it's focused
+          const el = document.activeElement as HTMLInputElement;
+          if (el?.tagName === 'INPUT') {
+            el.blur();
+          }
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
@@ -196,7 +223,82 @@ export default function HomePage() {
         padding: '20px 24px',
         transition: 'background 0.2s'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          {/* Search Bar */}
+          <div style={{ 
+            position: 'relative',
+            flex: '0 1 280px',
+            minWidth: 0
+          }}>
+            <svg 
+              width="18" 
+              height="18" 
+              fill="none" 
+              stroke="var(--muted)" 
+              strokeWidth="2" 
+              viewBox="0 0 24 24"
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none'
+              }}
+            >
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 12px 10px 40px',
+                fontSize: 15,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                color: 'var(--foreground)',
+                outline: 'none',
+                transition: 'border-color 0.15s, box-shadow 0.15s'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--accent)';
+                e.target.style.boxShadow = '0 0 0 3px var(--accent-light)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--border)';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 24,
+                  height: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'var(--muted-light)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                <svg width="12" height="12" fill="none" stroke="var(--muted)" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {/* Theme Toggle */}
             <button 
@@ -319,7 +421,47 @@ export default function HomePage() {
               </section>
             ))}
             
-            {incompleteTasks.length === 0 && completedTasks.length === 0 && (
+            {incompleteTasks.length === 0 && completedTasks.length === 0 && searchQuery && (
+              <div style={{ textAlign: 'center', padding: '80px 0' }}>
+                <div style={{ 
+                  width: 100, 
+                  height: 100, 
+                  borderRadius: '50%', 
+                  background: 'var(--accent-light)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  margin: '0 auto 24px'
+                }}>
+                  <svg width="50" height="50" fill="none" stroke="var(--muted)" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>No Results</h3>
+                <p style={{ color: 'var(--muted)', fontSize: 16 }}>
+                  No tasks found for &ldquo;{searchQuery}&rdquo;
+                </p>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    marginTop: 16,
+                    padding: '10px 20px',
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: 'var(--accent)',
+                    background: 'var(--accent-light)',
+                    border: 'none',
+                    borderRadius: 8,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear search
+                </button>
+              </div>
+            )}
+            
+            {incompleteTasks.length === 0 && completedTasks.length === 0 && !searchQuery && (
               <div style={{ textAlign: 'center', padding: '80px 0' }}>
                 <div style={{ 
                   width: 100, 
@@ -339,8 +481,8 @@ export default function HomePage() {
                 <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>All Done</h3>
                 <p style={{ color: 'var(--muted)', fontSize: 16 }}>
                   No tasks yet. Tap + to add one.
-          </p>
-        </div>
+                </p>
+              </div>
             )}
 
             {/* Completed Section */}
