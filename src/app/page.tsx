@@ -74,7 +74,11 @@ export default function HomePage() {
     });
     if (overdueTasks.length > 0) {
       const yesterday = addDays(today, -1);
-      groups.push({ label: 'Overdue', tasks: overdueTasks, isOverdue: true, date: yesterday, dropTarget: true });
+      // Sort alphabetically by title
+      const sortedOverdueTasks = [...overdueTasks].sort((a, b) => 
+        a.title.localeCompare(b.title)
+      );
+      groups.push({ label: 'Overdue', tasks: sortedOverdueTasks, isOverdue: true, date: yesterday, dropTarget: true });
     }
     
     // Today's tasks (only today, not overdue)
@@ -82,14 +86,22 @@ export default function HomePage() {
       const d = new Date(t.dueDate);
       return isToday(d);
     });
-    groups.push({ label: 'Today', tasks: todayTasks, isToday: true, date: today, dropTarget: true });
+    // Sort alphabetically by title
+    const sortedTodayTasks = [...todayTasks].sort((a, b) => 
+      a.title.localeCompare(b.title)
+    );
+    groups.push({ label: 'Today', tasks: sortedTodayTasks, isToday: true, date: today, dropTarget: true });
 
     // Next 7 days (by day of week) - always show as drop targets
     for (let i = 1; i <= 7; i++) {
       const date = addDays(today, i);
       const dayTasks = incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), date));
+      // Sort alphabetically by title
+      const sortedDayTasks = [...dayTasks].sort((a, b) => 
+        a.title.localeCompare(b.title)
+      );
       const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
-      groups.push({ label, tasks: dayTasks, date, dropTarget: true });
+      groups.push({ label, tasks: sortedDayTasks, date, dropTarget: true });
     }
 
     // Beyond this week - group by month (not drop targets)
@@ -103,7 +115,11 @@ export default function HomePage() {
     });
 
     Object.entries(monthGroups).forEach(([month, monthTasks]) => {
-      groups.push({ label: month, tasks: monthTasks, dropTarget: false });
+      // Sort alphabetically by title
+      const sortedMonthTasks = [...monthTasks].sort((a, b) => 
+        a.title.localeCompare(b.title)
+      );
+      groups.push({ label: month, tasks: sortedMonthTasks, dropTarget: false });
     });
 
     return groups;

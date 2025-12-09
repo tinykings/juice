@@ -25,9 +25,13 @@ export default function UpcomingPage() {
       const date = addDays(today, i);
       const dayTasks = tasks.filter((task) => isSameDay(new Date(task.dueDate), date));
       if (dayTasks.length > 0) {
+        // Sort alphabetically by title
+        const sortedDayTasks = [...dayTasks].sort((a, b) => 
+          a.title.localeCompare(b.title)
+        );
         groups.push({
           label: i === 1 ? 'Tomorrow' : format(date, 'EEEE'),
-          tasks: dayTasks,
+          tasks: sortedDayTasks,
         });
       }
     }
@@ -42,7 +46,11 @@ export default function UpcomingPage() {
     });
 
     Object.entries(monthGroups).forEach(([month, monthTasks]) => {
-      groups.push({ label: month, tasks: monthTasks });
+      // Sort alphabetically by title
+      const sortedMonthTasks = [...monthTasks].sort((a, b) => 
+        a.title.localeCompare(b.title)
+      );
+      groups.push({ label: month, tasks: sortedMonthTasks });
     });
 
     return groups;
