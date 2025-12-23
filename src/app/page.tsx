@@ -115,9 +115,9 @@ export default function HomePage() {
     });
 
     Object.entries(monthGroups).forEach(([month, monthTasks]) => {
-      // Sort alphabetically by title
+      // Sort by due date
       const sortedMonthTasks = [...monthTasks].sort((a, b) => 
-        a.title.localeCompare(b.title)
+        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
       );
       groups.push({ label: month, tasks: sortedMonthTasks, dropTarget: false });
     });
