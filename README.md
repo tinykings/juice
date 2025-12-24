@@ -3,7 +3,7 @@
 <div align="center">
   <img src="./public/icon-192.png" alt="Juice Logo" width="128" height="128">
   
-  A beautiful, mobile-first task management app inspired by [Things](https://culturedcode.com/things/), built with Next.js and optimized for PWA deployment on GitHub Pages.
+  A task management app inspired by [Things](https://culturedcode.com/things/), built with Next.js and optimized for PWA deployment on GitHub Pages.
 </div>
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
