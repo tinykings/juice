@@ -32,6 +32,22 @@ export default function HomePage() {
   const draggedTaskIdRef = useRef<string | null>(null);
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Update current date when window gains focus or becomes visible to ensure "Today" is accurate
+  useEffect(() => {
+    const updateDate = () => {
+      setCurrentDate(new Date());
+    };
+
+    document.addEventListener('visibilitychange', updateDate);
+    window.addEventListener('focus', updateDate);
+
+    return () => {
+      document.removeEventListener('visibilitychange', updateDate);
+      window.removeEventListener('focus', updateDate);
+    };
+  }, []);
 
   // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
@@ -62,7 +78,7 @@ export default function HomePage() {
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
-    const today = startOfDay(new Date());
+    const today = startOfDay(currentDate);
     const weekEnd = endOfDay(addDays(today, 7));
     
     const groups: TaskGroup[] = [];
@@ -84,7 +100,7 @@ export default function HomePage() {
     // Today's tasks (only today, not overdue)
     const todayTasks = incompleteTasks.filter(t => {
       const d = new Date(t.dueDate);
-      return isToday(d);
+      return isSameDay(d, today);
     });
     // Sort alphabetically by title
     const sortedTodayTasks = [...todayTasks].sort((a, b) => 
@@ -123,7 +139,7 @@ export default function HomePage() {
     });
 
     return groups;
-  }, [incompleteTasks]);
+  }, [incompleteTasks, currentDate]);
 
   // Filter to only show groups with tasks or that are drop targets during drag
   const visibleGroups = useMemo(() => {
