@@ -171,7 +171,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       // Check if this is a Gist ID change (settings update) vs initial mount
       const isGistIdChange = previousGistIdRef.current !== '' && 
                              previousGistIdRef.current !== currentGistId;
-      const isInitialMount = !hasRunMountEffectRef.current;
       
       // Update the previous Gist ID and mark that we've run
       previousGistIdRef.current = currentGistId;
@@ -198,8 +197,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             // Don't overwrite if we're in the middle of syncing to Gist
             return currentLocalTasks;
           }
-          
-          const currentTasksJson = JSON.stringify(currentLocalTasks);
           
           // On page refresh/load, always use Gist as source of truth to respect deletions from other devices
           // Only preserve local tasks that were created very recently (within last 5 seconds)
@@ -274,7 +271,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadFromGistOnMount();
-  }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
+  }, [isGistConfigured, gistSettings, setTasks]);
 
 
   // Auto-sync to gist when tasks change (but not on initial load from Gist)

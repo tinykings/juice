@@ -4,18 +4,16 @@ import { useState, useEffect } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((prev: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     try {
       const item = window.localStorage.getItem(key);
       if (item) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStoredValue(JSON.parse(item));
       }
-      setIsInitialized(true);
     } catch (error) {
       console.error('Error reading from localStorage:', error);
-      setIsInitialized(true);
     }
   }, [key]);
 
