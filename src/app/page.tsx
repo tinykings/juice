@@ -464,6 +464,7 @@ export default function HomePage() {
                       onDragStart={(e) => handleDragStart(e, task.id)}
                       onDragEnd={handleDragEnd}
                       isDragging={draggedTaskId === task.id}
+                      needsConfirmation={!(group.isToday || group.isOverdue)}
                     />
                   ))}
                 </div>
@@ -624,7 +625,8 @@ function TaskItem({
   isOverdue: isOverdueProp,
   onDragStart,
   onDragEnd,
-  isDragging
+  isDragging,
+  needsConfirmation
 }: { 
   task: Task; 
   onComplete: () => void; 
@@ -634,13 +636,18 @@ function TaskItem({
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  needsConfirmation: boolean;
 }) {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
   const handleComplete = () => {
-    setIsCompleting(true);
-    setTimeout(onComplete, 300);
+    if (needsConfirmation) {
+      onComplete();
+    } else {
+      setIsCompleting(true);
+      setTimeout(onComplete, 300);
+    }
   };
 
   const handlePressStart = () => setIsPressed(true);
