@@ -20,7 +20,7 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, isLoaded } = useTasks();
+  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, clearCompletedTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const { isGistConfigured } = useSettings();
   useServiceWorker();
@@ -552,6 +552,31 @@ export default function HomePage() {
                   {completedTasks.map((task) => (
                     <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
                   ))}
+                </div>
+                
+                <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to delete all completed tasks?')) {
+                        clearCompletedTasks();
+                      }
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--red)',
+                      fontSize: 15,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      padding: '12px 24px',
+                      opacity: 0.8,
+                      transition: 'opacity 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                  >
+                    Clear Completed
+                  </button>
                 </div>
               </section>
             )}
