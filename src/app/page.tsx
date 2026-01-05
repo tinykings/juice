@@ -633,9 +633,6 @@ function TaskItem({
 
   return (
     <div 
-      draggable={true}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
       onClick={onEdit}
       style={{
         display: 'flex',
@@ -645,7 +642,6 @@ function TaskItem({
         borderBottom: '1px solid var(--border)',
         opacity: isCompleting ? 0.3 : isDragging ? 0.5 : 1,
         transition: 'opacity 0.15s',
-        cursor: 'grab',
         background: 'var(--background)',
         userSelect: 'none'
       }}
@@ -722,6 +718,38 @@ function TaskItem({
             </span>
           )}
         </div>
+      </div>
+
+      {/* Drag Handle */}
+      <div
+        draggable={true}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          cursor: 'grab',
+          color: 'var(--muted-light)',
+          padding: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: 4,
+          flexShrink: 0,
+          opacity: 0.5,
+          transition: 'opacity 0.2s, color 0.2s'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = '1';
+          e.currentTarget.style.color = 'var(--muted)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = '0.5';
+          e.currentTarget.style.color = 'var(--muted-light)';
+        }}
+      >
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+        </svg>
       </div>
     </div>
   );
