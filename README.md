@@ -1,5 +1,4 @@
 <p align="center">
-  <img src="images/icon.png" alt="Juice Logo" width="120" />
 </p>
 
 <h1 align="center">Juice</h1>
