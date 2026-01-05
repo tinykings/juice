@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { format, startOfDay, parse } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
@@ -11,14 +11,24 @@ interface TaskModalProps {
   editTask?: Task | null;
 }
 
-function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
+const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
   const { addTask, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLInputElement>(null);
   
-  const [dueDate, setDueDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>('daily');
+  const [dueDate, setDueDate] = useState(() => {
+    if (editTask) {
+      const date = new Date(editTask.dueDate);
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return format(new Date(), 'yyyy-MM-dd');
+  });
+
+  const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
+  const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
 
   useEffect(() => {
     if (isOpen && !editTask) {
@@ -45,20 +55,9 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
     if (editTask) {
       if (titleRef.current) titleRef.current.value = editTask.title;
       if (notesRef.current) notesRef.current.value = editTask.notes;
-      // Extract date in UTC to avoid timezone shifts when displaying
-      const date = new Date(editTask.dueDate);
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      setDueDate(`${year}-${month}-${day}`);
-      setIsRecurring(editTask.isRecurring);
-      setRecurrenceType(editTask.recurrenceType || 'daily');
     } else {
       if (titleRef.current) titleRef.current.value = '';
       if (notesRef.current) notesRef.current.value = '';
-      setDueDate(format(new Date(), 'yyyy-MM-dd'));
-      setIsRecurring(false);
-      setRecurrenceType('daily');
     }
   }, [editTask, isOpen]);
 
@@ -125,7 +124,6 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
           position: 'absolute',
           inset: 0,
           background: 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(4px)'
         }}
       />
 
@@ -331,6 +329,6 @@ function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
       </div>
     </div>
   );
-}
+});
 
 export default TaskModal;

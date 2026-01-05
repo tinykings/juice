@@ -216,6 +216,11 @@ export default function HomePage() {
     }
   }, [confirmCompleteTask, completeTask, setConfirmCompleteTask]);
 
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setEditingTask(null);
+  }, []);
+
   // Keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -590,10 +595,7 @@ export default function HomePage() {
 
       <TaskModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingTask(null);
-        }}
+        onClose={handleCloseModal}
         editTask={editingTask}
       />
 
