@@ -433,6 +433,18 @@ export default function HomePage() {
                   {group.tasks.length === 0 && draggedTaskId && group.dropTarget && (
                     <p style={{ color: 'var(--muted)', fontSize: 16, padding: '20px 0' }}>Drop here</p>
                   )}
+                  {group.tasks.length > 0 && draggedTaskId && group.dropTarget && (
+                    <div style={{ 
+                      color: 'var(--muted)', 
+                      fontSize: 16, 
+                      padding: '16px 0',
+                      textAlign: 'center',
+                      borderBottom: '1px dashed var(--border)',
+                      userSelect: 'none'
+                    }}>
+                      Drop here
+                    </div>
+                  )}
                   {group.tasks.map((task) => (
                     <TaskItem 
                       key={task.id} 
