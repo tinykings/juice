@@ -1,4 +1,5 @@
 <p align="center">
+<img src="public/icon-192.png" alt="Stack Logo" width="120" />
 </p>
 
 <h1 align="center">Juice</h1>
