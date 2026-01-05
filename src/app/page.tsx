@@ -27,7 +27,7 @@ export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
   const draggedTaskIdRef = useRef<string | null>(null);
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
@@ -143,12 +143,12 @@ export default function HomePage() {
 
   // Filter to only show groups with tasks or that are drop targets during drag
   const visibleGroups = useMemo(() => {
-    if (isDragging) {
+    if (draggedTaskId) {
       // During drag, show all week days as potential drop targets
       return groupedTasks.filter(g => g.tasks.length > 0 || g.dropTarget);
     }
     return groupedTasks.filter(g => g.tasks.length > 0);
-  }, [groupedTasks, isDragging]);
+  }, [groupedTasks, draggedTaskId]);
 
   // Drag handlers
   const handleDragStart = (e: React.DragEvent, taskId: string) => {
@@ -156,12 +156,12 @@ export default function HomePage() {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', taskId);
     // Use setTimeout to allow the drag image to be captured before changing state
-    setTimeout(() => setIsDragging(true), 0);
+    setTimeout(() => setDraggedTaskId(taskId), 0);
   };
 
   const handleDragEnd = () => {
     draggedTaskIdRef.current = null;
-    setIsDragging(false);
+    setDraggedTaskId(null);
     setDragOverGroup(null);
   };
 
@@ -190,7 +190,7 @@ export default function HomePage() {
     }
     
     draggedTaskIdRef.current = null;
-    setIsDragging(false);
+    setDraggedTaskId(null);
     setDragOverGroup(null);
   };
 
@@ -214,7 +214,7 @@ export default function HomePage() {
       completeTask(confirmCompleteTask.id);
       setConfirmCompleteTask(null);
     }
-  }, [confirmCompleteTask, completeTask]);
+  }, [confirmCompleteTask, completeTask, setConfirmCompleteTask]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -424,13 +424,13 @@ export default function HomePage() {
                   background: dragOverGroup === group.label ? 'var(--accent-light)' : 'transparent',
                   borderRadius: dragOverGroup === group.label ? 8 : 0,
                   transition: 'background 0.15s',
-                  minHeight: group.tasks.length === 0 && isDragging ? 60 : undefined,
+                  minHeight: group.tasks.length === 0 && draggedTaskId ? 60 : undefined,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: group.tasks.length === 0 ? 'center' : 'flex-start',
                   alignItems: group.tasks.length === 0 ? 'center' : 'stretch'
                 }}>
-                  {group.tasks.length === 0 && isDragging && group.dropTarget && (
+                  {group.tasks.length === 0 && draggedTaskId && group.dropTarget && (
                     <p style={{ color: 'var(--muted)', fontSize: 16, padding: '20px 0' }}>Drop here</p>
                   )}
                   {group.tasks.map((task) => (
@@ -446,7 +446,7 @@ export default function HomePage() {
                       isOverdue={group.isOverdue || false}
                       onDragStart={(e) => handleDragStart(e, task.id)}
                       onDragEnd={handleDragEnd}
-                      isDragging={isDragging && draggedTaskIdRef.current === task.id}
+                      isDragging={draggedTaskId === task.id}
                     />
                   ))}
                 </div>
@@ -622,135 +622,169 @@ function TaskItem({
   isDragging: boolean;
 }) {
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
 
   const handleComplete = () => {
     setIsCompleting(true);
     setTimeout(onComplete, 300);
   };
 
+  const handlePressStart = () => setIsPressed(true);
+  const handlePressEnd = () => setIsPressed(false);
+
   const taskDate = new Date(task.dueDate);
   const isOverdue = isOverdueProp || (isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate));
 
   return (
     <div 
-      onClick={onEdit}
+      onClick={isDragging ? undefined : onEdit}
       style={{
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: isDragging ? 'center' : 'flex-start',
+        justifyContent: isDragging ? 'center' : 'flex-start',
         gap: 16,
         padding: '16px 0',
         borderBottom: '1px solid var(--border)',
-        opacity: isCompleting ? 0.3 : isDragging ? 0.5 : 1,
-        transition: 'opacity 0.15s',
-        background: 'var(--background)',
-        userSelect: 'none'
+        opacity: isCompleting ? 0.3 : 1,
+        transition: 'opacity 0.15s, background 0.2s',
+        background: isDragging ? 'var(--card)' : 'var(--background)',
+        userSelect: 'none',
+        minHeight: isDragging ? 80 : 'auto'
       }}
     >
-      {/* Checkbox */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleComplete();
-        }}
-        draggable={false}
-        style={{ 
-          flexShrink: 0, 
-          marginTop: 4, 
-          background: 'none', 
-          border: 'none', 
-          padding: 0,
-          cursor: 'pointer',
-          minWidth: 28,
-          minHeight: 28
-        }}
-      >
+      {isDragging ? (
         <div style={{
-          width: 28,
-          height: 28,
-          borderRadius: '50%',
-          border: isCompleting ? 'none' : '2.5px solid var(--muted-light)',
-          background: isCompleting ? 'var(--accent)' : 'transparent',
+          color: 'var(--accent)',
+          fontSize: 16,
+          fontWeight: 500,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s'
+          gap: 8
         }}>
-          {isCompleting && (
-            <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
-              <path d="M5 12l5 5L20 7" />
-            </svg>
-          )}
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M5 9l7-7 7 7M5 15l7 7 7-7" />
+          </svg>
+          Move to another day
         </div>
-      </button>
-
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }} draggable={false}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ 
-              margin: 0, 
-              fontSize: 18, 
-              lineHeight: 1.4,
-              textDecoration: isCompleting ? 'line-through' : 'none',
-              color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : 'var(--foreground)',
-              fontWeight: isOverdue ? 500 : 400
+      ) : (
+        <>
+          {/* Checkbox */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleComplete();
+            }}
+            draggable={false}
+            style={{ 
+              flexShrink: 0, 
+              marginTop: 4, 
+              background: 'none', 
+              border: 'none', 
+              padding: 0,
+              cursor: 'pointer',
+              minWidth: 28,
+              minHeight: 28
+            }}
+          >
+            <div style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              border: isCompleting ? 'none' : '2.5px solid var(--muted-light)',
+              background: isCompleting ? 'var(--accent)' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
             }}>
-              {task.title}
-            </p>
-            {task.notes && (
-              <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{task.notes}</p>
-            )}
-            {task.isRecurring && (
-              <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--accent)' }}>
-                ↻ {task.recurrenceType}
-              </p>
-            )}
+              {isCompleting && (
+                <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              )}
+            </div>
+          </button>
+
+          {/* Content */}
+          <div style={{ flex: 1, minWidth: 0 }} draggable={false}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: 18, 
+                  lineHeight: 1.4,
+                  textDecoration: isCompleting ? 'line-through' : 'none',
+                  color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : 'var(--foreground)',
+                  fontWeight: isOverdue ? 500 : 400
+                }}>
+                  {task.title}
+                </p>
+                {task.notes && (
+                  <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{task.notes}</p>
+                )}
+                {task.isRecurring && (
+                  <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--accent)' }}>
+                    ↻ {task.recurrenceType}
+                  </p>
+                )}
+              </div>
+              
+              {/* Date/Flag */}
+              {showDate && (
+                <span style={{ 
+                  fontSize: 14, 
+                  color: isOverdue ? 'var(--red)' : 'var(--muted)',
+                  flexShrink: 0
+                }}>
+                  {format(taskDate, 'MMM d')}
+                </span>
+              )}
+            </div>
           </div>
-          
-          {/* Date/Flag */}
-          {showDate && (
-            <span style={{ 
-              fontSize: 14, 
-              color: isOverdue ? 'var(--red)' : 'var(--muted)',
-              flexShrink: 0
-            }}>
-              {format(taskDate, 'MMM d')}
-            </span>
-          )}
-        </div>
-      </div>
 
-      {/* Drag Handle */}
-      <div
-        draggable={true}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          cursor: 'grab',
-          color: 'var(--muted-light)',
-          padding: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginTop: 4,
-          flexShrink: 0,
-          opacity: 0.5,
-          transition: 'opacity 0.2s, color 0.2s'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '1';
-          e.currentTarget.style.color = 'var(--muted)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '0.5';
-          e.currentTarget.style.color = 'var(--muted-light)';
-        }}
-      >
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-        </svg>
-      </div>
+          {/* Drag Handle */}
+          <div
+            draggable={true}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            onTouchCancel={handlePressEnd}
+            onMouseDown={handlePressStart}
+            onMouseUp={handlePressEnd}
+            style={{
+              cursor: 'grab',
+              color: isPressed ? 'var(--accent)' : 'var(--muted-light)',
+              background: isPressed ? 'var(--accent-light)' : 'transparent',
+              borderRadius: 4,
+              padding: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginTop: 4,
+              flexShrink: 0,
+              opacity: isPressed ? 1 : 0.5,
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              if (!isPressed) {
+                e.currentTarget.style.opacity = '1';
+                e.currentTarget.style.color = 'var(--muted)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              handlePressEnd();
+              e.currentTarget.style.opacity = '0.5';
+              e.currentTarget.style.color = 'var(--muted-light)';
+            }}
+          >
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+            </svg>
+          </div>
+        </>
+      )}
     </div>
   );
 }
