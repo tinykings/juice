@@ -35,9 +35,22 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskMod
       if (editTask) {
         if (titleRef.current) titleRef.current.value = editTask.title;
         if (notesRef.current) notesRef.current.value = editTask.notes;
+        
+        const date = new Date(editTask.dueDate);
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        setDueDate(`${year}-${month}-${day}`);
+        
+        setIsRecurring(editTask.isRecurring);
+        setRecurrenceType(editTask.recurrenceType || 'daily');
       } else {
         if (titleRef.current) titleRef.current.value = '';
         if (notesRef.current) notesRef.current.value = '';
+        
+        setDueDate(format(new Date(), 'yyyy-MM-dd'));
+        setIsRecurring(false);
+        setRecurrenceType('daily');
         
         // For mobile PWA, we need more time for the modal to render and be visible
         // Use multiple animation frames to ensure the DOM is ready
