@@ -31,33 +31,33 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskMod
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
 
   useEffect(() => {
-    if (isOpen && !editTask) {
-      // For mobile PWA, we need more time for the modal to render and be visible
-      // Use multiple animation frames to ensure the DOM is ready
-      requestAnimationFrame(() => {
+    if (isOpen) {
+      if (editTask) {
+        if (titleRef.current) titleRef.current.value = editTask.title;
+        if (notesRef.current) notesRef.current.value = editTask.notes;
+      } else {
+        if (titleRef.current) titleRef.current.value = '';
+        if (notesRef.current) notesRef.current.value = '';
+        
+        // For mobile PWA, we need more time for the modal to render and be visible
+        // Use multiple animation frames to ensure the DOM is ready
         requestAnimationFrame(() => {
-          setTimeout(() => {
-            if (titleRef.current) {
-              // Ensure the input is visible
-              titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-              // Focus the input
-              titleRef.current.focus();
-              // For mobile, sometimes we need to set selection to ensure keyboard appears
-              if (titleRef.current.setSelectionRange) {
-                titleRef.current.setSelectionRange(0, 0);
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              if (titleRef.current) {
+                // Ensure the input is visible
+                titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                // Focus the input
+                titleRef.current.focus();
+                // For mobile, sometimes we need to set selection to ensure keyboard appears
+                if (titleRef.current.setSelectionRange) {
+                  titleRef.current.setSelectionRange(0, 0);
+                }
               }
-            }
-          }, 400); // Increased delay for mobile PWA to ensure modal is fully rendered
+            }, 400);
+          });
         });
-      });
-    }
-    
-    if (editTask) {
-      if (titleRef.current) titleRef.current.value = editTask.title;
-      if (notesRef.current) notesRef.current.value = editTask.notes;
-    } else {
-      if (titleRef.current) titleRef.current.value = '';
-      if (notesRef.current) notesRef.current.value = '';
+      }
     }
   }, [editTask, isOpen]);
 
