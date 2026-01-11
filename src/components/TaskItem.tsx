@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format, isBefore, isToday, startOfDay, addDays, nextMonday } from 'date-fns';
 import { motion, PanInfo, useAnimation } from 'framer-motion';
@@ -78,7 +78,7 @@ export default function TaskItem({
     else setDragDirection('none');
   };
 
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden' }}>
@@ -215,49 +215,48 @@ export default function TaskItem({
                 )}
               </div>
               
-              {/* Date/Flag with Reschedule Popover */}
-              {showDate && (
-                <div style={{ position: 'relative' }}>
-                  <button
-                    ref={buttonRef}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowReschedule(!showReschedule);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '4px 8px',
-                      margin: '-4px -8px',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-light)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                  >
-                    <span style={{ 
-                      fontSize: 14, 
-                      color: isOverdue ? 'var(--red)' : 'var(--muted)',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {format(taskDate, 'MMM d')}
-                    </span>
-                  </button>
-
-                  {showReschedule && buttonRef.current && (
-                    <RescheduleMenu
-                      triggerRect={buttonRef.current.getBoundingClientRect()}
-                      onClose={() => setShowReschedule(false)}
-                      onSelect={handleReschedule}
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+                                {/* Date/Flag with Reschedule Popover */}
+                            {showDate && (
+                              <div style={{ position: 'relative' }}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAnchorEl(e.currentTarget);
+                                    setShowReschedule(!showReschedule);
+                                  }}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    margin: '-4px -8px',
+                                    borderRadius: 6,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    transition: 'background 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-light)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                >
+                                  <span style={{ 
+                                    fontSize: 14, 
+                                    color: isOverdue ? 'var(--red)' : 'var(--muted)',
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {format(taskDate, 'MMM d')}
+                                  </span>
+                                </button>
+              
+                                {showReschedule && anchorEl && (
+                                  <RescheduleMenu
+                                    anchorEl={anchorEl}
+                                    onClose={() => setShowReschedule(false)}
+                                    onSelect={handleReschedule}
+                                  />
+                                )}
+                              </div>
+                            )}            </div>
           </div>
         </div>
       </motion.div>
@@ -266,16 +265,18 @@ export default function TaskItem({
 }
 
 function RescheduleMenu({ 
-  triggerRect, 
+  anchorEl, 
   onClose, 
   onSelect 
 }: { 
-  triggerRect: DOMRect; 
+  anchorEl: HTMLElement; 
   onClose: () => void; 
   onSelect: (date: Date) => void; 
 }) {
   // Portal to body to avoid overflow clipping
   if (typeof document === 'undefined') return null;
+
+  const triggerRect = anchorEl.getBoundingClientRect();
 
   return createPortal(
     <>
