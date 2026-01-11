@@ -236,269 +236,8 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
-      {/* Header */}
-      <header style={{ 
-        position: 'sticky', 
-        top: 0, 
-        zIndex: 10, 
-        background: 'var(--background)', 
-        padding: '16px 24px',
-        transition: 'background 0.2s',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12
-      }}>
-          {/* Main Input Area */}
-          <div style={{ flex: 1, position: 'relative' }}>
-            {isSearchExpanded ? (
-               // Search Input
-               <div style={{ position: 'relative' }}>
-                 <input
-                   ref={searchInputRef}
-                   autoFocus
-                   type="text"
-                   placeholder="Search tasks..."
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                   onKeyDown={(e) => {
-                     if (e.key === 'Escape') {
-                       setSearchQuery('');
-                       setIsSearchExpanded(false);
-                     }
-                     if (e.key === 'Enter') {
-                       (e.target as HTMLInputElement).blur();
-                     }
-                   }}
-                   onBlur={() => {
-                     if (!searchQuery) setIsSearchExpanded(false);
-                   }}
-                   style={{
-                     width: '100%',
-                     padding: '10px 12px 10px 40px',
-                     fontSize: 16,
-                     background: 'var(--card)',
-                     border: '1px solid var(--accent)',
-                     borderRadius: 12,
-                     color: 'var(--foreground)',
-                     outline: 'none',
-                     boxShadow: '0 0 0 3px var(--accent-light)'
-                   }}
-                 />
-                 <svg 
-                    width="18" 
-                    height="18" 
-                    fill="none" 
-                    stroke="var(--muted)" 
-                    strokeWidth="2" 
-                    viewBox="0 0 24 24"
-                    style={{
-                      position: 'absolute',
-                      left: 12,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      pointerEvents: 'none'
-                    }}
-                  >
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="M21 21l-4.35-4.35"/>
-                  </svg>
-                  {searchQuery && (
-                    <button
-                      onMouseDown={(e) => e.preventDefault()} // Prevent blur
-                      onClick={(e) => {
-                        setSearchQuery('');
-                        // Keep input focused and expanded
-                        const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
-                        input?.focus();
-                      }}
-                      style={{
-                        position: 'absolute',
-                        right: 8,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: 24,
-                        height: 24,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'var(--muted-light)',
-                        border: 'none',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                    >
-                      <svg width="12" height="12" fill="none" stroke="var(--muted)" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path d="M18 6L6 18M6 6l12 12"/>
-                      </svg>
-                    </button>
-                  )}
-               </div>
-            ) : (
-               // Quick Add Input
-               <div style={{ position: 'relative' }}>
-                 <input
-                   type="text"
-                   placeholder="Add a task..."
-                   value={newTaskTitle}
-                   onChange={(e) => setNewTaskTitle(e.target.value)}
-                   onKeyDown={handleQuickAdd}
-                   style={{
-                     width: '100%',
-                     padding: '10px 12px 10px 40px',
-                     fontSize: 16,
-                     background: 'var(--card)',
-                     border: '1px solid var(--border)',
-                     borderRadius: 12,
-                     color: 'var(--foreground)',
-                     outline: 'none',
-                     transition: 'all 0.2s'
-                   }}
-                   onFocus={(e) => {
-                      e.target.style.borderColor = 'var(--accent)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
-                   }}
-                   onBlur={(e) => {
-                      e.target.style.borderColor = 'var(--border)';
-                      e.target.style.boxShadow = 'none';
-                   }}
-                 />
-                 <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    width: 40,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--muted-light)',
-                    pointerEvents: 'none'
-                 }}>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                 </div>
-               </div>
-            )}
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            
-            {/* Search Toggle */}
-            {!isSearchExpanded && (
-              <button 
-                onClick={() => {
-                  setIsSearchExpanded(true);
-                }}
-                style={{
-                  width: 44,
-                  height: 44,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--muted)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: '50%',
-                }}
-              >
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="M21 21l-4.35-4.35"/>
-                </svg>
-              </button>
-            )}
-
-            {/* Close Search (Only visible if expanded) */}
-            {isSearchExpanded && (
-              <button
-                 onClick={() => {
-                    setSearchQuery('');
-                    setIsSearchExpanded(false);
-                 }}
-                 style={{
-                   fontSize: 15,
-                   color: 'var(--accent)',
-                   background: 'none',
-                   border: 'none',
-                   cursor: 'pointer',
-                   padding: '0 8px',
-                   fontWeight: 500
-                 }}
-              >
-                Cancel
-              </button>
-            )}
-
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme}
-              style={{ 
-                width: 44, 
-                height: 44, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: 'var(--accent)', 
-                background: 'none', 
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0
-              }}
-            >
-              {theme === 'dark' ? (
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
-                </svg>
-              ) : (
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="5"/>
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                </svg>
-              )}
-            </button>
-
-            {/* Settings Button */}
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
-              style={{ 
-                width: 44, 
-                height: 44, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: 'var(--muted)', 
-                background: 'none', 
-                border: 'none',
-                cursor: 'pointer',
-                position: 'relative',
-                padding: 0
-              }}
-            >
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              {isGistConfigured && (
-                <div style={{
-                  position: 'absolute',
-                  top: 6,
-                  right: 6,
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: 'var(--green)',
-                }} />
-              )}
-            </button>
-          </div>
-      </header>
-
       {/* Main Content */}
-      <main style={{ padding: '0 24px 120px' }}>
+      <main style={{ padding: '24px 24px 120px' }}>
         {/* Task Groups */}
         {isLoaded && (
           <div>
@@ -657,40 +396,280 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Floating Add Button */}
-      <button
-        onClick={() => setIsModalOpen(true)}
-        style={{
-          position: 'fixed',
-          bottom: 32,
-          right: 24,
-          width: 60,
-          height: 60,
-          background: 'var(--accent)',
-          borderRadius: '50%',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: 'none',
-          cursor: 'pointer',
-          zIndex: 20,
-          padding: 0,
-          transition: 'transform 0.15s, box-shadow 0.15s'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.25)';
-        }}
-      >
-        <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
-      </button>
+      {/* Footer */}
+      <footer style={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0,
+        right: 0,
+        zIndex: 10, 
+        background: 'var(--background)', 
+        padding: '16px 24px 24px',
+        transition: 'background 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        borderTop: '1px solid var(--border)'
+      }}>
+          {/* Actions (Left side) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            
+            {/* Settings Button */}
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              style={{ 
+                width: 44, 
+                height: 44, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--muted)', 
+                background: 'none', 
+                border: 'none',
+                cursor: 'pointer',
+                position: 'relative',
+                padding: 0
+              }}
+            >
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              {isGistConfigured && (
+                <div style={{
+                  position: 'absolute',
+                  top: 6,
+                  right: 6,
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: 'var(--green)',
+                }} />
+              )}
+            </button>
+
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              style={{ 
+                width: 44, 
+                height: 44, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--accent)', 
+                background: 'none', 
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              {theme === 'dark' ? (
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+              ) : (
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              )}
+            </button>
+
+            {/* Search Toggle */}
+            {!isSearchExpanded && (
+              <button 
+                onClick={() => {
+                  setIsSearchExpanded(true);
+                }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--muted)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRadius: '50%',
+                }}
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="M21 21l-4.35-4.35"/>
+                </svg>
+              </button>
+            )}
+
+            {/* Close Search (Only visible if expanded) */}
+            {isSearchExpanded && (
+              <button
+                 onClick={() => {
+                    setSearchQuery('');
+                    setIsSearchExpanded(false);
+                 }}
+                 style={{
+                   fontSize: 15,
+                   color: 'var(--accent)',
+                   background: 'none',
+                   border: 'none',
+                   cursor: 'pointer',
+                   padding: '0 8px',
+                   fontWeight: 500
+                 }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+
+          {/* Main Input Area (Right side) */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            {isSearchExpanded ? (
+               // Search Input
+               <div style={{ position: 'relative' }}>
+                 <input
+                   ref={searchInputRef}
+                   autoFocus
+                   type="text"
+                   placeholder="Search tasks..."
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   onKeyDown={(e) => {
+                     if (e.key === 'Escape') {
+                       setSearchQuery('');
+                       setIsSearchExpanded(false);
+                     }
+                     if (e.key === 'Enter') {
+                       (e.target as HTMLInputElement).blur();
+                     }
+                   }}
+                   onBlur={() => {
+                     if (!searchQuery) setIsSearchExpanded(false);
+                   }}
+                   style={{
+                     width: '100%',
+                     padding: '10px 12px 10px 40px',
+                     fontSize: 16,
+                     background: 'var(--card)',
+                     border: '1px solid var(--accent)',
+                     borderRadius: 12,
+                     color: 'var(--foreground)',
+                     outline: 'none',
+                     boxShadow: '0 0 0 3px var(--accent-light)'
+                   }}
+                 />
+                 <svg 
+                    width="18" 
+                    height="18" 
+                    fill="none" 
+                    stroke="var(--muted)" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                    style={{
+                      position: 'absolute',
+                      left: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                      onClick={(e) => {
+                        setSearchQuery('');
+                        // Keep input focused and expanded
+                        const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
+                        input?.focus();
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 24,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--muted-light)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      <svg width="12" height="12" fill="none" stroke="var(--muted)" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  )}
+               </div>
+            ) : (
+               // Quick Add Input
+               <div style={{ position: 'relative' }}>
+                 <input
+                   type="text"
+                   placeholder="Quick add..."
+                   value={newTaskTitle}
+                   onChange={(e) => setNewTaskTitle(e.target.value)}
+                   onKeyDown={handleQuickAdd}
+                   style={{
+                     width: '100%',
+                     padding: '10px 12px 10px 16px',
+                     fontSize: 16,
+                     background: 'var(--card)',
+                     border: '1px solid var(--border)',
+                     borderRadius: 12,
+                     color: 'var(--foreground)',
+                     outline: 'none',
+                     transition: 'all 0.2s'
+                   }}
+                   onFocus={(e) => {
+                      e.target.style.borderColor = 'var(--accent)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                   }}
+                   onBlur={(e) => {
+                      e.target.style.borderColor = 'var(--border)';
+                      e.target.style.boxShadow = 'none';
+                   }}
+                 />
+               </div>
+            )}
+          </div>
+
+          {/* Add Task Button (Far Right) */}
+          <button
+            onClick={() => {
+              setIsModalOpen(true);
+            }}
+            style={{
+              width: 44,
+              height: 44,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              background: 'var(--purple)',
+              border: 'none',
+              borderRadius: 12,
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'opacity 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+          >
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+      </footer>
 
       <TaskModal
         isOpen={isModalOpen}
