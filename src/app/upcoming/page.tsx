@@ -7,9 +7,10 @@ import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
+import TaskItem from '@/components/TaskItem';
 
 export default function UpcomingPage() {
-  const { getUpcomingTasks, completeTask, isLoaded } = useTasks();
+  const { getUpcomingTasks, completeTask, deleteTask, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -88,11 +89,13 @@ export default function UpcomingPage() {
                 </h2>
                 <div style={{ borderTop: '1px solid var(--border)' }}>
                   {group.tasks.map((task) => (
-                    <TaskRow
+                    <TaskItem
                       key={task.id}
                       task={task}
                       onComplete={() => completeTask(task.id)}
                       onEdit={() => { setEditingTask(task); setIsModalOpen(true); }}
+                      onDelete={() => deleteTask(task.id)}
+                      showDate={true}
                     />
                   ))}
                 </div>
@@ -113,26 +116,6 @@ export default function UpcomingPage() {
       </button>
 
       <TaskModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingTask(null); }} editTask={editingTask} />
-    </div>
-  );
-}
-
-function TaskRow({ task, onComplete, onEdit }: { task: Task; onComplete: () => void; onEdit: () => void }) {
-  const [isCompleting, setIsCompleting] = useState(false);
-  const taskDate = new Date(task.dueDate);
-
-  return (
-    <div onClick={onEdit} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderBottom: '1px solid var(--border)', opacity: isCompleting ? 0.3 : 1, cursor: 'pointer' }}>
-      <button onClick={(e) => { e.stopPropagation(); setIsCompleting(true); setTimeout(onComplete, 300); }} style={{ flexShrink: 0, marginTop: 2, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-        <div style={{ width: 22, height: 22, borderRadius: '50%', border: isCompleting ? 'none' : '2px solid var(--muted-light)', background: isCompleting ? 'var(--accent)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {isCompleting && <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7" /></svg>}
-        </div>
-      </button>
-      <div style={{ flex: 1 }}>
-        <p style={{ margin: 0, fontSize: 16, textDecoration: isCompleting ? 'line-through' : 'none', color: isCompleting ? 'var(--muted)' : 'var(--foreground)' }}>{task.title}</p>
-        {task.notes && <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>{task.notes}</p>}
-      </div>
-      <span style={{ fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>{format(taskDate, 'MMM d')}</span>
     </div>
   );
 }

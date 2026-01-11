@@ -9,6 +9,7 @@ import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
+import TaskItem from '@/components/TaskItem';
 
 interface TaskGroup {
   label: string;
@@ -16,22 +17,20 @@ interface TaskGroup {
   isToday?: boolean;
   isOverdue?: boolean;
   date?: Date;
-  dropTarget?: boolean;
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, clearCompletedTasks, isLoaded } = useTasks();
+  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, isLoaded, addTask } = useTasks();
   const { theme, toggleTheme } = useTheme();
   const { isGistConfigured } = useSettings();
   useServiceWorker();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
-  const [dragOverGroup, setDragOverGroup] = useState<string | null>(null);
-  const draggedTaskIdRef = useRef<string | null>(null);
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Update current date when window gains focus or becomes visible to ensure "Today" is accurate
@@ -48,6 +47,25 @@ export default function HomePage() {
       window.removeEventListener('focus', updateDate);
     };
   }, []);
+
+  const handleQuickAdd = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newTaskTitle.trim()) {
+      e.preventDefault();
+      
+      const today = startOfDay(new Date());
+      
+      addTask({
+        title: newTaskTitle.trim(),
+        notes: '',
+        dueDate: today.toISOString(),
+        isRecurring: false,
+        recurrenceType: null,
+        tags: []
+      });
+      
+      setNewTaskTitle('');
+    }
+  };
 
   // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
@@ -94,7 +112,7 @@ export default function HomePage() {
       const sortedOverdueTasks = [...overdueTasks].sort((a, b) => 
         a.title.localeCompare(b.title)
       );
-      groups.push({ label: 'Overdue', tasks: sortedOverdueTasks, isOverdue: true, date: yesterday, dropTarget: true });
+      groups.push({ label: 'Overdue', tasks: sortedOverdueTasks, isOverdue: true, date: yesterday });
     }
     
     // Today's tasks (only today, not overdue)
@@ -106,9 +124,9 @@ export default function HomePage() {
     const sortedTodayTasks = [...todayTasks].sort((a, b) => 
       a.title.localeCompare(b.title)
     );
-    groups.push({ label: 'Today', tasks: sortedTodayTasks, isToday: true, date: today, dropTarget: true });
+    groups.push({ label: 'Today', tasks: sortedTodayTasks, isToday: true, date: today });
 
-    // Next 7 days (by day of week) - always show as drop targets
+    // Next 7 days (by day of week)
     for (let i = 1; i <= 7; i++) {
       const date = addDays(today, i);
       const dayTasks = incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), date));
@@ -117,10 +135,10 @@ export default function HomePage() {
         a.title.localeCompare(b.title)
       );
       const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
-      groups.push({ label, tasks: sortedDayTasks, date, dropTarget: true });
+      groups.push({ label, tasks: sortedDayTasks, date });
     }
 
-    // Beyond this week - group by month (not drop targets)
+    // Beyond this week - group by month
     const futureTasks = incompleteTasks.filter(t => isAfter(new Date(t.dueDate), weekEnd));
     const monthGroups: { [key: string]: Task[] } = {};
     
@@ -135,64 +153,15 @@ export default function HomePage() {
       const sortedMonthTasks = [...monthTasks].sort((a, b) => 
         new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
       );
-      groups.push({ label: month, tasks: sortedMonthTasks, dropTarget: false });
+      groups.push({ label: month, tasks: sortedMonthTasks });
     });
 
     return groups;
   }, [incompleteTasks, currentDate]);
 
-  // Filter to only show groups with tasks or that are drop targets during drag
   const visibleGroups = useMemo(() => {
-    if (draggedTaskId) {
-      // During drag, show all week days as potential drop targets
-      return groupedTasks.filter(g => g.tasks.length > 0 || g.dropTarget);
-    }
     return groupedTasks.filter(g => g.tasks.length > 0);
-  }, [groupedTasks, draggedTaskId]);
-
-  // Drag handlers
-  const handleDragStart = (e: React.DragEvent, taskId: string) => {
-    draggedTaskIdRef.current = taskId;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', taskId);
-    // Use setTimeout to allow the drag image to be captured before changing state
-    setTimeout(() => setDraggedTaskId(taskId), 0);
-  };
-
-  const handleDragEnd = () => {
-    draggedTaskIdRef.current = null;
-    setDraggedTaskId(null);
-    setDragOverGroup(null);
-  };
-
-  const handleDragOver = (e: React.DragEvent, groupLabel: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverGroup(groupLabel);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    // Only clear if we're actually leaving the drop zone (not entering a child)
-    const relatedTarget = e.relatedTarget as HTMLElement;
-    if (!e.currentTarget.contains(relatedTarget)) {
-      setDragOverGroup(null);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent, group: TaskGroup) => {
-    e.preventDefault();
-    const taskId = e.dataTransfer.getData('text/plain') || draggedTaskIdRef.current;
-    
-    if (taskId && group.date) {
-      updateTask(taskId, {
-        dueDate: group.date.toISOString()
-      });
-    }
-    
-    draggedTaskIdRef.current = null;
-    setDraggedTaskId(null);
-    setDragOverGroup(null);
-  };
+  }, [groupedTasks]);
 
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
@@ -237,17 +206,20 @@ export default function HomePage() {
           setConfirmCompleteTask(null);
         } else if (searchQuery) {
           setSearchQuery('');
+          setIsSearchExpanded(false);
           // Also blur the search input if it's focused
           const el = document.activeElement as HTMLInputElement;
           if (el?.tagName === 'INPUT') {
             el.blur();
           }
+        } else if (isSearchExpanded) {
+           setIsSearchExpanded(false);
         }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
@@ -257,86 +229,193 @@ export default function HomePage() {
         top: 0, 
         zIndex: 10, 
         background: 'var(--background)', 
-        padding: '20px 24px',
-        transition: 'background 0.2s'
+        padding: '16px 24px',
+        transition: 'background 0.2s',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          {/* Search Bar */}
-          <div style={{ 
-            position: 'relative',
-            flex: '0 1 280px',
-            minWidth: 0
-          }}>
-            <svg 
-              width="18" 
-              height="18" 
-              fill="none" 
-              stroke="var(--muted)" 
-              strokeWidth="2" 
-              viewBox="0 0 24 24"
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                pointerEvents: 'none'
-              }}
-            >
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px 10px 40px',
-                fontSize: 15,
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 10,
-                color: 'var(--foreground)',
-                outline: 'none',
-                transition: 'border-color 0.15s, box-shadow 0.15s'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = 'var(--accent)';
-                e.target.style.boxShadow = '0 0 0 3px var(--accent-light)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = 'var(--border)';
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
+          {/* Main Input Area */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            {isSearchExpanded ? (
+               // Search Input
+               <div style={{ position: 'relative' }}>
+                 <input
+                   autoFocus
+                   type="text"
+                   placeholder="Search tasks..."
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   onKeyDown={(e) => {
+                     if (e.key === 'Escape') {
+                       setSearchQuery('');
+                       setIsSearchExpanded(false);
+                     }
+                   }}
+                   onBlur={() => {
+                     if (!searchQuery) setIsSearchExpanded(false);
+                   }}
+                   style={{
+                     width: '100%',
+                     padding: '10px 12px 10px 40px',
+                     fontSize: 16,
+                     background: 'var(--card)',
+                     border: '1px solid var(--accent)',
+                     borderRadius: 12,
+                     color: 'var(--foreground)',
+                     outline: 'none',
+                     boxShadow: '0 0 0 3px var(--accent-light)'
+                   }}
+                 />
+                 <svg 
+                    width="18" 
+                    height="18" 
+                    fill="none" 
+                    stroke="var(--muted)" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                    style={{
+                      position: 'absolute',
+                      left: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                  </svg>
+                  {searchQuery && (
+                    <button
+                      onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                      onClick={(e) => {
+                        setSearchQuery('');
+                        // Keep input focused and expanded
+                        const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
+                        input?.focus();
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: 8,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: 24,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'var(--muted-light)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                    >
+                      <svg width="12" height="12" fill="none" stroke="var(--muted)" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                      </svg>
+                    </button>
+                  )}
+               </div>
+            ) : (
+               // Quick Add Input
+               <div style={{ position: 'relative' }}>
+                 <input
+                   type="text"
+                   placeholder="Add a task..."
+                   value={newTaskTitle}
+                   onChange={(e) => setNewTaskTitle(e.target.value)}
+                   onKeyDown={handleQuickAdd}
+                   style={{
+                     width: '100%',
+                     padding: '10px 12px 10px 40px',
+                     fontSize: 16,
+                     background: 'var(--card)',
+                     border: '1px solid var(--border)',
+                     borderRadius: 12,
+                     color: 'var(--foreground)',
+                     outline: 'none',
+                     transition: 'all 0.2s'
+                   }}
+                   onFocus={(e) => {
+                      e.target.style.borderColor = 'var(--accent)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                   }}
+                   onBlur={(e) => {
+                      e.target.style.borderColor = 'var(--border)';
+                      e.target.style.boxShadow = 'none';
+                   }}
+                 />
+                 <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--muted-light)',
+                    pointerEvents: 'none'
+                 }}>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                 </div>
+               </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            
+            {/* Search Toggle */}
+            {!isSearchExpanded && (
+              <button 
+                onClick={() => {
+                  setIsSearchExpanded(true);
+                }}
                 style={{
-                  position: 'absolute',
-                  right: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 24,
-                  height: 24,
+                  width: 44,
+                  height: 44,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'var(--muted-light)',
+                  color: 'var(--muted)',
+                  background: 'none',
                   border: 'none',
-                  borderRadius: '50%',
                   cursor: 'pointer',
-                  padding: 0
+                  borderRadius: '50%',
                 }}
               >
-                <svg width="12" height="12" fill="none" stroke="var(--muted)" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path d="M18 6L6 18M6 6l12 12"/>
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="M21 21l-4.35-4.35"/>
                 </svg>
               </button>
             )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+
+            {/* Close Search (Only visible if expanded) */}
+            {isSearchExpanded && (
+              <button
+                 onClick={() => {
+                    setSearchQuery('');
+                    setIsSearchExpanded(false);
+                 }}
+                 style={{
+                   fontSize: 15,
+                   color: 'var(--accent)',
+                   background: 'none',
+                   border: 'none',
+                   cursor: 'pointer',
+                   padding: '0 8px',
+                   fontWeight: 500
+                 }}
+              >
+                Cancel
+              </button>
+            )}
+
             {/* Theme Toggle */}
             <button 
               onClick={toggleTheme}
@@ -364,6 +443,7 @@ export default function HomePage() {
                 </svg>
               )}
             </button>
+
             {/* Settings Button */}
             <button 
               onClick={() => setIsSettingsOpen(true)}
@@ -398,7 +478,6 @@ export default function HomePage() {
               )}
             </button>
           </div>
-        </div>
       </header>
 
       {/* Main Content */}
@@ -410,9 +489,6 @@ export default function HomePage() {
               <section 
                 key={group.label} 
                 style={{ marginBottom: 32 }}
-                onDragOver={group.dropTarget ? (e) => handleDragOver(e, group.label) : undefined}
-                onDragLeave={group.dropTarget ? handleDragLeave : undefined}
-                onDrop={group.dropTarget ? (e) => handleDrop(e, group) : undefined}
               >
                 <h2 style={{ 
                   fontSize: 15, 
@@ -426,30 +502,12 @@ export default function HomePage() {
                 </h2>
                 <div style={{ 
                   borderTop: '1px solid var(--border)',
-                  background: dragOverGroup === group.label ? 'var(--accent-light)' : 'transparent',
-                  borderRadius: dragOverGroup === group.label ? 8 : 0,
-                  transition: 'background 0.15s',
-                  minHeight: group.tasks.length === 0 && draggedTaskId ? 60 : undefined,
+                  background: 'transparent',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: group.tasks.length === 0 ? 'center' : 'flex-start',
                   alignItems: group.tasks.length === 0 ? 'center' : 'stretch'
                 }}>
-                  {group.tasks.length === 0 && draggedTaskId && group.dropTarget && (
-                    <p style={{ color: 'var(--muted)', fontSize: 16, padding: '20px 0' }}>Drop here</p>
-                  )}
-                  {group.tasks.length > 0 && draggedTaskId && group.dropTarget && (
-                    <div style={{ 
-                      color: 'var(--muted)', 
-                      fontSize: 16, 
-                      padding: '16px 0',
-                      textAlign: 'center',
-                      borderBottom: '1px dashed var(--border)',
-                      userSelect: 'none'
-                    }}>
-                      Drop here
-                    </div>
-                  )}
                   {group.tasks.map((task) => (
                     <TaskItem 
                       key={task.id} 
@@ -459,12 +517,10 @@ export default function HomePage() {
                         setEditingTask(task);
                         setIsModalOpen(true);
                       }}
-                      showDate={!group.isToday && !group.isOverdue && !group.dropTarget}
+                      showDate={true}
                       isOverdue={group.isOverdue || false}
-                      onDragStart={(e) => handleDragStart(e, task.id)}
-                      onDragEnd={handleDragEnd}
-                      isDragging={draggedTaskId === task.id}
                       needsConfirmation={!(group.isToday || group.isOverdue)}
+                      onDelete={() => deleteTask(task.id)}
                     />
                   ))}
                 </div>
@@ -637,199 +693,6 @@ export default function HomePage() {
           onConfirm={handleConfirmComplete}
           onCancel={() => setConfirmCompleteTask(null)}
         />
-      )}
-    </div>
-  );
-}
-
-function TaskItem({ 
-  task, 
-  onComplete, 
-  onEdit,
-  showDate,
-  isOverdue: isOverdueProp,
-  onDragStart,
-  onDragEnd,
-  isDragging,
-  needsConfirmation
-}: { 
-  task: Task; 
-  onComplete: () => void; 
-  onEdit: () => void;
-  showDate?: boolean;
-  isOverdue?: boolean;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
-  isDragging: boolean;
-  needsConfirmation: boolean;
-}) {
-  const [isCompleting, setIsCompleting] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  const handleComplete = () => {
-    if (needsConfirmation) {
-      onComplete();
-    } else {
-      setIsCompleting(true);
-      setTimeout(onComplete, 300);
-    }
-  };
-
-  const handlePressStart = () => setIsPressed(true);
-  const handlePressEnd = () => setIsPressed(false);
-
-  const taskDate = new Date(task.dueDate);
-  const isOverdue = isOverdueProp || (isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate));
-
-  return (
-    <div 
-      onClick={isDragging ? undefined : onEdit}
-      style={{
-        display: 'flex',
-        alignItems: isDragging ? 'center' : 'flex-start',
-        justifyContent: isDragging ? 'center' : 'flex-start',
-        gap: 16,
-        padding: '16px 0',
-        borderBottom: '1px solid var(--border)',
-        opacity: isCompleting ? 0.3 : 1,
-        transition: 'opacity 0.15s, background 0.2s',
-        background: isDragging ? 'var(--card)' : 'var(--background)',
-        userSelect: 'none',
-        minHeight: isDragging ? 80 : 'auto'
-      }}
-    >
-      {isDragging ? (
-        <div style={{
-          color: 'var(--accent)',
-          fontSize: 16,
-          fontWeight: 500,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8
-        }}>
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M5 9l7-7 7 7M5 15l7 7 7-7" />
-          </svg>
-          Move to another day
-        </div>
-      ) : (
-        <>
-          {/* Checkbox */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleComplete();
-            }}
-            draggable={false}
-            style={{ 
-              flexShrink: 0, 
-              marginTop: 4, 
-              background: 'none', 
-              border: 'none', 
-              padding: 0,
-              cursor: 'pointer',
-              minWidth: 28,
-              minHeight: 28
-            }}
-          >
-            <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              border: isCompleting ? 'none' : '2.5px solid var(--muted-light)',
-              background: isCompleting ? 'var(--accent)' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}>
-              {isCompleting && (
-                <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
-                  <path d="M5 12l5 5L20 7" />
-                </svg>
-              )}
-            </div>
-          </button>
-
-          {/* Content */}
-          <div style={{ flex: 1, minWidth: 0 }} draggable={false}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ flex: 1 }}>
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: 18, 
-                  lineHeight: 1.4,
-                  textDecoration: isCompleting ? 'line-through' : 'none',
-                  color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : 'var(--foreground)',
-                  fontWeight: isOverdue ? 500 : 400
-                }}>
-                  {task.title}
-                </p>
-                {task.notes && (
-                  <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{task.notes}</p>
-                )}
-                {task.isRecurring && (
-                  <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--accent)' }}>
-                    ↻ {task.recurrenceType}
-                  </p>
-                )}
-              </div>
-              
-              {/* Date/Flag */}
-              {showDate && (
-                <span style={{ 
-                  fontSize: 14, 
-                  color: isOverdue ? 'var(--red)' : 'var(--muted)',
-                  flexShrink: 0
-                }}>
-                  {format(taskDate, 'MMM d')}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Drag Handle */}
-          <div
-            draggable={true}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={handlePressStart}
-            onTouchEnd={handlePressEnd}
-            onTouchCancel={handlePressEnd}
-            onMouseDown={handlePressStart}
-            onMouseUp={handlePressEnd}
-            style={{
-              cursor: 'grab',
-              color: isPressed ? 'var(--accent)' : 'var(--muted-light)',
-              background: isPressed ? 'var(--accent-light)' : 'transparent',
-              borderRadius: 4,
-              padding: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: 4,
-              flexShrink: 0,
-              opacity: isPressed ? 1 : 0.5,
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              if (!isPressed) {
-                e.currentTarget.style.opacity = '1';
-                e.currentTarget.style.color = 'var(--muted)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              handlePressEnd();
-              e.currentTarget.style.opacity = '0.5';
-              e.currentTarget.style.color = 'var(--muted-light)';
-            }}
-          >
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-            </svg>
-          </div>
-        </>
       )}
     </div>
   );
