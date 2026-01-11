@@ -32,6 +32,18 @@ export default function HomePage() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus search input when expanded
+  useEffect(() => {
+    if (isSearchExpanded) {
+      // Small timeout to ensure the element is rendered and ready for focus
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isSearchExpanded]);
 
   // Update current date when window gains focus or becomes visible to ensure "Today" is accurate
   useEffect(() => {
@@ -64,6 +76,7 @@ export default function HomePage() {
       });
       
       setNewTaskTitle('');
+      (e.target as HTMLInputElement).blur();
     }
   };
 
@@ -241,6 +254,7 @@ export default function HomePage() {
                // Search Input
                <div style={{ position: 'relative' }}>
                  <input
+                   ref={searchInputRef}
                    autoFocus
                    type="text"
                    placeholder="Search tasks..."
@@ -250,6 +264,9 @@ export default function HomePage() {
                      if (e.key === 'Escape') {
                        setSearchQuery('');
                        setIsSearchExpanded(false);
+                     }
+                     if (e.key === 'Enter') {
+                       (e.target as HTMLInputElement).blur();
                      }
                    }}
                    onBlur={() => {
