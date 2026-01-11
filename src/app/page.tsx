@@ -77,6 +77,7 @@ export default function HomePage() {
       
       setNewTaskTitle('');
       (e.target as HTMLInputElement).blur();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
