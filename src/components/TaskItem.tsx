@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { format, isBefore, isToday, startOfDay, addDays, nextMonday } from 'date-fns';
+import { format, isBefore, isToday, startOfDay, addDays } from 'date-fns';
 import { motion, PanInfo, useAnimation } from 'framer-motion';
 import { Task } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
@@ -301,7 +301,17 @@ function RescheduleMenu({
       }}>
         <RescheduleOption label="Today" date={startOfDay(new Date())} onClick={onSelect} />
         <RescheduleOption label="Tomorrow" date={addDays(startOfDay(new Date()), 1)} onClick={onSelect} />
-        <RescheduleOption label="Next Week" date={nextMonday(startOfDay(new Date()))} onClick={onSelect} />
+        {[2, 3, 4].map(daysToAdd => {
+          const date = addDays(startOfDay(new Date()), daysToAdd);
+          return (
+            <RescheduleOption 
+              key={daysToAdd}
+              label={format(date, 'EEEE')} 
+              date={date} 
+              onClick={onSelect} 
+            />
+          );
+        })}
       </div>
     </>,
     document.body
