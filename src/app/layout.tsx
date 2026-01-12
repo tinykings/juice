@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   title: "Juice",
   description: "A beautiful task management app",
   manifest: `${basePath}/manifest.json`,
+  icons: {
+    icon: `${basePath}/icon-180.png`,
+    apple: `${basePath}/icon-180.png`,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -34,9 +38,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/png" href={`${basePath}/icon-192.png`} />
-        <link rel="apple-touch-icon" href={`${basePath}/icon-192.png`} />
-        <link rel="apple-touch-icon" sizes="180x180" href={`${basePath}/icon-180.png`} />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
