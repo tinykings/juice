@@ -100,7 +100,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -112,12 +113,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       <div 
         style={{
           background: 'var(--background)',
-          borderRadius: 16,
+          borderRadius: 0,
           width: '100%',
           maxWidth: 400,
           maxHeight: '90vh',
           overflow: 'auto',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          boxShadow: '12px 12px 0 rgba(0, 0, 0, 0.2)',
+          border: '1px solid var(--border)'
         }}
       >
         {/* Header */}
@@ -128,12 +130,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           padding: '20px 24px',
           borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>Settings</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, fontFamily: 'var(--font-display)' }}>Settings</h2>
           <button
             onClick={onClose}
             style={{
               background: 'none',
-              border: 'none',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
               color: 'var(--muted)',
               padding: 8,
@@ -141,7 +143,17 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               minHeight: 44,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              transition: 'all 0.2s',
+              borderRadius: 0
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--foreground)';
+              e.currentTarget.style.color = 'var(--background)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.color = 'var(--muted)';
             }}
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -153,12 +165,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Content */}
         <div style={{ padding: 24 }}>
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
               GitHub Gist Sync
             </h3>
             <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>
               Sync your tasks across devices using a GitHub Gist as storage. 
-              You need a GitHub personal access token with <code style={{ background: 'var(--border)', padding: '4px 6px', borderRadius: 6, fontSize: 14 }}>gist</code> scope.
+              You need a GitHub personal access token with <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '4px 6px', fontSize: 14 }}>gist</code> scope.
             </p>
           </div>
 
@@ -177,13 +189,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 padding: '14px 16px',
                 fontSize: 16,
                 border: '1px solid var(--border)',
-                borderRadius: 12,
-                background: 'var(--background)',
+                borderRadius: 0,
+                background: 'var(--card)',
                 color: 'var(--foreground)',
                 outline: 'none',
                 boxSizing: 'border-box',
-                minHeight: 48
+                minHeight: 48,
+                transition: 'box-shadow 0.2s'
               }}
+              onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
+              onBlur={(e) => e.target.style.boxShadow = 'none'}
             />
           </div>
 
@@ -202,13 +217,16 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 padding: '14px 16px',
                 fontSize: 16,
                 border: '1px solid var(--border)',
-                borderRadius: 12,
-                background: 'var(--background)',
+                borderRadius: 0,
+                background: 'var(--card)',
                 color: 'var(--foreground)',
                 outline: 'none',
                 boxSizing: 'border-box',
-                minHeight: 48
+                minHeight: 48,
+                transition: 'box-shadow 0.2s'
               }}
+              onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
+              onBlur={(e) => e.target.style.boxShadow = 'none'}
             />
           </div>
 
@@ -216,11 +234,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {message && (
             <div style={{
               padding: '14px 16px',
-              borderRadius: 12,
+              borderRadius: 0,
               marginBottom: 20,
               fontSize: 15,
               background: message.type === 'success' ? 'var(--green)' : 'var(--red)',
-              color: 'white',
+              color: 'var(--background)',
+              fontWeight: 500
             }}>
               {message.text}
             </div>
@@ -233,14 +252,18 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               style={{
                 padding: '14px 20px',
                 fontSize: 16,
-                fontWeight: 500,
+                fontWeight: 600,
                 border: 'none',
-                borderRadius: 12,
+                borderRadius: 0,
                 background: 'var(--accent)',
-                color: 'white',
+                color: 'var(--background)',
                 cursor: 'pointer',
-                minHeight: 48
+                minHeight: 48,
+                boxShadow: '4px 4px 0 var(--foreground)',
+                transition: 'transform 0.1s'
               }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
             >
               Save Settings
             </button>
@@ -253,12 +276,21 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 fontSize: 16,
                 fontWeight: 500,
                 border: '1px solid var(--border)',
-                borderRadius: 12,
+                borderRadius: 0,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
                 opacity: isLoading || !gistId || !token ? 0.5 : 1,
-                minHeight: 48
+                minHeight: 48,
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading && gistId && token) {
+                  e.currentTarget.style.background = 'var(--card)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--background)';
               }}
             >
               {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
@@ -285,12 +317,20 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 fontSize: 16,
                 fontWeight: 500,
                 border: '1px solid var(--border)',
-                borderRadius: 12,
+                borderRadius: 0,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 cursor: isCreating || !token ? 'not-allowed' : 'pointer',
                 opacity: isCreating || !token ? 0.5 : 1,
                 minHeight: 48
+              }}
+              onMouseEnter={(e) => {
+                if (!isCreating && token) {
+                  e.currentTarget.style.background = 'var(--card)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--background)';
               }}
             >
               {isCreating ? 'Creating...' : 'Create New Gist'}
@@ -301,8 +341,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div style={{ 
             marginTop: 24, 
             padding: '16px', 
-            background: 'var(--accent-light)', 
-            borderRadius: 12,
+            background: 'var(--card)', 
+            border: '1px solid var(--border)',
+            borderRadius: 0,
             fontSize: 15,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -325,7 +366,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Update App Section */}
           <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
               App Updates
             </h3>
             <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
@@ -339,7 +380,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 fontSize: 16,
                 fontWeight: 500,
                 border: '1px solid var(--border)',
-                borderRadius: 12,
+                borderRadius: 0,
                 background: 'var(--background)',
                 color: 'var(--foreground)',
                 cursor: 'pointer',
@@ -349,6 +390,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 justifyContent: 'center',
                 gap: 10
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--card)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--background)'}
             >
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M1 4v6h6M23 20v-6h-6" />

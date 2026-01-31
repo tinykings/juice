@@ -25,7 +25,17 @@ export default {
         "calendar-text": "var(--calendar-text)",
       },
       fontFamily: {
-        sans: ["'Inter'", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        sans: ["var(--font-body)", "sans-serif"],
+        display: ["var(--font-display)", "serif"],
+      },
+      animation: {
+        "fade-in": "fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+      },
+      keyframes: {
+        fadeIn: {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
     },
   },

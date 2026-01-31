@@ -242,10 +242,16 @@ export default function HomePage() {
         {/* Task Groups */}
         {isLoaded && (
           <div>
-            {visibleGroups.map((group) => (
+            {visibleGroups.map((group, index) => (
               <section 
                 key={group.label} 
-                style={{ marginBottom: 32 }}
+                style={{ 
+                  marginBottom: 32,
+                  animation: 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  opacity: 0,
+                  transform: 'translateY(10px)',
+                  animationDelay: `${index * 100}ms`
+                }}
               >
                 <h2 style={{ 
                   fontSize: 15, 
@@ -253,12 +259,13 @@ export default function HomePage() {
                   color: group.isOverdue ? 'var(--red)' : group.isToday ? 'var(--foreground)' : 'var(--muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  marginBottom: 12
+                  marginBottom: 12,
+                  fontFamily: 'var(--font-display)'
                 }}>
                   {group.label}
                 </h2>
                 <div style={{ 
-                  borderTop: '1px solid var(--border)',
+                  borderTop: '2px solid var(--border)',
                   background: 'transparent',
                   display: 'flex',
                   flexDirection: 'column',
@@ -289,7 +296,6 @@ export default function HomePage() {
                 <div style={{ 
                   width: 100, 
                   height: 100, 
-                  borderRadius: '50%', 
                   background: 'var(--accent-light)', 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -301,7 +307,7 @@ export default function HomePage() {
                     <path d="M21 21l-4.35-4.35"/>
                   </svg>
                 </div>
-                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>No Results</h3>
+                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-display)' }}>No Results</h3>
                 <p style={{ color: 'var(--muted)', fontSize: 16 }}>
                   No tasks found for &ldquo;{searchQuery}&rdquo;
                 </p>
@@ -315,7 +321,7 @@ export default function HomePage() {
                     color: 'var(--accent)',
                     background: 'var(--accent-light)',
                     border: 'none',
-                    borderRadius: 8,
+                    borderRadius: 0,
                     cursor: 'pointer'
                   }}
                 >
@@ -329,7 +335,6 @@ export default function HomePage() {
                 <div style={{ 
                   width: 100, 
                   height: 100, 
-                  borderRadius: '50%', 
                   background: 'var(--accent-light)', 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -341,7 +346,7 @@ export default function HomePage() {
                     <polyline points="22,4 12,14.01 9,11.01"/>
                   </svg>
                 </div>
-                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8 }}>All Done</h3>
+                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-display)' }}>All Done</h3>
                 <p style={{ color: 'var(--muted)', fontSize: 16 }}>
                   No tasks yet. Tap + to add one.
                 </p>
@@ -357,11 +362,12 @@ export default function HomePage() {
                   color: 'var(--muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  marginBottom: 12
+                  marginBottom: 12,
+                  fontFamily: 'var(--font-display)'
                 }}>
                   Completed (30 days)
                 </h2>
-                <div style={{ borderTop: '1px solid var(--border)' }}>
+                <div style={{ borderTop: '2px solid var(--border)' }}>
                   {completedTasks.map((task) => (
                     <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
                   ))}
@@ -376,17 +382,26 @@ export default function HomePage() {
                     }}
                     style={{
                       background: 'transparent',
-                      border: 'none',
+                      border: '1px solid var(--red)',
                       color: 'var(--red)',
                       fontSize: 15,
                       fontWeight: 500,
                       cursor: 'pointer',
                       padding: '12px 24px',
                       opacity: 0.8,
-                      transition: 'opacity 0.2s'
+                      transition: 'all 0.2s',
+                      borderRadius: 0
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.background = 'var(--red)';
+                      e.currentTarget.style.color = 'var(--background)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '0.8';
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--red)';
+                    }}
                   >
                     Clear Completed
                   </button>
@@ -410,7 +425,7 @@ export default function HomePage() {
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        borderTop: '1px solid var(--border)'
+        borderTop: '2px solid var(--border)'
       }}>
           {/* Actions (Left side) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -426,10 +441,11 @@ export default function HomePage() {
                 justifyContent: 'center', 
                 color: 'var(--muted)', 
                 background: 'none', 
-                border: 'none',
+                border: '1px solid var(--border)',
                 cursor: 'pointer',
                 position: 'relative',
-                padding: 0
+                padding: 0,
+                borderRadius: 0
               }}
             >
               <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -441,9 +457,8 @@ export default function HomePage() {
                   position: 'absolute',
                   top: 6,
                   right: 6,
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
+                  width: 6,
+                  height: 6,
                   background: 'var(--green)',
                 }} />
               )}
@@ -460,9 +475,10 @@ export default function HomePage() {
                 justifyContent: 'center', 
                 color: 'var(--accent)', 
                 background: 'none', 
-                border: 'none',
+                border: '1px solid var(--border)',
                 cursor: 'pointer',
-                padding: 0
+                padding: 0,
+                borderRadius: 0
               }}
             >
               {theme === 'dark' ? (
@@ -491,9 +507,9 @@ export default function HomePage() {
                   justifyContent: 'center',
                   color: 'var(--muted)',
                   background: 'none',
-                  border: 'none',
+                  border: '1px solid var(--border)',
                   cursor: 'pointer',
-                  borderRadius: '50%',
+                  borderRadius: 0,
                 }}
               >
                 <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -514,10 +530,12 @@ export default function HomePage() {
                    fontSize: 15,
                    color: 'var(--accent)',
                    background: 'none',
-                   border: 'none',
+                   border: '1px solid var(--accent)',
                    cursor: 'pointer',
                    padding: '0 8px',
-                   fontWeight: 500
+                   fontWeight: 500,
+                   height: 44,
+                   borderRadius: 0
                  }}
               >
                 Cancel
@@ -555,10 +573,11 @@ export default function HomePage() {
                      fontSize: 16,
                      background: 'var(--card)',
                      border: '1px solid var(--accent)',
-                     borderRadius: 12,
+                     borderRadius: 0,
                      color: 'var(--foreground)',
                      outline: 'none',
-                     boxShadow: '0 0 0 3px var(--accent-light)'
+                     boxShadow: '4px 4px 0 var(--accent-light)',
+                     height: 44
                    }}
                  />
                  <svg 
@@ -600,7 +619,7 @@ export default function HomePage() {
                         justifyContent: 'center',
                         background: 'var(--muted-light)',
                         border: 'none',
-                        borderRadius: '50%',
+                        borderRadius: 0,
                         cursor: 'pointer',
                         padding: 0
                       }}
@@ -626,14 +645,15 @@ export default function HomePage() {
                      fontSize: 16,
                      background: 'var(--card)',
                      border: '1px solid var(--border)',
-                     borderRadius: 12,
+                     borderRadius: 0,
                      color: 'var(--foreground)',
                      outline: 'none',
-                     transition: 'all 0.2s'
+                     transition: 'all 0.2s',
+                     height: 44
                    }}
                    onFocus={(e) => {
                       e.target.style.borderColor = 'var(--accent)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)';
+                      e.target.style.boxShadow = '4px 4px 0 var(--muted-light)';
                    }}
                    onBlur={(e) => {
                       e.target.style.borderColor = 'var(--border)';
@@ -655,16 +675,17 @@ export default function HomePage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'white',
-              background: 'var(--purple)',
+              color: 'var(--background)',
+              background: 'var(--foreground)',
               border: 'none',
-              borderRadius: 12,
+              borderRadius: 0,
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'opacity 0.2s'
+              transition: 'transform 0.2s',
+              boxShadow: '4px 4px 0 var(--border)'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'translate(-2px, -2px)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'translate(0, 0)'}
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" />

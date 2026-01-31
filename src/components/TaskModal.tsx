@@ -28,7 +28,8 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskMod
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.5)',
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)'
         }}
       />
 
@@ -41,9 +42,10 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskMod
         maxWidth: 500,
         margin: '0 auto',
         background: 'var(--card)',
-        borderRadius: 20,
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-        overflow: 'hidden'
+        borderRadius: 0,
+        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
+        overflow: 'hidden',
+        border: '1px solid var(--border)'
       }}>
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 
@@ -161,14 +163,19 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
           style={{
             width: '100%',
             fontSize: 22,
-            fontWeight: 500,
+            fontWeight: 600,
             background: 'transparent',
             border: 'none',
+            borderBottom: '2px solid transparent',
             outline: 'none',
             color: 'var(--foreground)',
             marginBottom: 12,
-            padding: '4px 0'
+            padding: '4px 0',
+            fontFamily: 'var(--font-display)',
+            transition: 'border-color 0.2s'
           }}
+          onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
+          onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
         />
         <input
           ref={notesRef}
@@ -196,13 +203,18 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
           gap: 10,
           padding: '12px 16px',
           background: 'var(--background)',
-          borderRadius: 12,
+          border: '1px solid var(--border)',
+          borderRadius: 0,
           fontSize: 16,
           cursor: 'pointer',
-          minHeight: 48
-        }}>
-          <svg width="20" height="20" fill="none" stroke="var(--red)" strokeWidth="2" viewBox="0 0 24 24">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
+          minHeight: 48,
+          transition: 'all 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--foreground)'}
+        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="0"/>
             <path d="M16 2v4M8 2v4M3 10h18"/>
           </svg>
           <input
@@ -214,7 +226,8 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
               border: 'none',
               outline: 'none',
               color: 'var(--foreground)',
-              fontSize: 16
+              fontSize: 16,
+              fontFamily: 'inherit'
             }}
           />
         </label>
@@ -228,12 +241,13 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
             gap: 8,
             padding: '12px 16px',
             background: isRecurring ? 'var(--accent)' : 'var(--background)',
-            color: isRecurring ? 'white' : 'var(--muted)',
-            borderRadius: 12,
+            color: isRecurring ? 'var(--background)' : 'var(--muted)',
+            border: isRecurring ? 'none' : '1px solid var(--border)',
+            borderRadius: 0,
             fontSize: 16,
-            border: 'none',
             cursor: 'pointer',
-            minHeight: 48
+            minHeight: 48,
+            fontWeight: 500
           }}
         >
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -258,13 +272,14 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
               onClick={() => setRecurrenceType(type)}
               style={{
                 padding: '10px 18px',
-                borderRadius: 20,
+                borderRadius: 0,
                 fontSize: 15,
-                fontWeight: 500,
-                textTransform: 'capitalize',
-                background: recurrenceType === type ? 'var(--accent)' : 'var(--background)',
-                color: recurrenceType === type ? 'white' : 'var(--muted)',
-                border: 'none',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                background: recurrenceType === type ? 'var(--foreground)' : 'var(--background)',
+                color: recurrenceType === type ? 'var(--background)' : 'var(--muted)',
+                border: '1px solid var(--border)',
                 cursor: 'pointer',
                 minHeight: 44
               }}
@@ -293,9 +308,11 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
               fontSize: 16,
               color: 'var(--muted)',
               background: 'none',
-              border: 'none',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
-              minHeight: 48
+              minHeight: 48,
+              borderRadius: 0,
+              fontWeight: 500
             }}
           >
             Cancel
@@ -309,9 +326,11 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
                 fontSize: 16,
                 color: 'var(--red)',
                 background: 'none',
-                border: 'none',
+                border: '1px solid var(--border)',
                 cursor: 'pointer',
-                minHeight: 48
+                minHeight: 48,
+                borderRadius: 0,
+                fontWeight: 500
               }}
             >
               Delete
@@ -323,14 +342,18 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
           style={{
             padding: '12px 24px',
             fontSize: 16,
-            fontWeight: 500,
-            color: 'white',
+            fontWeight: 600,
+            color: 'var(--background)',
             background: 'var(--accent)',
-            borderRadius: 12,
+            borderRadius: 0,
             border: 'none',
             cursor: 'pointer',
-            minHeight: 48
+            minHeight: 48,
+            boxShadow: '4px 4px 0 var(--foreground)',
+            transition: 'transform 0.1s'
           }}
+          onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+          onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
         >
           {editTask ? 'Save' : 'Add'}
         </button>

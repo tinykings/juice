@@ -59,7 +59,7 @@ export default function UpcomingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
-      <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)', padding: '16px 20px' }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Link href="/" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', textDecoration: 'none' }}>
@@ -67,7 +67,7 @@ export default function UpcomingPage() {
                 <path d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Upcoming</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, fontFamily: 'var(--font-display)' }}>Upcoming</h1>
           </div>
           <button onClick={toggleTheme} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
             {theme === 'dark' ? (
@@ -79,15 +79,32 @@ export default function UpcomingPage() {
         </div>
       </header>
 
-      <main style={{ padding: '0 20px 96px' }}>
+      <main style={{ padding: '24px 20px 96px' }}>
         {isLoaded && (
           <div>
-            {groupedTasks.map((group) => (
-              <section key={group.label} style={{ marginBottom: 24 }}>
-                <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>
+            {groupedTasks.map((group, index) => (
+              <section 
+                key={group.label} 
+                style={{ 
+                  marginBottom: 32,
+                  animation: 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  opacity: 0,
+                  transform: 'translateY(10px)',
+                  animationDelay: `${index * 100}ms`
+                }}
+              >
+                <h2 style={{ 
+                  fontSize: 15, 
+                  fontWeight: 600, 
+                  color: 'var(--muted)', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.5px', 
+                  marginBottom: 12,
+                  fontFamily: 'var(--font-display)'
+                }}>
                   {group.label}
                 </h2>
-                <div style={{ borderTop: '1px solid var(--border)' }}>
+                <div style={{ borderTop: '2px solid var(--border)' }}>
                   {group.tasks.map((task) => (
                     <TaskItem
                       key={task.id}

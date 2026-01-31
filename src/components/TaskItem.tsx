@@ -86,18 +86,19 @@ export default function TaskItem({
           }}
         >
           <div style={{
-            width: 28,
-            height: 28,
-            borderRadius: '50%',
-            border: isCompleting ? 'none' : '2.5px solid var(--muted-light)',
+            width: 24,
+            height: 24,
+            borderRadius: 0,
+            border: isCompleting ? 'none' : '2px solid var(--foreground)',
             background: isCompleting ? 'var(--accent)' : 'transparent',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            boxShadow: isCompleting ? 'none' : '4px 4px 0 var(--border)'
           }}>
             {isCompleting && (
-              <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+              <svg width="16" height="16" fill="none" stroke="var(--background)" strokeWidth="3" viewBox="0 0 24 24">
                 <path d="M5 12l5 5L20 7" />
               </svg>
             )}
@@ -114,7 +115,7 @@ export default function TaskItem({
                 lineHeight: 1.4,
                 textDecoration: isCompleting ? 'line-through' : 'none',
                 color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : 'var(--foreground)',
-                fontWeight: isOverdue ? 500 : 400
+                fontWeight: isOverdue ? 600 : 400
               }}>
                 {task.title}
               </p>
@@ -139,23 +140,32 @@ export default function TaskItem({
                   }}
                   style={{
                     background: 'none',
-                    border: 'none',
+                    border: '1px solid var(--border)',
                     padding: '4px 8px',
                     margin: '-4px -8px',
-                    borderRadius: 6,
+                    borderRadius: 0,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
                     transition: 'background 0.2s'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-light)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--accent)';
+                    e.currentTarget.style.color = 'var(--background)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'none';
+                    e.currentTarget.style.color = 'inherit';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                  }}
                 >
                   <span style={{ 
                     fontSize: 14, 
-                    color: isOverdue ? 'var(--red)' : 'var(--muted)',
-                    whiteSpace: 'nowrap'
+                    color: isOverdue ? 'var(--red)' : 'inherit',
+                    whiteSpace: 'nowrap',
+                    fontWeight: 500
                   }}>
                     {format(taskDate, 'MMM d')}
                   </span>
@@ -206,11 +216,11 @@ function RescheduleMenu({
         left: Math.min(window.innerWidth - 190, Math.max(10, triggerRect.right - 180)),
         width: 180,
         background: 'var(--card)',
-        borderRadius: 12,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+        borderRadius: 0,
+        boxShadow: '8px 8px 0 rgba(0,0,0,0.15)',
         padding: 8,
         zIndex: 9999,
-        border: '1px solid var(--border)'
+        border: '1px solid var(--foreground)'
       }}>
         <RescheduleOption label="Today" date={startOfDay(new Date())} onClick={onSelect} />
         <RescheduleOption label="Tomorrow" date={addDays(startOfDay(new Date()), 1)} onClick={onSelect} />
@@ -249,14 +259,20 @@ function RescheduleOption({ label, date, onClick }: { label: string; date: Date;
         cursor: 'pointer',
         fontSize: 14,
         color: 'var(--foreground)',
-        borderRadius: 8,
+        borderRadius: 0,
         textAlign: 'left'
       }}
-      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--background)'}
-      onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--foreground)';
+        e.currentTarget.style.color = 'var(--background)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'none';
+        e.currentTarget.style.color = 'var(--foreground)';
+      }}
     >
-      <span>{label}</span>
-      <span style={{ color: 'var(--muted)', fontSize: 12 }}>{format(date, 'EEE')}</span>
+      <span style={{ fontWeight: 500 }}>{label}</span>
+      <span style={{ opacity: 0.7, fontSize: 12 }}>{format(date, 'EEE')}</span>
     </button>
   );
 }
