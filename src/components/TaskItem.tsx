@@ -120,7 +120,7 @@ export default function TaskItem({
                 {task.title}
               </p>
               {task.notes && (
-                <p style={{ margin: '6px 0 0', fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{task.notes}</p>
+                <p style={{ margin: '6px 0 2px', fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{task.notes}</p>
               )}
               {task.isRecurring && (
                 <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--accent)' }}>

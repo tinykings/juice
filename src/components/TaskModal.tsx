@@ -38,7 +38,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskMod
         background: 'var(--card)',
         borderRadius: 0,
         boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
-        overflow: 'hidden',
+        overflow: 'auto',
         border: '1px solid var(--border)'
       }}>
         <TaskForm 
@@ -165,6 +165,7 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
             color: 'var(--foreground)',
             marginBottom: 12,
             padding: '4px 0',
+            lineHeight: 1.4,
             fontFamily: 'var(--font-display)',
             transition: 'border-color 0.2s'
           }}
@@ -184,7 +185,8 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
             border: 'none',
             outline: 'none',
             color: 'var(--muted)',
-            padding: '4px 0'
+            padding: '4px 0',
+            lineHeight: 1.4
           }}
         />
       </div>
