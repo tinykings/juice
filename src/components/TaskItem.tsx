@@ -148,22 +148,21 @@ export default function TaskItem({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    color: 'var(--foreground)'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.borderColor = 'var(--accent)';
                     e.currentTarget.style.color = 'var(--accent)';
-                    e.currentTarget.style.background = 'var(--background)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.borderColor = 'var(--border)';
-                    e.currentTarget.style.color = 'inherit';
-                    e.currentTarget.style.background = 'var(--background)';
+                    e.currentTarget.style.color = 'var(--foreground)';
                   }}
                 >
                   <span style={{ 
                     fontSize: 14, 
-                    color: isOverdue ? 'var(--red)' : 'inherit',
+                    color: isOverdue ? 'var(--red)' : 'var(--foreground)',
                     whiteSpace: 'nowrap',
                     fontWeight: 500
                   }}>
