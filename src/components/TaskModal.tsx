@@ -11,12 +11,6 @@ interface TaskModalProps {
   editTask?: Task | null;
 }
 
-interface TaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  editTask?: Task | null;
-}
-
 const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
   if (!isOpen) return null;
 

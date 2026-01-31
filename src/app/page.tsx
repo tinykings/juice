@@ -431,16 +431,17 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             
             {/* Settings Button */}
-            <button 
+            <button
               onClick={() => setIsSettingsOpen(true)}
-              style={{ 
-                width: 44, 
-                height: 44, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: 'var(--muted)', 
-                background: 'none', 
+              aria-label="Settings"
+              style={{
+                width: 44,
+                height: 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--muted)',
+                background: 'none',
                 border: '1px solid var(--border)',
                 cursor: 'pointer',
                 position: 'relative',
@@ -465,9 +466,10 @@ export default function HomePage() {
             </button>
 
             {/* Theme Toggle */}
-            <button 
+            <button
               onClick={toggleTheme}
-              style={{ 
+              aria-label="Toggle dark mode"
+              style={{
                 width: 44, 
                 height: 44, 
                 display: 'flex', 
@@ -495,10 +497,11 @@ export default function HomePage() {
 
             {/* Search Toggle */}
             {!isSearchExpanded && (
-              <button 
+              <button
                 onClick={() => {
                   setIsSearchExpanded(true);
                 }}
+                aria-label="Search tasks"
                 style={{
                   width: 44,
                   height: 44,
@@ -669,6 +672,7 @@ export default function HomePage() {
             onClick={() => {
               setIsModalOpen(true);
             }}
+            aria-label="Add task"
             style={{
               width: 44,
               height: 44,
@@ -739,7 +743,7 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
         style={{
           width: 28,
           height: 28,
-          borderRadius: '50%',
+          borderRadius: 0,
           background: isUncompleting ? 'transparent' : 'var(--green)',
           border: isUncompleting ? '2.5px solid var(--muted-light)' : 'none',
           display: 'flex',

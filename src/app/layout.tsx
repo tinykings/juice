@@ -40,7 +40,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#EBE9E4",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#EBE9E4" },
+    { media: "(prefers-color-scheme: dark)", color: "#0D0D0D" },
+  ],
 };
 
 export default function RootLayout({
