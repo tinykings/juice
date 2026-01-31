@@ -139,26 +139,26 @@ export default function TaskItem({
                     setShowReschedule(!showReschedule);
                   }}
                   style={{
-                    background: 'none',
+                    background: 'var(--background)',
                     border: '1px solid var(--border)',
                     padding: '4px 8px',
-                    margin: '-4px -8px',
+                    margin: '-4px 0 -4px -8px',
                     borderRadius: 0,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
-                    transition: 'background 0.2s'
+                    transition: 'all 0.2s'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--accent)';
-                    e.currentTarget.style.color = 'var(--background)';
                     e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.color = 'var(--accent)';
+                    e.currentTarget.style.background = 'var(--background)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'none';
-                    e.currentTarget.style.color = 'inherit';
                     e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.color = 'inherit';
+                    e.currentTarget.style.background = 'var(--background)';
                   }}
                 >
                   <span style={{ 
@@ -167,7 +167,7 @@ export default function TaskItem({
                     whiteSpace: 'nowrap',
                     fontWeight: 500
                   }}>
-                    {format(taskDate, 'MMM d')}
+                    {format(taskDate, 'M/d')}
                   </span>
                 </button>
 
