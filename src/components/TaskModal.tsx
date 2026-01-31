@@ -349,7 +349,6 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
             border: 'none',
             cursor: 'pointer',
             minHeight: 48,
-            boxShadow: '4px 4px 0 var(--foreground)',
             transition: 'transform 0.1s'
           }}
           onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}

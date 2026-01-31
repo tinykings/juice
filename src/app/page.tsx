@@ -681,8 +681,7 @@ export default function HomePage() {
               borderRadius: 0,
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'transform 0.2s',
-              boxShadow: '4px 4px 0 var(--border)'
+              transition: 'transform 0.2s'
             }}
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translate(-2px, -2px)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translate(0, 0)'}
@@ -816,7 +815,7 @@ function ConfirmCompleteDialog({
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.5)',
+          background: 'rgba(0,0,0,0.6)',
           backdropFilter: 'blur(4px)'
         }}
       />
@@ -831,16 +830,18 @@ function ConfirmCompleteDialog({
         maxWidth: 400,
         margin: '0 auto',
         background: 'var(--card)',
-        borderRadius: 20,
-        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-        overflow: 'hidden'
+        borderRadius: 0,
+        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
+        overflow: 'hidden',
+        border: '1px solid var(--border)'
       }}>
         <div style={{ padding: 24 }}>
           <h3 style={{
             fontSize: 20,
             fontWeight: 600,
             margin: '0 0 12px 0',
-            color: 'var(--foreground)'
+            color: 'var(--foreground)',
+            fontFamily: 'var(--font-display)'
           }}>
             Complete this task?
           </h3>
@@ -855,7 +856,7 @@ function ConfirmCompleteDialog({
           <div style={{
             background: 'var(--background)',
             padding: 12,
-            borderRadius: 12,
+            border: '1px solid var(--border)',
             marginBottom: 20
           }}>
             <p style={{
@@ -896,8 +897,8 @@ function ConfirmCompleteDialog({
               fontWeight: 500,
               color: 'var(--muted)',
               background: 'var(--card)',
-              borderRadius: 12,
-              border: 'none',
+              borderRadius: 0,
+              border: '1px solid var(--border)',
               cursor: 'pointer',
               minHeight: 48
             }}
@@ -912,9 +913,9 @@ function ConfirmCompleteDialog({
               padding: '12px 20px',
               fontSize: 16,
               fontWeight: 500,
-              color: 'white',
+              color: 'var(--background)',
               background: 'var(--accent)',
-              borderRadius: 12,
+              borderRadius: 0,
               border: 'none',
               cursor: 'pointer',
               minHeight: 48
