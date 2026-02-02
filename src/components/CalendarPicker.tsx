@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   format,
   startOfMonth,
@@ -24,9 +25,11 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   const [open, setOpen] = useState(false);
   const selected = parse(value, 'yyyy-MM-dd', new Date());
   const [viewMonth, setViewMonth] = useState(startOfMonth(selected));
-  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const nativeRef = useRef<HTMLInputElement>(null);
   const [useNative, setUseNative] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
 
   // Detect coarse pointer (touch devices) to use native picker
   useEffect(() => {
@@ -41,12 +44,23 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // Position dropdown relative to button using fixed positioning (escapes overflow)
+  useEffect(() => {
+    if (!open || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 4, left: rect.left });
   }, [open]);
 
   // Sync viewMonth when value changes externally
@@ -109,8 +123,9 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
 
   // Custom calendar for desktop
   return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setOpen(!open)}
         style={{
@@ -137,16 +152,15 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
         {displayText}
       </button>
 
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          marginTop: 4,
+      {open && dropdownPos && createPortal(
+        <div ref={dropdownRef} style={{
+          position: 'fixed',
+          top: dropdownPos.top,
+          left: dropdownPos.left,
           background: 'var(--card)',
           border: '1px solid var(--border)',
           boxShadow: '6px 6px 0 rgba(0,0,0,0.15)',
-          zIndex: 200,
+          zIndex: 300,
           padding: 12,
           width: 280,
           userSelect: 'none',
@@ -256,7 +270,8 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           >
             Today
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
