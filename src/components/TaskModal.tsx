@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, memo } from 'react';
 import { format, startOfDay, parse } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
+import CalendarPicker from './CalendarPicker';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -193,40 +194,7 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
 
       {/* Options */}
       <div style={{ padding: '0 24px 24px', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '12px 16px',
-          background: 'var(--background)',
-          border: '1px solid var(--border)',
-          borderRadius: 0,
-          fontSize: 16,
-          cursor: 'pointer',
-          minHeight: 48,
-          transition: 'all 0.2s'
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--foreground)'}
-        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
-        >
-          <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24">
-            <rect x="3" y="4" width="18" height="18" rx="0"/>
-            <path d="M16 2v4M8 2v4M3 10h18"/>
-          </svg>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: 'var(--foreground)',
-              fontSize: 16,
-              fontFamily: 'inherit'
-            }}
-          />
-        </label>
+        <CalendarPicker value={dueDate} onChange={setDueDate} />
 
         <button
           type="button"
