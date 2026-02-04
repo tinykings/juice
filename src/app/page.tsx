@@ -32,18 +32,12 @@ export default function HomePage() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Focus search input when expanded
-  useEffect(() => {
-    if (isSearchExpanded) {
-      // Small timeout to ensure the element is rendered and ready for focus
-      const timer = setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 0);
-      return () => clearTimeout(timer);
+  // Callback ref to focus search input immediately when mounted (preserves user gesture for mobile keyboards)
+  const searchInputRef = useCallback((node: HTMLInputElement | null) => {
+    if (node) {
+      node.focus();
     }
-  }, [isSearchExpanded]);
+  }, []);
 
   // Update current date when window gains focus or becomes visible to ensure "Today" is accurate
   useEffect(() => {
@@ -553,7 +547,6 @@ export default function HomePage() {
                <div style={{ position: 'relative' }}>
                  <input
                    ref={searchInputRef}
-                   autoFocus
                    type="text"
                    placeholder="Search tasks..."
                    value={searchQuery}
