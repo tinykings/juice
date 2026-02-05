@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTasks } from '@/context/TaskContext';
 import { loadTasksFromGist, createNewGist } from '@/services/gistSync';
+import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 
 async function clearCacheAndReload() {
   // Unregister all service workers
@@ -28,7 +29,7 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { gistSettings, updateGistSettings, isGistConfigured } = useSettings();
+  const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
   const { loadFromGist, tasks } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
@@ -362,6 +363,55 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </p>
             )}
           </div>
+
+          {/* Badge Section */}
+          {isBadgeSupported() && (
+            <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
+                App Badge
+              </h3>
+              <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                Show a count of today&apos;s tasks on the app icon. Requires notification permission on iOS.
+              </p>
+              <button
+                onClick={async () => {
+                  if (badgeEnabled) {
+                    setBadgeEnabled(false);
+                  } else {
+                    const granted = await requestBadgePermission();
+                    if (granted) {
+                      setBadgeEnabled(true);
+                    } else {
+                      setMessage({ type: 'error', text: 'Notification permission is required for app badges on iOS.' });
+                    }
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '14px 20px',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  border: badgeEnabled ? 'none' : '1px solid var(--border)',
+                  borderRadius: 0,
+                  background: badgeEnabled ? 'var(--accent)' : 'var(--background)',
+                  color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
+                  cursor: 'pointer',
+                  minHeight: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                {badgeEnabled ? 'Badge Enabled' : 'Enable App Badge'}
+              </button>
+            </div>
+          )}
 
           {/* Update App Section */}
           <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>

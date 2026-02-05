@@ -8,6 +8,8 @@ interface SettingsContextType {
   gistSettings: GistSettings;
   updateGistSettings: (settings: Partial<GistSettings>) => void;
   isGistConfigured: boolean;
+  badgeEnabled: boolean;
+  setBadgeEnabled: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -22,6 +24,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     'juice-gist-settings',
     DEFAULT_GIST_SETTINGS
   );
+  const [badgeEnabled, setBadgeEnabled] = useLocalStorage<boolean>(
+    'juice-badge-enabled',
+    false
+  );
 
   const updateGistSettings = useCallback((updates: Partial<GistSettings>) => {
     setGistSettings((prev) => ({ ...prev, ...updates }));
@@ -35,6 +41,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         gistSettings,
         updateGistSettings,
         isGistConfigured,
+        badgeEnabled,
+        setBadgeEnabled,
       }}
     >
       {children}

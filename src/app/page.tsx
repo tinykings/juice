@@ -6,6 +6,7 @@ import { useTasks } from '@/context/TaskContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
+import { useAppBadge } from '@/hooks/useAppBadge';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
@@ -20,10 +21,12 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, isLoaded } = useTasks();
+  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, getTodayTasks, isLoaded } = useTasks();
   const { theme, toggleTheme } = useTheme();
-  const { isGistConfigured } = useSettings();
+  const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
+  const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks]);
+  useAppBadge(todayTaskCount, badgeEnabled);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
