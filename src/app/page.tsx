@@ -25,8 +25,6 @@ export default function HomePage() {
   const { theme, toggleTheme } = useTheme();
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
-  const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks]);
-  useAppBadge(todayTaskCount, badgeEnabled);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -34,6 +32,8 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks, currentDate]);
+  useAppBadge(todayTaskCount, badgeEnabled);
   // Callback ref to focus search input immediately when mounted (preserves user gesture for mobile keyboards)
   const searchInputRef = useCallback((node: HTMLInputElement | null) => {
     if (node) {
