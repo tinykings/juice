@@ -99,22 +99,14 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Hide scrollbars for native app feel on mobile PWA */
+html,
+body {
+  scrollbar-width: none; /* Firefox */
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--muted-light);
-  border-radius: 0;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+  display: none; /* Chrome, Safari, Edge */
 }
 
 input, textarea, button {
