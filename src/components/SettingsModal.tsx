@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useTasks } from '@/context/TaskContext';
 import { loadTasksFromGist, createNewGist } from '@/services/gistSync';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
@@ -13,6 +14,7 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
+  const { theme, toggleTheme } = useTheme();
   const { loadFromGist, tasks } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
@@ -148,6 +150,45 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         {/* Content */}
         <div style={{ padding: 24 }}>
+          {/* Theme */}
+          <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
+              Theme
+            </h3>
+            <button
+              onClick={toggleTheme}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                fontSize: 16,
+                fontWeight: 500,
+                border: '1px solid var(--border)',
+                borderRadius: 0,
+                background: 'var(--card)',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+                minHeight: 48,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                transition: 'all 0.2s'
+              }}
+            >
+              {theme === 'dark' ? (
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              )}
+              {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+            </button>
+          </div>
+
           <div style={{ marginBottom: 24 }}>
             <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
               GitHub Gist Sync

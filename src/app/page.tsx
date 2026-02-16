@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useAppBadge } from '@/hooks/useAppBadge';
@@ -11,6 +10,7 @@ import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
 import TaskItem from '@/components/TaskItem';
+import CalendarView from '@/components/CalendarView';
 
 interface TaskGroup {
   label: string;
@@ -22,9 +22,9 @@ interface TaskGroup {
 
 export default function HomePage() {
   const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, getTodayTasks, isLoaded } = useTasks();
-  const { theme, toggleTheme } = useTheme();
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
+  const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -213,7 +213,7 @@ export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
       {/* Search Header */}
-      {isSearchExpanded && (
+      {view === 'list' && isSearchExpanded && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -325,7 +325,21 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Calendar View */}
+      {view === 'calendar' && isLoaded && (
+        <CalendarView
+          tasks={tasks}
+          onEditTask={(task) => {
+            setEditingTask(task);
+            setIsModalOpen(true);
+          }}
+          onCompleteTask={completeTask}
+          onDeleteTask={deleteTask}
+        />
+      )}
+
       {/* Main Content */}
+      {view === 'list' && (
       <main style={{ padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px' }}>
         {/* Task Groups */}
         {isLoaded && (
@@ -499,6 +513,7 @@ export default function HomePage() {
           </div>
         )}
       </main>
+      )}
 
       {/* Footer */}
       <footer style={{
@@ -554,39 +569,39 @@ export default function HomePage() {
               )}
             </button>
 
-            {/* Theme Toggle */}
+            {/* Calendar Toggle */}
             <button
-              onClick={toggleTheme}
-              aria-label="Toggle dark mode"
+              onClick={() => {
+                setView(view === 'calendar' ? 'list' : 'calendar');
+                if (view !== 'calendar') {
+                  setIsSearchExpanded(false);
+                  setSearchQuery('');
+                }
+              }}
+              aria-label="Calendar view"
               style={{
                 width: 44,
                 height: 44,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--accent)',
+                color: view === 'calendar' ? 'var(--accent)' : 'var(--muted)',
                 background: 'none',
-                border: '1px solid var(--border)',
+                border: view === 'calendar' ? '1px solid var(--accent)' : '1px solid var(--border)',
                 cursor: 'pointer',
-                padding: 0,
-                borderRadius: 0
+                borderRadius: 0,
               }}
             >
-              {theme === 'dark' ? (
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
-                </svg>
-              ) : (
-                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="5"/>
-                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-                </svg>
-              )}
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="0" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
             </button>
 
             {/* Search Toggle */}
             <button
               onClick={() => {
+                if (view === 'calendar') setView('list');
                 setIsSearchExpanded(true);
               }}
               aria-label="Search tasks"

@@ -4,14 +4,12 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { format, addDays, isSameDay, isAfter, endOfDay, startOfDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
-import { useTheme } from '@/context/ThemeContext';
 import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 import TaskItem from '@/components/TaskItem';
 
 export default function UpcomingPage() {
   const { getUpcomingTasks, completeTask, deleteTask, isLoaded } = useTasks();
-  const { theme, toggleTheme } = useTheme();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
@@ -69,13 +67,6 @@ export default function UpcomingPage() {
             </Link>
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, fontFamily: 'var(--font-display)' }}>Upcoming</h1>
           </div>
-          <button onClick={toggleTheme} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer' }}>
-            {theme === 'dark' ? (
-              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
-            ) : (
-              <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            )}
-          </button>
         </div>
       </header>
 
