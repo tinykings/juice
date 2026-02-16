@@ -63,7 +63,10 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
     });
     return Array.from(monthSet)
       .sort()
-      .map(key => new Date(key + '-01'));
+      .map(key => {
+        const [y, m] = key.split('-').map(Number);
+        return new Date(y, m - 1, 1);
+      });
   }, [tasks, thisMonth]);
 
   const selectedDayTasks = useMemo(() => {
