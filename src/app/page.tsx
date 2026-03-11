@@ -28,6 +28,8 @@ export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [initialDate, setInitialDate] = useState<string | null>(null);
+  const [selectedDateFilter, setSelectedDateFilter] = useState<Date | null>(null);
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -60,6 +62,7 @@ export default function HomePage() {
   const incompleteTasks = useMemo(() => {
     const filtered = tasks.filter(t => {
       if (t.completed) return false;
+      if (selectedDateFilter && !isSameDay(new Date(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return (
@@ -70,18 +73,19 @@ export default function HomePage() {
     return filtered.sort((a, b) => 
       new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
     );
-  }, [tasks, searchQuery]);
+  }, [tasks, searchQuery, selectedDateFilter]);
 
   // Get completed tasks (filtered by search if query exists)
   const completedTasks = useMemo(() => {
     const allCompleted = getCompletedTasks();
+    if (selectedDateFilter) return [];
     if (!searchQuery.trim()) return allCompleted;
     const query = searchQuery.toLowerCase();
     return allCompleted.filter(t => 
       t.title.toLowerCase().includes(query) ||
       (t.notes && t.notes.toLowerCase().includes(query))
     );
-  }, [getCompletedTasks, searchQuery]);
+  }, [getCompletedTasks, searchQuery, selectedDateFilter]);
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
@@ -177,6 +181,21 @@ export default function HomePage() {
   const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setEditingTask(null);
+    setInitialDate(null);
+    setSelectedDateFilter(null);
+  }, []);
+
+  const handleDaySelect = useCallback((date: Date, dayTasks: Task[]) => {
+    if (dayTasks.length > 0) {
+      setView('list');
+      setSearchQuery('');
+      setIsSearchExpanded(false);
+      setSelectedDateFilter(date);
+    } else {
+      setSelectedDateFilter(null);
+      setInitialDate(format(date, 'yyyy-MM-dd'));
+      setIsModalOpen(true);
+    }
   }, []);
 
   // Keyboard shortcut
@@ -329,12 +348,7 @@ export default function HomePage() {
       {view === 'calendar' && isLoaded && (
         <CalendarView
           tasks={tasks}
-          onEditTask={(task) => {
-            setEditingTask(task);
-            setIsModalOpen(true);
-          }}
-          onCompleteTask={completeTask}
-          onDeleteTask={deleteTask}
+          onDaySelect={handleDaySelect}
         />
       )}
 
@@ -576,6 +590,7 @@ export default function HomePage() {
                 if (view !== 'calendar') {
                   setIsSearchExpanded(false);
                   setSearchQuery('');
+                  setSelectedDateFilter(null);
                 }
               }}
               aria-label="Calendar view"
@@ -602,6 +617,7 @@ export default function HomePage() {
             <button
               onClick={() => {
                 if (view === 'calendar') setView('list');
+                setSelectedDateFilter(null);
                 setIsSearchExpanded(true);
               }}
               aria-label="Search tasks"
@@ -658,6 +674,7 @@ export default function HomePage() {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         editTask={editingTask}
+        initialDate={initialDate}
       />
 
       <SettingsModal

@@ -10,9 +10,10 @@ interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   editTask?: Task | null;
+  initialDate?: string | null;
 }
 
-const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskModalProps) {
+const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask, initialDate }: TaskModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -45,14 +46,15 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask }: TaskMod
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 
           editTask={editTask} 
-          onClose={onClose} 
+          onClose={onClose}
+          initialDate={initialDate}
         />
       </div>
     </div>
   );
 });
 
-function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () => void }) {
+function TaskForm({ editTask, onClose, initialDate }: { editTask?: Task | null, onClose: () => void, initialDate?: string | null }) {
   const { addTask, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLInputElement>(null);
@@ -67,6 +69,12 @@ function TaskForm({ editTask, onClose }: { editTask?: Task | null, onClose: () =
     }
     return format(new Date(), 'yyyy-MM-dd');
   });
+
+  useEffect(() => {
+    if (initialDate && !editTask) {
+      setDueDate(initialDate);
+    }
+  }, [initialDate, editTask]);
 
   const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');

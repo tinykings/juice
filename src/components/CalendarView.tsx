@@ -13,23 +13,18 @@ import {
   isBefore,
 } from 'date-fns';
 import { Task } from '@/types/task';
-import TaskItem from '@/components/TaskItem';
 
 interface CalendarViewProps {
   tasks: Task[];
-  onEditTask: (task: Task) => void;
-  onCompleteTask: (taskId: string) => void;
-  onDeleteTask: (taskId: string) => void;
+  onDaySelect: (date: Date, tasks: Task[]) => void;
 }
 
 const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDeleteTask }: CalendarViewProps) {
+export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) {
   const [today, setToday] = useState<Date | null>(null);
   const thisMonth = today ? startOfMonth(today) : null;
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
-  // Defer date to client to avoid hydration mismatch
   useEffect(() => {
     setToday(new Date());
   }, []);
@@ -68,13 +63,6 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
         return new Date(y, m - 1, 1);
       });
   }, [tasks, thisMonth]);
-
-  const selectedDayTasks = useMemo(() => {
-    if (!selectedDay) return [];
-    const key = format(selectedDay, 'yyyy-MM-dd');
-    return tasksByDate[key] || [];
-  }, [selectedDay, tasksByDate]);
-
 
   if (!today) return null;
 
@@ -147,20 +135,14 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
               {allDays.map(day => {
                 const inMonth = isSameMonth(day, month);
                 const isToday = isSameDay(day, today);
-                const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
                 const key = format(day, 'yyyy-MM-dd');
                 const dayTasks = tasksByDate[key] || [];
 
-                let bg = 'transparent';
-                let color = inMonth ? 'var(--foreground)' : 'var(--muted-light)';
+                const color = inMonth ? 'var(--foreground)' : 'var(--muted-light)';
                 let fontWeight = 400;
                 let border = '1px solid transparent';
 
-                if (isSelected) {
-                  bg = 'var(--accent)';
-                  color = 'var(--background)';
-                  fontWeight = 700;
-                } else if (isToday) {
+                if (isToday) {
                   border = '1px solid var(--accent)';
                   fontWeight = 600;
                 }
@@ -168,7 +150,7 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
                 return (
                   <button
                     key={day.toISOString()}
-                    onClick={() => setSelectedDay(isSelected ? null : day)}
+                    onClick={() => onDaySelect(day, dayTasks)}
                     style={{
                       width: '100%',
                       minHeight: 64,
@@ -177,7 +159,7 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
                       alignItems: 'stretch',
                       fontSize: 13,
                       fontWeight,
-                      background: bg,
+                      background: 'transparent',
                       color,
                       border,
                       cursor: 'pointer',
@@ -204,7 +186,7 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
                         lineHeight: 1.2,
                         padding: '1px 2px',
                         marginBottom: 1,
-                        color: isSelected ? 'var(--background)' : 'var(--accent)',
+                        color: 'var(--accent)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -216,7 +198,7 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
                     {inMonth && dayTasks.length > 2 && (
                       <div style={{
                         fontSize: 9,
-                        color: isSelected ? 'var(--background)' : 'var(--muted)',
+                        color: 'var(--muted)',
                         padding: '0 2px',
                         fontWeight: 600,
                       }}>
@@ -230,49 +212,6 @@ export default function CalendarView({ tasks, onEditTask, onCompleteTask, onDele
           </div>
         );
       })}
-
-      {/* Selected day tasks */}
-      {selectedDay && (
-        <div style={{
-          padding: '16px 16px 0',
-          animation: 'fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-        }}>
-          <h3 style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: isSameDay(selectedDay, today) ? 'var(--foreground)' : 'var(--muted)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: 12,
-            fontFamily: 'var(--font-display)',
-          }}>
-            {isSameDay(selectedDay, today) ? 'Today' : format(selectedDay, 'EEEE, MMMM d')}
-          </h3>
-          <div style={{ borderTop: '2px solid var(--border)' }}>
-            {selectedDayTasks.length > 0 ? (
-              selectedDayTasks.map(task => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onComplete={() => onCompleteTask(task.id)}
-                  onEdit={() => onEditTask(task)}
-                  onDelete={() => onDeleteTask(task.id)}
-                  showDate={false}
-                />
-              ))
-            ) : (
-              <div style={{
-                padding: '24px 0',
-                textAlign: 'center',
-                color: 'var(--muted)',
-                fontSize: 15,
-              }}>
-                No tasks for this day
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
