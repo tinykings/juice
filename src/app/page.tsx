@@ -355,6 +355,34 @@ export default function HomePage() {
       {/* Main Content */}
       {view === 'list' && (
       <main style={{ padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px' }}>
+        {/* Back to Calendar button (shown when date filter is active) */}
+        {selectedDateFilter && (
+          <button
+            onClick={() => {
+              setSelectedDateFilter(null);
+              setView('calendar');
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              marginBottom: 16,
+              fontSize: 15,
+              fontWeight: 500,
+              color: 'var(--accent)',
+              background: 'none',
+              border: '1px solid var(--accent)',
+              cursor: 'pointer',
+              borderRadius: 0,
+            }}
+          >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Calendar
+          </button>
+        )}
         {/* Task Groups */}
         {isLoaded && (
           <div>
