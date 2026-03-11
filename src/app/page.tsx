@@ -179,11 +179,15 @@ export default function HomePage() {
   }, [confirmCompleteTask, completeTask, setConfirmCompleteTask]);
 
   const handleCloseModal = useCallback(() => {
+    const hadDateFilter = selectedDateFilter !== null;
     setIsModalOpen(false);
     setEditingTask(null);
     setInitialDate(null);
     setSelectedDateFilter(null);
-  }, []);
+    if (hadDateFilter) {
+      setView('calendar');
+    }
+  }, [selectedDateFilter]);
 
   const handleDaySelect = useCallback((date: Date, dayTasks: Task[]) => {
     if (dayTasks.length > 0) {
@@ -672,6 +676,9 @@ export default function HomePage() {
           {/* Add Task Button (Right side) */}
           <button
             onClick={() => {
+              if (selectedDateFilter) {
+                setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+              }
               setIsModalOpen(true);
             }}
             aria-label="Add task"
@@ -701,6 +708,11 @@ export default function HomePage() {
       <TaskModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        onSave={() => {
+          if (selectedDateFilter !== null) {
+            setView('calendar');
+          }
+        }}
         editTask={editingTask}
         initialDate={initialDate}
       />

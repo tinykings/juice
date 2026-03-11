@@ -9,11 +9,12 @@ import CalendarPicker from './CalendarPicker';
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSave?: () => void;
   editTask?: Task | null;
   initialDate?: string | null;
 }
 
-const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask, initialDate }: TaskModalProps) {
+const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, initialDate }: TaskModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -47,6 +48,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask, initialDa
           key={editTask ? editTask.id : 'new'} 
           editTask={editTask} 
           onClose={onClose}
+          onSave={onSave}
           initialDate={initialDate}
         />
       </div>
@@ -54,7 +56,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, editTask, initialDa
   );
 });
 
-function TaskForm({ editTask, onClose, initialDate }: { editTask?: Task | null, onClose: () => void, initialDate?: string | null }) {
+function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null }) {
   const { addTask, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLInputElement>(null);
@@ -143,6 +145,7 @@ function TaskForm({ editTask, onClose, initialDate }: { editTask?: Task | null, 
     }
 
     onClose();
+    if (onSave) onSave();
   };
 
   const handleDelete = () => {

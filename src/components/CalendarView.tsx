@@ -128,7 +128,8 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: 1,
+              gap: 2,
+              background: 'var(--border)',
               borderBottom: '1px solid var(--border)',
               paddingBottom: 8,
             }}>
@@ -140,10 +141,9 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
 
                 const color = inMonth ? 'var(--foreground)' : 'var(--muted-light)';
                 let fontWeight = 400;
-                let border = '1px solid transparent';
+                const border = inMonth ? '1px solid var(--border)' : '1px solid transparent';
 
                 if (isToday) {
-                  border = '1px solid var(--accent)';
                   fontWeight = 600;
                 }
 
@@ -156,10 +156,10 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                       minHeight: 64,
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: 'stretch',
+                      alignItems: 'center',
                       fontSize: 13,
                       fontWeight,
-                      background: 'transparent',
+                      background: 'var(--card)',
                       color,
                       border,
                       cursor: 'pointer',
@@ -167,7 +167,6 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                       padding: '3px 2px',
                       transition: 'background 0.1s',
                       overflow: 'hidden',
-                      textAlign: 'left',
                       verticalAlign: 'top',
                     }}
                   >
@@ -177,6 +176,7 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                       marginBottom: 2,
                       alignSelf: 'flex-end',
                       paddingRight: 2,
+                      width: '100%',
                     }}>
                       {day.getDate()}
                     </span>
