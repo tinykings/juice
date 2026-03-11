@@ -142,9 +142,11 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                 const color = inMonth ? 'var(--foreground)' : 'var(--muted-light)';
                 let fontWeight = 400;
                 const border = inMonth ? '1px solid var(--border)' : '1px solid transparent';
+                let background = 'var(--card)';
 
                 if (isToday) {
                   fontWeight = 600;
+                  background = 'var(--accent-light)';
                 }
 
                 return (
@@ -159,9 +161,9 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                       alignItems: 'center',
                       fontSize: 13,
                       fontWeight,
-                      background: 'var(--card)',
+                      background,
                       color,
-                      border,
+                      border: isToday ? '2px solid var(--accent)' : border,
                       cursor: 'pointer',
                       borderRadius: 0,
                       padding: '3px 2px',
