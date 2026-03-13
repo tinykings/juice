@@ -199,167 +199,177 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </p>
           </div>
 
-          {/* GitHub Token */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
-              GitHub Token
-            </label>
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="ghp_xxxxxxxxxxxx"
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                fontSize: 16,
-                border: '1px solid var(--border)',
-                borderRadius: 0,
-                background: 'var(--card)',
-                color: 'var(--foreground)',
-                outline: 'none',
-                boxSizing: 'border-box',
-                minHeight: 48,
-                transition: 'box-shadow 0.2s'
-              }}
-              onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
-              onBlur={(e) => e.target.style.boxShadow = 'none'}
-            />
-          </div>
-
-          {/* Gist ID */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
-              Gist ID
-            </label>
-            <input
-              type="text"
-              value={gistId}
-              onChange={(e) => setGistId(e.target.value)}
-              placeholder="abc123def456..."
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                fontSize: 16,
-                border: '1px solid var(--border)',
-                borderRadius: 0,
-                background: 'var(--card)',
-                color: 'var(--foreground)',
-                outline: 'none',
-                boxSizing: 'border-box',
-                minHeight: 48,
-                transition: 'box-shadow 0.2s'
-              }}
-              onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
-              onBlur={(e) => e.target.style.boxShadow = 'none'}
-            />
-          </div>
-
-          {/* Message */}
-          {message && (
-            <div style={{
-              padding: '14px 16px',
-              borderRadius: 0,
-              marginBottom: 20,
-              fontSize: 15,
-              background: message.type === 'success' ? 'var(--green)' : 'var(--red)',
-              color: 'var(--background)',
-              fontWeight: 500
-            }}>
-              {message.text}
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+            {/* Gist ID */}
+            <div style={{ marginBottom: 20 }}>
+              <label htmlFor="username" style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
+                Gist ID
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                value={gistId}
+                onChange={(e) => setGistId(e.target.value)}
+                placeholder="abc123def456..."
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  fontSize: 16,
+                  border: '1px solid var(--border)',
+                  borderRadius: 0,
+                  background: 'var(--card)',
+                  color: 'var(--foreground)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  minHeight: 48,
+                  transition: 'box-shadow 0.2s'
+                }}
+                onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
+                onBlur={(e) => e.target.style.boxShadow = 'none'}
+              />
             </div>
-          )}
 
-          {/* Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button
-              onClick={handleSave}
-              style={{
-                padding: '14px 20px',
-                fontSize: 16,
-                fontWeight: 600,
-                border: 'none',
+            {/* GitHub Token */}
+            <div style={{ marginBottom: 20 }}>
+              <label htmlFor="password" style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
+                GitHub Token
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                placeholder="ghp_xxxxxxxxxxxx"
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  fontSize: 16,
+                  border: '1px solid var(--border)',
+                  borderRadius: 0,
+                  background: 'var(--card)',
+                  color: 'var(--foreground)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  minHeight: 48,
+                  transition: 'box-shadow 0.2s'
+                }}
+                onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
+                onBlur={(e) => e.target.style.boxShadow = 'none'}
+              />
+            </div>
+
+            {/* Message */}
+            {message && (
+              <div style={{
+                padding: '14px 16px',
                 borderRadius: 0,
-                background: 'var(--accent)',
+                marginBottom: 20,
+                fontSize: 15,
+                background: message.type === 'success' ? 'var(--green)' : 'var(--red)',
                 color: 'var(--background)',
-                cursor: 'pointer',
-                minHeight: 48,
-                transition: 'transform 0.1s'
-              }}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-            >
-              Save Settings
-            </button>
+                fontWeight: 500
+              }}>
+                {message.text}
+              </div>
+            )}
 
-            <button
-              onClick={handleLoadFromGist}
-              disabled={isLoading || !gistId || !token}
-              style={{
-                padding: '14px 20px',
-                fontSize: 16,
-                fontWeight: 500,
-                border: '1px solid var(--border)',
-                borderRadius: 0,
-                background: 'var(--background)',
-                color: 'var(--foreground)',
-                cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
-                opacity: isLoading || !gistId || !token ? 0.5 : 1,
-                minHeight: 48,
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                if (!isLoading && gistId && token) {
-                  e.currentTarget.style.background = 'var(--card)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--background)';
-              }}
-            >
-              {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
-            </button>
+            {/* Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                type="submit"
+                style={{
+                  padding: '14px 20px',
+                  fontSize: 16,
+                  fontWeight: 600,
+                  border: 'none',
+                  borderRadius: 0,
+                  background: 'var(--accent)',
+                  color: 'var(--background)',
+                  cursor: 'pointer',
+                  minHeight: 48,
+                  transition: 'transform 0.1s'
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
+              >
+                Save Settings
+              </button>
 
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 12, 
-              margin: '8px 0',
-              color: 'var(--muted)',
-              fontSize: 12,
-            }}>
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              <span>or</span>
-              <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              <button
+                type="button"
+                onClick={handleLoadFromGist}
+                disabled={isLoading || !gistId || !token}
+                style={{
+                  padding: '14px 20px',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  border: '1px solid var(--border)',
+                  borderRadius: 0,
+                  background: 'var(--background)',
+                  color: 'var(--foreground)',
+                  cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
+                  opacity: isLoading || !gistId || !token ? 0.5 : 1,
+                  minHeight: 48,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading && gistId && token) {
+                    e.currentTarget.style.background = 'var(--card)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--background)';
+                }}
+              >
+                {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
+              </button>
+
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12, 
+                margin: '8px 0',
+                color: 'var(--muted)',
+                fontSize: 12,
+              }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span>or</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCreateGist}
+                disabled={isCreating || !token}
+                style={{
+                  padding: '14px 20px',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  border: '1px solid var(--border)',
+                  borderRadius: 0,
+                  background: 'var(--background)',
+                  color: 'var(--foreground)',
+                  cursor: isCreating || !token ? 'not-allowed' : 'pointer',
+                  opacity: isCreating || !token ? 0.5 : 1,
+                  minHeight: 48
+                }}
+                onMouseEnter={(e) => {
+                  if (!isCreating && token) {
+                    e.currentTarget.style.background = 'var(--card)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--background)';
+                }}
+              >
+                {isCreating ? 'Creating...' : 'Create New Gist'}
+              </button>
             </div>
-
-            <button
-              onClick={handleCreateGist}
-              disabled={isCreating || !token}
-              style={{
-                padding: '14px 20px',
-                fontSize: 16,
-                fontWeight: 500,
-                border: '1px solid var(--border)',
-                borderRadius: 0,
-                background: 'var(--background)',
-                color: 'var(--foreground)',
-                cursor: isCreating || !token ? 'not-allowed' : 'pointer',
-                opacity: isCreating || !token ? 0.5 : 1,
-                minHeight: 48
-              }}
-              onMouseEnter={(e) => {
-                if (!isCreating && token) {
-                  e.currentTarget.style.background = 'var(--card)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--background)';
-              }}
-            >
-              {isCreating ? 'Creating...' : 'Create New Gist'}
-            </button>
-          </div>
+          </form>
 
           {/* Sync Status */}
           <div style={{ 
