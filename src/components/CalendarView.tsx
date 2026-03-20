@@ -155,7 +155,7 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                     onClick={() => onDaySelect(day, dayTasks)}
                     style={{
                       width: '100%',
-                      minHeight: 64,
+                      minHeight: 80,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -166,7 +166,7 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                       border: isToday ? '2px solid var(--accent)' : border,
                       cursor: 'pointer',
                       borderRadius: 0,
-                      padding: '3px 2px',
+                      padding: '4px 3px',
                       transition: 'background 0.1s',
                       overflow: 'hidden',
                       verticalAlign: 'top',
@@ -182,29 +182,29 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
                     }}>
                       {day.getDate()}
                     </span>
-                    {inMonth && dayTasks.slice(0, 2).map(task => (
+                    {inMonth && dayTasks.slice(0, 3).map(task => (
                       <div key={task.id} style={{
                         fontSize: 10,
-                        lineHeight: 1.2,
+                        lineHeight: 1.25,
                         padding: '1px 2px',
                         marginBottom: 1,
                         color: 'var(--accent)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
                         fontWeight: 500,
+                        width: '100%',
+                        textAlign: 'center',
+                        wordBreak: 'break-word',
                       }}>
                         {task.title}
                       </div>
                     ))}
-                    {inMonth && dayTasks.length > 2 && (
+                    {inMonth && dayTasks.length > 3 && (
                       <div style={{
                         fontSize: 9,
                         color: 'var(--muted)',
                         padding: '0 2px',
                         fontWeight: 600,
                       }}>
-                        +{dayTasks.length - 2} more
+                        +{dayTasks.length - 3} more
                       </div>
                     )}
                   </button>
