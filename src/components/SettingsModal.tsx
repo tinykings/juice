@@ -122,15 +122,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
         {/* Content */}
         <div style={{ padding: 24 }}>
-          {/* Theme */}
-          <div style={{ marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
-              Theme
-            </h3>
+          {/* Theme & Badge buttons row */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 32 }}>
             <button
               onClick={toggleTheme}
               style={{
-                width: '100%',
+                flex: 1,
                 padding: '14px 20px',
                 fontSize: 16,
                 fontWeight: 500,
@@ -157,8 +154,47 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
               )}
-              {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+              {theme === 'dark' ? 'Dark' : 'Light'}
             </button>
+            {isBadgeSupported() && (
+              <button
+                onClick={async () => {
+                  if (badgeEnabled) {
+                    setBadgeEnabled(false);
+                  } else {
+                    const granted = await requestBadgePermission();
+                    if (granted) {
+                      setBadgeEnabled(true);
+                    } else {
+                      setMessage({ type: 'error', text: 'Notification permission is required for app badges on iOS.' });
+                    }
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  padding: '14px 20px',
+                  fontSize: 16,
+                  fontWeight: 500,
+                  border: badgeEnabled ? 'none' : '1px solid var(--border)',
+                  borderRadius: 0,
+                  background: badgeEnabled ? 'var(--accent)' : 'var(--card)',
+                  color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
+                  cursor: 'pointer',
+                  minHeight: 48,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 10,
+                  transition: 'all 0.2s'
+                }}
+              >
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                Notify
+              </button>
+            )}
           </div>
 
           <div style={{ marginBottom: 24 }}>
@@ -304,54 +340,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
           </div>
 
-          {/* Badge Section */}
-          {isBadgeSupported() && (
-            <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-              <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
-                App Badge
-              </h3>
-              <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.5 }}>
-                Show a count of today&apos;s tasks on the app icon. Requires notification permission on iOS.
-              </p>
-              <button
-                onClick={async () => {
-                  if (badgeEnabled) {
-                    setBadgeEnabled(false);
-                  } else {
-                    const granted = await requestBadgePermission();
-                    if (granted) {
-                      setBadgeEnabled(true);
-                    } else {
-                      setMessage({ type: 'error', text: 'Notification permission is required for app badges on iOS.' });
-                    }
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  padding: '14px 20px',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  border: badgeEnabled ? 'none' : '1px solid var(--border)',
-                  borderRadius: 0,
-                  background: badgeEnabled ? 'var(--accent)' : 'var(--background)',
-                  color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
-                  cursor: 'pointer',
-                  minHeight: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  transition: 'all 0.2s'
-                }}
-              >
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-                {badgeEnabled ? 'Badge Enabled' : 'Enable App Badge'}
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
