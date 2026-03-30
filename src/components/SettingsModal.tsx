@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useTasks } from '@/context/TaskContext';
-import { loadTasksFromGist, createNewGist } from '@/services/gistSync';
+import { loadTasksFromGist } from '@/services/gistSync';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 
 interface SettingsModalProps {
@@ -15,12 +15,11 @@ interface SettingsModalProps {
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
   const { theme, toggleTheme } = useTheme();
-  const { loadFromGist, tasks } = useTasks();
+  const { loadFromGist } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
   const [token, setToken] = useState(gistSettings.githubToken);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Sync local state with persisted settings when modal opens or settings change
@@ -32,12 +31,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }, [isOpen, gistSettings.gistId, gistSettings.githubToken]);
 
   if (!isOpen) return null;
-
-  const handleSave = () => {
-    updateGistSettings({ gistId, githubToken: token });
-    setMessage({ type: 'success', text: 'Settings saved!' });
-    setTimeout(() => setMessage(null), 2000);
-  };
 
   const handleLoadFromGist = async () => {
     if (!gistId || !token) {
@@ -57,27 +50,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to load from Gist' });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleCreateGist = async () => {
-    if (!token) {
-      setMessage({ type: 'error', text: 'Please enter a GitHub token first' });
-      return;
-    }
-
-    setIsCreating(true);
-    setMessage(null);
-
-    try {
-      const newGistId = await createNewGist(tasks, token);
-      setGistId(newGistId);
-      updateGistSettings({ gistId: newGistId, githubToken: token });
-      setMessage({ type: 'success', text: 'Created new Gist! ID has been filled in.' });
-    } catch (error) {
-      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to create Gist' });
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -199,7 +171,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </p>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+          <form onSubmit={(e) => { e.preventDefault(); handleLoadFromGist(); }}>
             {/* Gist ID */}
             <div style={{ marginBottom: 20 }}>
               <label htmlFor="username" style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
@@ -278,97 +250,31 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
 
             {/* Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button
-                type="submit"
-                style={{
-                  padding: '14px 20px',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  border: 'none',
-                  borderRadius: 0,
-                  background: 'var(--accent)',
-                  color: 'var(--background)',
-                  cursor: 'pointer',
-                  minHeight: 48,
-                  transition: 'transform 0.1s'
-                }}
-                onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-                onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-              >
-                Save Settings
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLoadFromGist}
-                disabled={isLoading || !gistId || !token}
-                style={{
-                  padding: '14px 20px',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  border: '1px solid var(--border)',
-                  borderRadius: 0,
-                  background: 'var(--background)',
-                  color: 'var(--foreground)',
-                  cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
-                  opacity: isLoading || !gistId || !token ? 0.5 : 1,
-                  minHeight: 48,
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading && gistId && token) {
-                    e.currentTarget.style.background = 'var(--card)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--background)';
-                }}
-              >
-                {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
-              </button>
-
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 12, 
-                margin: '8px 0',
-                color: 'var(--muted)',
-                fontSize: 12,
-              }}>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                <span>or</span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCreateGist}
-                disabled={isCreating || !token}
-                style={{
-                  padding: '14px 20px',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  border: '1px solid var(--border)',
-                  borderRadius: 0,
-                  background: 'var(--background)',
-                  color: 'var(--foreground)',
-                  cursor: isCreating || !token ? 'not-allowed' : 'pointer',
-                  opacity: isCreating || !token ? 0.5 : 1,
-                  minHeight: 48
-                }}
-                onMouseEnter={(e) => {
-                  if (!isCreating && token) {
-                    e.currentTarget.style.background = 'var(--card)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--background)';
-                }}
-              >
-                {isCreating ? 'Creating...' : 'Create New Gist'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !gistId || !token}
+              style={{
+                width: '100%',
+                padding: '14px 20px',
+                fontSize: 16,
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: 0,
+                background: isLoading || !gistId || !token ? 'var(--muted-light)' : 'var(--accent)',
+                color: isLoading || !gistId || !token ? 'var(--muted)' : 'var(--background)',
+                cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
+                minHeight: 48,
+                transition: 'transform 0.1s'
+              }}
+              onMouseDown={(e) => {
+                if (!isLoading && gistId && token) {
+                  e.currentTarget.style.transform = 'translate(2px, 2px)';
+                }
+              }}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
+            >
+              {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
+            </button>
           </form>
 
           {/* Sync Status */}
