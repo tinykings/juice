@@ -21,7 +21,7 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, getTodayTasks, isLoaded } = useTasks();
+  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
@@ -235,6 +235,25 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
+      {/* Gist Sync Message */}
+      {isGistConfigured && isSyncing && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 30,
+          background: 'var(--accent)',
+          color: 'var(--background)',
+          padding: '10px 24px',
+          textAlign: 'center',
+          fontSize: 14,
+          fontWeight: 500,
+        }}>
+          Syncing tasks from Gist...
+        </div>
+      )}
+
       {/* Search Header */}
       {view === 'list' && isSearchExpanded && (
         <div style={{
@@ -353,12 +372,14 @@ export default function HomePage() {
         <CalendarView
           tasks={tasks}
           onDaySelect={handleDaySelect}
+          isGistConfigured={isGistConfigured}
+          isSyncing={isSyncing}
         />
       )}
 
       {/* Main Content */}
       {view === 'list' && (
-      <main style={{ padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px' }}>
+      <main style={{ padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24) }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
           <button

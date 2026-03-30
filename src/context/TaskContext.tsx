@@ -22,6 +22,7 @@ interface TaskContextType {
   loadFromGist: (tasks: Task[]) => void;
   syncFromGist: () => Promise<void>;
   isLoaded: boolean;
+  isSyncing: boolean;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -45,6 +46,7 @@ function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceTy
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<Task[]>('juice-tasks', []);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { gistSettings, isGistConfigured } = useSettings();
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedRef = useRef<string>('');
@@ -163,11 +165,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       if (!isGistConfigured) {
         // If Gist not configured, just use local storage
         setIsLoaded(true);
+        setIsSyncing(false);
         hasLoadedFromGistRef.current = true; // Allow local saves to work
         previousGistIdRef.current = '';
         hasRunMountEffectRef.current = true;
         return;
       }
+
+      setIsSyncing(true);
+      setIsLoaded(true); // Allow UI to render while Gist syncs in background
       
       // Check if this is a Gist ID change (settings update) vs initial mount
       const isGistIdChange = previousGistIdRef.current !== '' && 
@@ -268,6 +274,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       } finally {
         isLoadingFromGistRef.current = false;
         setIsLoaded(true);
+        setIsSyncing(false);
       }
     };
 
@@ -508,6 +515,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         loadFromGist,
         syncFromGist,
         isLoaded,
+        isSyncing,
       }}
     >
       {children}

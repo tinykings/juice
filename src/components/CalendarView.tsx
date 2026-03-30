@@ -17,11 +17,13 @@ import { Task } from '@/types/task';
 interface CalendarViewProps {
   tasks: Task[];
   onDaySelect: (date: Date, tasks: Task[]) => void;
+  isGistConfigured?: boolean;
+  isSyncing?: boolean;
 }
 
 const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) {
+export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isSyncing }: CalendarViewProps) {
   const [today, setToday] = useState<Date | null>(null);
   const thisMonth = today ? startOfMonth(today) : null;
 
@@ -66,8 +68,10 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
 
   if (!today) return null;
 
+  const topPadding = (isGistConfigured && isSyncing) ? 44 : 24;
+  
   return (
-    <div style={{ padding: '0 0 100px' }}>
+    <div style={{ padding: `${topPadding}px 0 100px` }}>
       {/* Sticky day headers */}
       <div style={{
         position: 'sticky',
