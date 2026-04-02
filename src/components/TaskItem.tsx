@@ -47,11 +47,16 @@ export default function TaskItem({
   const isOverdue = isOverdueProp || (isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate));
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
+  const [isTitleHovered, setIsTitleHovered] = useState(false);
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden' }}>
       <div 
         onClick={onEdit}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         style={{
           display: 'flex',
           alignItems: 'flex-start',
@@ -74,6 +79,8 @@ export default function TaskItem({
             handleComplete();
           }}
           draggable={false}
+          onMouseEnter={() => setIsCheckboxHovered(true)}
+          onMouseLeave={() => setIsCheckboxHovered(false)}
           style={{ 
             flexShrink: 0, 
             marginTop: 4, 
@@ -85,23 +92,31 @@ export default function TaskItem({
             minHeight: 28
           }}
         >
-          <div style={{
-            width: 24,
-            height: 24,
-            borderRadius: 0,
-            border: isCompleting ? 'none' : '2px solid var(--foreground)',
-            background: isCompleting ? 'var(--accent)' : 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            boxShadow: isCompleting ? 'none' : '4px 4px 0 var(--border)'
-          }}>
-            {isCompleting && (
-              <svg width="16" height="16" fill="none" stroke="var(--background)" strokeWidth="3" viewBox="0 0 24 24">
-                <path d="M5 12l5 5L20 7" />
-              </svg>
-            )}
+          <div 
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 0,
+              border: isCompleting ? 'none' : isCheckboxHovered ? '2px solid #d4ff00' : '2px solid var(--foreground)',
+              background: isCompleting ? 'var(--accent)' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+          >
+            {isCompleting || isCheckboxHovered ? (
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: isCheckboxHovered ? 'checkSlide 0.2s ease-out' : 'none'
+              }}>
+                <svg width="16" height="16" fill="none" stroke={isCompleting ? 'var(--background)' : '#d4ff00'} strokeWidth="3" viewBox="0 0 24 24">
+                  <path d="M5 12l5 5L20 7" />
+                </svg>
+              </span>
+            ) : null}
           </div>
         </button>
 
@@ -109,14 +124,20 @@ export default function TaskItem({
         <div style={{ flex: 1, minWidth: 0 }} draggable={false}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ flex: 1 }}>
-              <p style={{ 
-                margin: 0, 
-                fontSize: 18, 
-                lineHeight: 1.4,
-                textDecoration: isCompleting ? 'line-through' : 'none',
-                color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : 'var(--foreground)',
-                fontWeight: isOverdue ? 600 : 400
-              }}>
+              <p 
+                onMouseEnter={() => setIsTitleHovered(true)}
+                onMouseLeave={() => setIsTitleHovered(false)}
+                style={{ 
+                  margin: 0, 
+                  fontSize: 18, 
+                  lineHeight: 1.4,
+                  textDecoration: isCompleting ? 'line-through' : isTitleHovered ? 'underline' : 'none',
+                  textDecorationColor: isTitleHovered ? '#d4ff00' : 'transparent',
+                  color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : isTitleHovered ? '#d4ff00' : 'var(--foreground)',
+                  fontWeight: isOverdue ? 600 : 400,
+                  transition: 'color 0.2s, text-decoration 0.2s'
+                }}
+              >
                 {task.title}
               </p>
               {task.notes && (
