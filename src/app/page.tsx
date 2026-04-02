@@ -212,6 +212,15 @@ export default function HomePage() {
           setIsModalOpen(true);
         }
       }
+      if (e.key === 's' && !e.metaKey && !e.ctrlKey && !isModalOpen) {
+        const el = document.activeElement;
+        if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          if (view === 'calendar') setView('list');
+          setSelectedDateFilter(null);
+          setIsSearchExpanded(true);
+        }
+      }
       // Escape to close confirmation dialog or clear search
       if (e.key === 'Escape') {
         if (confirmCompleteTask) {
@@ -316,39 +325,19 @@ export default function HomePage() {
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
-            {searchQuery && (
-              <button
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setSearchQuery('');
-                }}
-                style={{
-                  position: 'absolute',
-                  right: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 24,
-                  height: 24,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'var(--muted-light)',
-                  border: 'none',
-                  borderRadius: 0,
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-              >
-                <svg width="12" height="12" fill="none" stroke="var(--muted)" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
-            )}
           </div>
           <button
             onClick={() => {
               setSearchQuery('');
               setIsSearchExpanded(false);
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--background)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.color = 'var(--accent)';
             }}
             style={{
               fontSize: 15,
@@ -359,7 +348,8 @@ export default function HomePage() {
               padding: '0 16px',
               fontWeight: 500,
               height: 44,
-              borderRadius: 0
+              borderRadius: 0,
+              transition: 'all 0.2s'
             }}
           >
             Cancel
@@ -459,45 +449,6 @@ export default function HomePage() {
                 </div>
               </section>
             ))}
-            
-            {incompleteTasks.length === 0 && completedTasks.length === 0 && searchQuery && (
-              <div style={{ textAlign: 'center', padding: '80px 0' }}>
-                <div style={{ 
-                  width: 100, 
-                  height: 100, 
-                  background: 'var(--accent-light)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  margin: '0 auto 24px'
-                }}>
-                  <svg width="50" height="50" fill="none" stroke="var(--muted)" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="M21 21l-4.35-4.35"/>
-                  </svg>
-                </div>
-                <h3 style={{ fontSize: 22, fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-display)' }}>No Results</h3>
-                <p style={{ color: 'var(--muted)', fontSize: 16 }}>
-                  No tasks found for &ldquo;{searchQuery}&rdquo;
-                </p>
-                <button
-                  onClick={() => setSearchQuery('')}
-                  style={{
-                    marginTop: 16,
-                    padding: '10px 20px',
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: 'var(--accent)',
-                    background: 'var(--accent-light)',
-                    border: 'none',
-                    borderRadius: 0,
-                    cursor: 'pointer'
-                  }}
-                >
-                  Clear search
-                </button>
-              </div>
-            )}
             
             {incompleteTasks.length === 0 && completedTasks.length === 0 && !searchQuery && (
               <div style={{ textAlign: 'center', padding: '80px 0' }}>
@@ -605,6 +556,14 @@ export default function HomePage() {
             <button
               onClick={() => setIsSettingsOpen(true)}
               aria-label="Settings"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent)';
+                e.currentTarget.style.color = 'var(--accent)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.color = 'var(--muted)';
+              }}
               style={{
                 width: 44,
                 height: 44,
@@ -617,7 +576,8 @@ export default function HomePage() {
                 cursor: 'pointer',
                 position: 'relative',
                 padding: 0,
-                borderRadius: 0
+                borderRadius: 0,
+                transition: 'all 0.2s'
               }}
             >
               <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
@@ -647,6 +607,14 @@ export default function HomePage() {
                 }
               }}
               aria-label="Calendar view"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent)';
+                e.currentTarget.style.color = 'var(--accent)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = view === 'calendar' ? 'var(--accent)' : 'var(--border)';
+                e.currentTarget.style.color = view === 'calendar' ? 'var(--accent)' : 'var(--muted)';
+              }}
               style={{
                 width: 44,
                 height: 44,
@@ -658,6 +626,7 @@ export default function HomePage() {
                 border: view === 'calendar' ? '1px solid var(--accent)' : '1px solid var(--border)',
                 cursor: 'pointer',
                 borderRadius: 0,
+                transition: 'all 0.2s'
               }}
             >
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -669,22 +638,37 @@ export default function HomePage() {
             {/* Search Toggle */}
             <button
               onClick={() => {
-                if (view === 'calendar') setView('list');
-                setSelectedDateFilter(null);
-                setIsSearchExpanded(true);
+                if (searchQuery || isSearchExpanded) {
+                  setSearchQuery('');
+                  setIsSearchExpanded(false);
+                } else {
+                  if (view === 'calendar') setView('list');
+                  setSelectedDateFilter(null);
+                  setIsSearchExpanded(true);
+                }
               }}
               aria-label="Search tasks"
+              title="Search (s)"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent)';
+                e.currentTarget.style.color = 'var(--accent)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = isSearchExpanded ? 'var(--accent)' : 'var(--border)';
+                e.currentTarget.style.color = isSearchExpanded ? 'var(--accent)' : 'var(--muted)';
+              }}
               style={{
                 width: 44,
                 height: 44,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: searchQuery ? 'var(--accent)' : 'var(--muted)',
+                color: isSearchExpanded ? 'var(--accent)' : 'var(--muted)',
                 background: 'none',
-                border: searchQuery ? '1px solid var(--accent)' : '1px solid var(--border)',
+                border: isSearchExpanded ? '1px solid var(--accent)' : '1px solid var(--border)',
                 cursor: 'pointer',
                 borderRadius: 0,
+                transition: 'all 0.2s'
               }}
             >
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -703,6 +687,17 @@ export default function HomePage() {
               setIsModalOpen(true);
             }}
             aria-label="Add task"
+            title="New (n)"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.background = 'var(--foreground)';
+              e.currentTarget.style.border = '2px solid var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--background)';
+              e.currentTarget.style.background = 'var(--accent)';
+              e.currentTarget.style.border = 'none';
+            }}
             style={{
               width: 44,
               height: 44,
@@ -710,15 +705,13 @@ export default function HomePage() {
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--background)',
-              background: 'var(--foreground)',
+              background: 'var(--accent)',
               border: 'none',
               borderRadius: 0,
               cursor: 'pointer',
               flexShrink: 0,
-              transition: 'transform 0.2s'
+              transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'translate(-2px, -2px)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'translate(0, 0)'}
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" />
