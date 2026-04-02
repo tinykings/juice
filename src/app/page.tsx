@@ -117,7 +117,7 @@ export default function HomePage() {
     const sortedTodayTasks = [...todayTasks].sort((a, b) => 
       a.title.localeCompare(b.title)
     );
-    groups.push({ label: 'Today', tasks: sortedTodayTasks, isToday: true, date: today });
+    groups.push({ label: `Today (${format(today, 'M/d')})`, tasks: sortedTodayTasks, isToday: true, date: today });
 
     // Next 7 days (by day of week)
     for (let i = 1; i <= 7; i++) {
@@ -127,7 +127,7 @@ export default function HomePage() {
       const sortedDayTasks = [...dayTasks].sort((a, b) => 
         a.title.localeCompare(b.title)
       );
-      const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
+      const label = format(date, 'EEEE (M/d)');
       groups.push({ label, tasks: sortedDayTasks, date });
     }
 

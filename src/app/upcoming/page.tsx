@@ -29,7 +29,7 @@ export default function UpcomingPage() {
           a.title.localeCompare(b.title)
         );
         groups.push({
-          label: i === 1 ? 'Tomorrow' : format(date, 'EEEE'),
+          label: format(date, 'EEEE (M/d)'),
           tasks: sortedDayTasks,
         });
       }

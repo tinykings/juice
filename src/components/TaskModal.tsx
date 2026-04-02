@@ -57,7 +57,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
 });
 
 function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null }) {
-  const { addTask, updateTask, deleteTask } = useTasks();
+  const { addTask, updateTask, deleteTask, completeTask } = useTasks();
   const titleRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLInputElement>(null);
   
@@ -72,6 +72,16 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     return format(new Date(), 'yyyy-MM-dd');
   });
 
+  const [hasChanges, setHasChanges] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const originalData = useRef({
+    title: editTask?.title || '',
+    notes: editTask?.notes || '',
+    dueDate: dueDate,
+    isRecurring: editTask?.isRecurring || false,
+    recurrenceType: editTask?.recurrenceType || 'daily'
+  });
+
   useEffect(() => {
     if (initialDate && !editTask) {
       setDueDate(initialDate);
@@ -80,6 +90,27 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
 
   const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
+
+  const checkForChanges = () => {
+    const currentTitle = titleRef.current?.value || '';
+    const currentNotes = notesRef.current?.value || '';
+    const changed = 
+      currentTitle !== originalData.current.title ||
+      currentNotes !== originalData.current.notes ||
+      dueDate !== originalData.current.dueDate ||
+      isRecurring !== originalData.current.isRecurring ||
+      (isRecurring && recurrenceType !== originalData.current.recurrenceType);
+    
+    if (changed && !hasChanges) {
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 300);
+    }
+    setHasChanges(changed);
+  };
+
+  useEffect(() => {
+    checkForChanges();
+  }, [dueDate, isRecurring, recurrenceType]);
 
   useEffect(() => {
     if (!editTask) {
@@ -155,6 +186,14 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     }
   };
 
+  const handleComplete = () => {
+    if (editTask) {
+      completeTask(editTask.id);
+      onClose();
+      if (onSave) onSave();
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       {/* Inputs */}
@@ -166,6 +205,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           placeholder="New To-Do"
           defaultValue={editTask?.title || ''}
           autoFocus={!editTask}
+          onChange={checkForChanges}
           style={{
             width: '100%',
             fontSize: 22,
@@ -190,6 +230,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           name="notes"
           placeholder="Notes"
           defaultValue={editTask?.notes || ''}
+          onChange={checkForChanges}
           style={{
             width: '100%',
             fontSize: 17,
@@ -205,11 +246,23 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
 
       {/* Options */}
       <div style={{ padding: '0 24px 24px', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-        <CalendarPicker value={dueDate} onChange={setDueDate} />
+        <CalendarPicker value={dueDate} onChange={(val) => { setDueDate(val); checkForChanges(); }} />
 
         <button
           type="button"
-          onClick={() => setIsRecurring(!isRecurring)}
+          onClick={() => { setIsRecurring(!isRecurring); checkForChanges(); }}
+          onMouseEnter={(e) => {
+            if (!isRecurring) {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isRecurring) {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -222,7 +275,8 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             fontSize: 16,
             cursor: 'pointer',
             minHeight: 48,
-            fontWeight: 500
+            fontWeight: 500,
+            transition: 'all 0.2s'
           }}
         >
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -244,7 +298,19 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             <button
               key={type}
               type="button"
-              onClick={() => setRecurrenceType(type)}
+              onClick={() => { setRecurrenceType(type); checkForChanges(); }}
+              onMouseEnter={(e) => {
+                if (recurrenceType !== type) {
+                  e.currentTarget.style.borderColor = 'var(--accent)';
+                  e.currentTarget.style.color = 'var(--accent)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (recurrenceType !== type) {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--muted)';
+                }
+              }}
               style={{
                 padding: '10px 18px',
                 borderRadius: 0,
@@ -256,7 +322,8 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
                 color: recurrenceType === type ? 'var(--background)' : 'var(--muted)',
                 border: '1px solid var(--border)',
                 cursor: 'pointer',
-                minHeight: 44
+                minHeight: 44,
+                transition: 'all 0.2s'
               }}
             >
               {type}
@@ -278,6 +345,14 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           <button
             type="button"
             onClick={onClose}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
             style={{
               padding: '12px 20px',
               fontSize: 16,
@@ -287,7 +362,8 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               cursor: 'pointer',
               minHeight: 48,
               borderRadius: 0,
-              fontWeight: 500
+              fontWeight: 500,
+              transition: 'all 0.2s'
             }}
           >
             Cancel
@@ -296,6 +372,12 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             <button
               type="button"
               onClick={handleDelete}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--red)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+              }}
               style={{
                 padding: '12px 20px',
                 fontSize: 16,
@@ -305,32 +387,55 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
                 cursor: 'pointer',
                 minHeight: 48,
                 borderRadius: 0,
-                fontWeight: 500
+                fontWeight: 500,
+                transition: 'all 0.2s'
               }}
             >
               Delete
             </button>
           )}
         </div>
-        <button
-          type="submit"
-          style={{
-            padding: '12px 24px',
-            fontSize: 16,
-            fontWeight: 600,
-            color: 'var(--background)',
-            background: 'var(--accent)',
-            borderRadius: 0,
-            border: 'none',
-            cursor: 'pointer',
-            minHeight: 48,
-            transition: 'transform 0.1s'
-          }}
-          onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-          onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-        >
-          {editTask ? 'Save' : 'Add'}
-        </button>
+        {editTask ? (
+          <button
+            type="button"
+            onClick={hasChanges ? handleSubmit : handleComplete}
+            style={{
+              padding: '12px 24px',
+              fontSize: 16,
+              fontWeight: 600,
+              color: isAnimating ? 'var(--muted)' : '#d4ff00',
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderColor: isAnimating ? 'var(--muted)' : '#d4ff00',
+              borderRadius: 0,
+              cursor: 'pointer',
+              minHeight: 48,
+              transition: 'all 0.2s'
+            }}
+          >
+            {hasChanges ? 'Save' : 'Complete'}
+          </button>
+        ) : (
+          <button
+            type="submit"
+            style={{
+              padding: '12px 24px',
+              fontSize: 16,
+              fontWeight: 600,
+              color: 'var(--background)',
+              background: 'var(--accent)',
+              borderRadius: 0,
+              border: 'none',
+              cursor: 'pointer',
+              minHeight: 48,
+              transition: 'transform 0.1s'
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
+          >
+            Add
+          </button>
+        )}
       </div>
     </form>
   );

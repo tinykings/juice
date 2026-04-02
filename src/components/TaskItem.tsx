@@ -50,6 +50,7 @@ export default function TaskItem({
   const [isHovered, setIsHovered] = useState(false);
   const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   const [isTitleHovered, setIsTitleHovered] = useState(false);
+  const [isDateHovered, setIsDateHovered] = useState(false);
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden' }}>
@@ -97,7 +98,7 @@ export default function TaskItem({
               width: 24,
               height: 24,
               borderRadius: 0,
-              border: isCompleting ? 'none' : isCheckboxHovered ? '2px solid #d4ff00' : '2px solid var(--foreground)',
+              border: isCompleting ? 'none' : isCheckboxHovered ? '2px solid var(--accent)' : '2px solid var(--foreground)',
               background: isCompleting ? 'var(--accent)' : 'transparent',
               display: 'flex',
               alignItems: 'center',
@@ -112,7 +113,7 @@ export default function TaskItem({
                 justifyContent: 'center',
                 animation: isCheckboxHovered ? 'checkSlide 0.2s ease-out' : 'none'
               }}>
-                <svg width="16" height="16" fill="none" stroke={isCompleting ? 'var(--background)' : '#d4ff00'} strokeWidth="3" viewBox="0 0 24 24">
+                <svg width="16" height="16" fill="none" stroke={isCompleting ? 'var(--background)' : 'var(--accent)'} strokeWidth="3" viewBox="0 0 24 24">
                   <path d="M5 12l5 5L20 7" />
                 </svg>
               </span>
@@ -132,8 +133,8 @@ export default function TaskItem({
                   fontSize: 18, 
                   lineHeight: 1.4,
                   textDecoration: isCompleting ? 'line-through' : isTitleHovered ? 'underline' : 'none',
-                  textDecorationColor: isTitleHovered ? '#d4ff00' : 'transparent',
-                  color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : isTitleHovered ? '#d4ff00' : 'var(--foreground)',
+                  textDecorationColor: isTitleHovered ? 'var(--accent)' : 'transparent',
+                  color: isCompleting ? 'var(--muted)' : isOverdue ? 'var(--red)' : isTitleHovered ? 'var(--accent)' : 'var(--foreground)',
                   fontWeight: isOverdue ? 600 : 400,
                   transition: 'color 0.2s, text-decoration 0.2s'
                 }}
@@ -152,43 +153,32 @@ export default function TaskItem({
             
             {/* Date/Flag with Reschedule Popover */}
             {showDate && (
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end' }}>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setAnchorEl(e.currentTarget);
                     setShowReschedule(!showReschedule);
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--muted)';
+                  }}
                   style={{
-                    background: 'var(--background)',
-                    border: '1px solid var(--border)',
-                    padding: '4px 8px',
-                    margin: '-4px 0 -4px -8px',
-                    borderRadius: 0,
+                    background: 'none',
+                    border: 'none',
+                    padding: '4px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
-                    transition: 'all 0.2s',
-                    color: 'var(--foreground)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--accent)';
-                    e.currentTarget.style.color = 'var(--accent)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border)';
-                    e.currentTarget.style.color = 'var(--foreground)';
+                    color: 'var(--muted)',
+                    transition: 'color 0.2s'
                   }}
                 >
-                  <span style={{ 
-                    fontSize: 14, 
-                    color: isOverdue ? 'var(--red)' : 'var(--foreground)',
-                    whiteSpace: 'nowrap',
-                    fontWeight: 500
-                  }}>
-                    {format(taskDate, 'M/d')}
-                  </span>
+                  <span style={{ fontSize: 18, fontWeight: 600 }}>...</span>
                 </button>
 
                 {showReschedule && anchorEl && (
