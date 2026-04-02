@@ -73,7 +73,6 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
   });
 
   const [hasChanges, setHasChanges] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
   const originalData = useRef({
     title: editTask?.title || '',
     notes: editTask?.notes || '',
@@ -101,10 +100,6 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
       isRecurring !== originalData.current.isRecurring ||
       (isRecurring && recurrenceType !== originalData.current.recurrenceType);
     
-    if (changed && !hasChanges) {
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 300);
-    }
     setHasChanges(changed);
   };
 
@@ -346,8 +341,8 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             type="button"
             onClick={onClose}
             onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--foreground)';
+              e.currentTarget.style.color = 'var(--foreground)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'var(--border)';
@@ -399,14 +394,19 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           <button
             type="button"
             onClick={hasChanges ? handleSubmit : handleComplete}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+            }}
             style={{
               padding: '12px 24px',
               fontSize: 16,
               fontWeight: 600,
-              color: isAnimating ? 'var(--muted)' : '#d4ff00',
+              color: 'var(--accent)',
               background: 'none',
               border: '1px solid var(--border)',
-              borderColor: isAnimating ? 'var(--muted)' : '#d4ff00',
               borderRadius: 0,
               cursor: 'pointer',
               minHeight: 48,
