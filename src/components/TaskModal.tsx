@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { format, startOfDay, parse } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
@@ -60,6 +60,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
   const { addTask, updateTask, deleteTask, completeTask } = useTasks();
   const titleRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLInputElement>(null);
+  const hasFocusedRef = useRef(false);
   
   const [dueDate, setDueDate] = useState(() => {
     if (editTask) {
@@ -107,26 +108,29 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     checkForChanges();
   }, [dueDate, isRecurring, recurrenceType]);
 
+  const focusTitle = useCallback(() => {
+    const input = titleRef.current;
+    const active = document.activeElement;
+    if (input && active !== input && active?.tagName !== 'INPUT' && active?.tagName !== 'TEXTAREA') {
+      input.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      input.focus();
+    }
+  }, []);
+
   useEffect(() => {
-    if (!editTask) {
-      // For mobile PWA, we need more time for the modal to render and be visible
-      // Use multiple animation frames to ensure the DOM is ready
+    if (!editTask && !hasFocusedRef.current) {
+      hasFocusedRef.current = true;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          setTimeout(() => {
-            if (titleRef.current) {
-              // Ensure the input is visible
-              titleRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-              // Focus the input
-              titleRef.current.focus();
-              // For mobile, sometimes we need to set selection to ensure keyboard appears
-              if (titleRef.current.setSelectionRange) {
-                titleRef.current.setSelectionRange(0, 0);
-              }
-            }
-          }, 400);
+          setTimeout(focusTitle, 400);
         });
       });
+    }
+  }, [editTask, focusTitle]);
+
+  useEffect(() => {
+    if (editTask) {
+      hasFocusedRef.current = false;
     }
   }, [editTask]);
 
