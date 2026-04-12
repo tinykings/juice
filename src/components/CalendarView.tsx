@@ -172,7 +172,6 @@ export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isS
                       borderRadius: 0,
                       padding: '4px 3px',
                       transition: 'background 0.1s',
-                      overflow: 'hidden',
                       verticalAlign: 'top',
                     }}
                   >
@@ -186,7 +185,7 @@ export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isS
                     }}>
                       {day.getDate()}
                     </span>
-                    {inMonth && dayTasks.slice(0, 3).map(task => (
+                    {inMonth && dayTasks.map(task => (
                       <div key={task.id} style={{
                         fontSize: 10,
                         lineHeight: 1.25,
@@ -201,16 +200,6 @@ export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isS
                         {task.title}
                       </div>
                     ))}
-                    {inMonth && dayTasks.length > 3 && (
-                      <div style={{
-                        fontSize: 9,
-                        color: 'var(--muted)',
-                        padding: '0 2px',
-                        fontWeight: 600,
-                      }}>
-                        +{dayTasks.length - 3} more
-                      </div>
-                    )}
                   </button>
                 );
               })}
