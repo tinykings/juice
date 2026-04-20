@@ -1,18 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Serif_Display, DM_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 
-const dmSerifDisplay = DM_Serif_Display({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-  display: "swap",
-});
-
-const dmSans = DM_Sans({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-body",
@@ -54,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${dmSerifDisplay.variable} ${dmSans.variable}`}>
+    <html lang="en" suppressHydrationWarning className={plusJakarta.variable}>
       <head>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>

@@ -451,7 +451,7 @@ export default function HomePage() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   marginBottom: 12,
-                  fontFamily: 'var(--font-display)'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   {group.label}
                 </h2>
@@ -501,7 +501,7 @@ export default function HomePage() {
                     <path d="M8 12h8"/>
                   </svg>
                 </div>
-                <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-display)', color: 'var(--foreground)' }}>
+                <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-body)', color: 'var(--foreground)' }}>
                   Ready to focus?
                 </h3>
                 <p style={{ color: 'var(--muted)', fontSize: 15, maxWidth: 240, margin: '0 auto', lineHeight: 1.5 }}>
@@ -520,7 +520,7 @@ export default function HomePage() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   marginBottom: 12,
-                  fontFamily: 'var(--font-display)'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   Completed (30 days)
                 </h2>
@@ -886,7 +886,7 @@ function ConfirmCompleteDialog({
             fontWeight: 600,
             margin: '0 0 12px 0',
             color: 'var(--foreground)',
-            fontFamily: 'var(--font-display)'
+            fontFamily: 'var(--font-body)'
           }}>
             Complete this task?
           </h3>

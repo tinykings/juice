@@ -65,7 +65,7 @@ export default function UpcomingPage() {
                 <path d="M15 19l-7-7 7-7" />
               </svg>
             </Link>
-            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, fontFamily: 'var(--font-display)' }}>Upcoming</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, fontFamily: 'var(--font-body)' }}>Upcoming</h1>
           </div>
         </div>
       </header>
@@ -91,7 +91,7 @@ export default function UpcomingPage() {
                   textTransform: 'uppercase', 
                   letterSpacing: '0.5px', 
                   marginBottom: 12,
-                  fontFamily: 'var(--font-display)'
+                  fontFamily: 'var(--font-body)'
                 }}>
                   {group.label}
                 </h2>

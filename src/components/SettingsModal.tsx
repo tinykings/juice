@@ -88,7 +88,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           padding: '20px 24px',
           borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, fontFamily: 'var(--font-display)' }}>Settings</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, fontFamily: 'var(--font-body)' }}>Settings</h2>
           <button
             onClick={onClose}
             style={{
@@ -198,7 +198,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
 
           <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-display)' }}>
+            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-body)' }}>
               GitHub Gist Sync
             </h3>
             <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>

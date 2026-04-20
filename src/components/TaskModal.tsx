@@ -44,7 +44,6 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
         boxShadow: 'var(--shadow-lg)',
         overflow: 'auto',
         border: '1px solid var(--border)',
-        animation: 'scaleIn 0.2s ease',
       }}>
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 
@@ -223,7 +222,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             marginBottom: 12,
             padding: '4px 0',
             lineHeight: 1.4,
-            fontFamily: 'var(--font-display)',
+            fontFamily: 'var(--font-body)',
             transition: 'border-color 0.2s'
           }}
           onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}

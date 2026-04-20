@@ -105,7 +105,7 @@ function MonthGrid({
       <h2 style={{
         fontSize: 18,
         fontWeight: 600,
-        fontFamily: 'var(--font-display)',
+        fontFamily: 'var(--font-body)',
         color: 'var(--foreground)',
         marginBottom: 16,
         paddingBottom: 8,
