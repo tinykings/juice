@@ -642,26 +642,60 @@ export default function HomePage() {
                       e.currentTarget.style.color = 'var(--red)';
                     }}
                   >
-                    Clear Completed
+Clear Completed
                   </button>
                 </div>
               </section>
             )}
           </div>
         )}
+        
+        {/* Settings Button at bottom of task list */}
+        <div style={{ padding: '24px 0 100px' }}>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              background: 'none',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              color: 'var(--muted)',
+              fontSize: 15,
+              fontWeight: 500,
+              width: '100%',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
+          >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+            Settings
+          </button>
+        </div>
       </main>
-      )}
+)}
 
-      {/* FAB + Bottom Nav */}
+      {/* Bottom Action Buttons */}
       <footer style={{
         position: 'fixed',
         bottom: 0,
-        left: isWideScreen ? 0 : 0,
+        left: 0,
         right: 0,
         zIndex: 10,
         background: 'var(--background)',
         padding: '0 24px 24px',
-        transition: 'background 0.2s',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
@@ -669,111 +703,37 @@ export default function HomePage() {
         borderTop: '1px solid var(--border)',
         maxWidth: (isWideScreen || showSplitView) ? '50%' : 'none',
       }}>
-          {/* Bottom Navigation Tabs */}
-          <nav style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            padding: '12px 16px',
-            background: 'var(--surface-inset)',
-            border: '1px solid var(--border)',
-            flex: 1,
-            maxWidth: 'calc(100% - 72px)',
-          }}>
-            {/* Today Tab */}
+          {/* Toggle Calendar/List Button - show in both views when < 1000px */}
+          {!showSplitView && (
             <button
-              onClick={() => {
-                setView('list');
-                setSelectedDateFilter(null);
-                setIsSearchExpanded(false);
-              }}
+              onClick={() => setView(view === 'list' ? 'calendar' : 'list')}
               style={{
-                flex: 1,
+                width: 60,
+                height: 60,
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                gap: 4,
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
+                justifyContent: 'center',
+                color: 'var(--foreground)',
+                background: 'var(--surface-inset)',
+                border: '1px solid var(--border)',
                 cursor: 'pointer',
-                color: view === 'list' ? 'var(--accent)' : 'var(--muted)',
-                transition: 'color 0.2s',
+                boxShadow: 'var(--shadow-md)',
+                transition: 'all 0.2s ease',
               }}
             >
-              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-              <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.02em' }}>Today</span>
-            </button>
-
-            {/* Calendar Tab */}
-            <button
-              onClick={() => {
-                setView('calendar');
-                setIsSearchExpanded(false);
-                setSearchQuery('');
-                setSelectedDateFilter(null);
-              }}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: view === 'calendar' ? 'var(--accent)' : 'var(--muted)',
-                transition: 'color 0.2s',
-              }}
-            >
-              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <path d="M16 2v4M8 2v4M3 10h18"/>
-              </svg>
-              <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.02em' }}>Calendar</span>
-            </button>
-
-            {/* Settings Button */}
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              aria-label="Settings"
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                padding: '8px 12px',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--muted)',
-                position: 'relative',
-                transition: 'color 0.2s',
-              }}
-            >
-              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
-                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-              </svg>
-              {mounted && isGistConfigured && (
-                <div style={{
-                  position: 'absolute',
-                  top: 4,
-                  right: '20%',
-                  width: 8,
-                  height: 8,
-                  background: 'var(--green)',
-                  borderRadius: '50%',
-                }} />
+              {view === 'list' ? (
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+              ) : (
+                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
               )}
-              <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.02em' }}>Settings</span>
             </button>
-          </nav>
+          )}
 
           {/* FAB - Add Task */}
           <button
