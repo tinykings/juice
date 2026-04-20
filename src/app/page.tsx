@@ -432,7 +432,7 @@ export default function HomePage() {
 
       {/* Calendar View - shown in calendar view OR split view */}
       {(view === 'calendar' || showSplitView) && isLoaded && (
-        <div style={{ flex: 1, overflow: 'auto', height: (isWideScreen || showSplitView) ? '100vh' : 'auto', borderLeft: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none' }}>
+        <div style={{ flex: 1, overflow: 'auto', height: (isWideScreen || showSplitView) ? '100vh' : 'auto' }}>
           <CalendarView
             tasks={tasks}
             onDaySelect={handleDaySelect}
@@ -450,7 +450,7 @@ export default function HomePage() {
         paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24),
         overflow: 'auto',
         height: (isWideScreen || showSplitView) ? 'calc(100vh - 80px)' : 'auto',
-        borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
+        borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
@@ -633,7 +633,6 @@ Clear Completed
         alignItems: 'flex-end',
         justifyContent: 'space-between',
         gap: 16,
-        borderTop: '1px solid var(--border)',
       }}>
           {/* Toggle Calendar/List Button & View indicator - show in both views when < 1000px */}
           {!showSplitView && (
@@ -705,8 +704,8 @@ Clear Completed
             aria-label="Add task"
             title="New (n)"
             style={{
-              width: 60,
-              height: 60,
+              width: 48,
+              height: 48,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
