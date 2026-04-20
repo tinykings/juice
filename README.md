@@ -1,8 +1,6 @@
 <p align="center">
-<img src="public/icon-192.png" alt="Juice Logo" width="120" />
+<img src="public/juice.webp" alt="Juice Logo" width="200" />
 </p>
-
-<h1 align="center">Juice</h1>
 
 <h3 align="center">A minimal task manager — installable as a PWA, hosted on GitHub Pages.</h3>
 <h4 align="center">https://tinykings.github.io/juice/</h4>
