@@ -619,7 +619,16 @@ Back
                 />
               </div>
             )}
-            {visibleGroups.map((group, index) => (
+            {allTodayTasksCompleted && completedTasks.length > 0 && !selectedDateFilter && (
+              <section style={{ marginBottom: 32 }}>
+                <div style={{ borderTop: '2px solid var(--border)' }}>
+                  {completedTasks.map((task) => (
+                    <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
+                  ))}
+                </div>
+              </section>
+            )}
+{visibleGroups.map((group, index) => (
               <section 
                 key={group.label} 
                 style={{ 
@@ -665,64 +674,19 @@ Back
                     />
                   ))}
                 </div>
+
+                {/* Completed Section - shown after Today group */}
+                {group.isToday && completedTasks.length > 0 && (
+                  <div style={{ marginTop: 24 }}>
+                    <div style={{ borderTop: '2px solid var(--border)' }}>
+                      {completedTasks.map((task) => (
+                        <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </section>
             ))}
-
-            {/* Completed Section */}
-            {completedTasks.length > 0 && (
-              <section style={{ marginTop: 48 }}>
-                <h2 style={{ 
-                  fontSize: 15, 
-                  fontWeight: 600, 
-                  color: 'var(--muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: 12,
-                  fontFamily: 'var(--font-body)'
-                }}>
-                  Completed (Today)
-                </h2>
-                <div style={{ borderTop: '2px solid var(--border)' }}>
-                  {completedTasks.map((task) => (
-                    <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
-                  ))}
-                </div>
-                
-                <div style={{ padding: '24px 0', textAlign: 'center' }}>
-                  <button
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete all completed tasks?')) {
-                        clearCompletedTasks();
-                      }
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid var(--red)',
-                      color: 'var(--red)',
-                      fontSize: 15,
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                      padding: '12px 24px',
-                      opacity: 0.8,
-                      transition: 'all 0.2s',
-                      borderRadius: 0
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.opacity = '1';
-                      e.currentTarget.style.background = 'var(--red)';
-                      e.currentTarget.style.color = 'var(--background)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.opacity = '0.8';
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'var(--red)';
-                    }}
-                  >
-Clear Completed
-                  </button>
-                </div>
-              </section>
-            )}
           </div>
 )}
       </main>
@@ -893,6 +857,7 @@ Clear Completed
 
 function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: () => void }) {
   const [isUncompleting, setIsUncompleting] = useState(false);
+  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
 
   const handleUncomplete = () => {
     setIsUncompleting(true);
@@ -912,11 +877,13 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
       {/* Completed checkmark - clickable to uncomplete */}
       <button
         onClick={handleUncomplete}
+        onMouseEnter={() => setIsCheckboxHovered(true)}
+        onMouseLeave={() => setIsCheckboxHovered(false)}
         style={{
           width: 28,
           height: 28,
           borderRadius: 0,
-          background: isUncompleting ? 'transparent' : 'var(--green)',
+          background: isUncompleting ? 'transparent' : (isCheckboxHovered ? 'var(--muted)' : 'var(--muted-light)'),
           border: isUncompleting ? '2.5px solid var(--muted-light)' : 'none',
           display: 'flex',
           alignItems: 'center',
@@ -931,7 +898,7 @@ function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: (
         }}
       >
         {!isUncompleting && (
-          <svg width="16" height="16" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
+          <svg width="16" height="16" fill="none" stroke="var(--foreground)" strokeWidth="3" viewBox="0 0 24 24">
             <path d="M5 12l5 5L20 7" />
           </svg>
         )}

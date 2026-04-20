@@ -30,6 +30,7 @@ export default function TaskItem({
   const [showReschedule, setShowReschedule] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   
   const taskDate = new Date(task.dueDate);
   const isOverdue = isOverdueProp || (isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate));
@@ -97,6 +98,8 @@ export default function TaskItem({
             e.stopPropagation();
             handleComplete();
           }}
+          onMouseEnter={() => setIsCheckboxHovered(true)}
+          onMouseLeave={() => setIsCheckboxHovered(false)}
           style={{ 
             flexShrink: 0,
             width: 24,
@@ -104,8 +107,8 @@ export default function TaskItem({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'transparent',
-            border: `2px solid ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
+            background: isCheckboxHovered ? (isOverdue ? 'var(--red)' : 'var(--accent-subtle)') : 'transparent',
+            border: `2px solid ${isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent)' : 'var(--border)')}`,
             cursor: 'pointer',
             padding: 0,
             transition: 'all 0.2s ease',
