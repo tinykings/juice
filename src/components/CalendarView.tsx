@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import {
   format,
   startOfMonth,
@@ -147,6 +147,7 @@ function MonthGrid({
           const inMonth = isSameMonth(day, month);
           const isToday = isSameDay(day, today);
           const key = format(day, 'yyyy-MM-dd');
+          const [isHovered, setIsHovered] = useState(false);
           const dayTasks = tasksByDate[key] || [];
           const hasTasks = dayTasks.length > 0;
 
@@ -154,6 +155,8 @@ function MonthGrid({
             <button
               key={day.toISOString()}
               onClick={() => onDaySelect(day, dayTasks)}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -163,7 +166,7 @@ function MonthGrid({
                 minHeight: 90,
                 fontSize: 13,
                 fontWeight: isToday ? 600 : 400,
-                background: isToday ? 'var(--accent-subtle)' : (inMonth ? 'var(--surface-inset)' : 'transparent'),
+                background: isHovered ? 'var(--accent-subtle)' : (isToday ? 'var(--accent-subtle)' : (inMonth ? 'var(--surface-inset)' : 'transparent')),
                 color: inMonth 
                   ? (isToday ? 'var(--accent)' : 'var(--foreground)') 
                   : 'var(--muted-light)',

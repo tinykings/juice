@@ -80,11 +80,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         
         // Only update if Gist has different data than what we last synced
         if (gistTasksJson !== lastSyncedRef.current) {
-          // Clean up tasks older than 30 days before setting
-          const thirtyDaysAgo = subDays(new Date(), 30);
+          // Clean up tasks older than 1 day before setting
+          const oneDayAgo = subDays(new Date(), 1);
           const cleanedTasks = gistTasks.filter((task) => {
             if (!task.completed || !task.completedAt) return true;
-            return new Date(task.completedAt) > thirtyDaysAgo;
+return new Date(task.completedAt) > oneDayAgo;
           });
           
           // Merge with current local tasks to preserve any unsynced local changes
@@ -188,11 +188,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       try {
         const gistTasks = await loadTasksFromGist(gistSettings);
         
-        // Clean up tasks older than 30 days
-        const thirtyDaysAgo = subDays(new Date(), 30);
+        // Clean up tasks older than 1 day
+        const oneDayAgo = subDays(new Date(), 1);
         const cleanedTasks = gistTasks.filter((task) => {
           if (!task.completed || !task.completedAt) return true;
-          return new Date(task.completedAt) > thirtyDaysAgo;
+          return new Date(task.completedAt) > oneDayAgo;
         });
         
         const gistTasksJson = JSON.stringify(cleanedTasks);
@@ -370,14 +370,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     
     setTasks((prev) => {
       // Clean up old tasks when adding a new task
-      const thirtyDaysAgo = subDays(new Date(), 30);
+      const oneDayAgo = subDays(new Date(), 1);
       const cleaned = prev.filter((task) => {
         if (!task.completed || !task.completedAt) return true;
-        return new Date(task.completedAt) > thirtyDaysAgo;
+        return new Date(task.completedAt) > oneDayAgo;
       });
       
       if (cleaned.length < prev.length) {
-        console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks (older than 30 days)`);
+        console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks (older than 1 day)`);
       }
       
       const updated = [...cleaned, newTask];
@@ -469,11 +469,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [tasks]);
 
-  // Get all completed tasks from the last 30 days
+  // Get all completed tasks from the last 1 day
   const getCompletedTasks = useCallback(() => {
-    const thirtyDaysAgo = subDays(new Date(), 30);
+    const oneDayAgo = subDays(new Date(), 1);
     return tasks
-      .filter((task) => task.completed && task.completedAt && new Date(task.completedAt) > thirtyDaysAgo)
+      .filter((task) => task.completed && task.completedAt && new Date(task.completedAt) > oneDayAgo)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 

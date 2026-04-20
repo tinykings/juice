@@ -228,6 +228,9 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
           onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
         />
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
+          Add time with @ (e.g., @9am, @530, @2:30pm)
+        </p>
         <input
           ref={notesRef}
           type="text"

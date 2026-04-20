@@ -572,7 +572,7 @@ export default function HomePage() {
                   marginBottom: 12,
                   fontFamily: 'var(--font-body)'
                 }}>
-                  Completed (30 days)
+                  Completed (Today)
                 </h2>
                 <div style={{ borderTop: '2px solid var(--border)' }}>
                   {completedTasks.map((task) => (
@@ -666,6 +666,31 @@ Clear Completed
                 )}
               </button>
             </div>
+          )}
+
+          {/* Search Button - show in all views */}
+          {(
+            <button
+              onClick={() => setIsSearchExpanded(true)}
+              style={{
+                width: 48,
+                height: 48,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+                color: 'var(--muted)',
+                transition: 'all 0.2s ease',
+              }}
+              aria-label="Search"
+            >
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </button>
           )}
 
           {/* Settings Button - show in all views */}

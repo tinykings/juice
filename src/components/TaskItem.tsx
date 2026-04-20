@@ -187,6 +187,14 @@ export default function TaskItem({
                     setAnchorEl(e.currentTarget);
                     setShowReschedule(!showReschedule);
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--accent)';
+                    e.currentTarget.style.backgroundColor = 'var(--accent-subtle)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = isOverdue ? 'var(--red)' : 'var(--muted)';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                   style={{
                     background: 'none',
                     border: 'none',
@@ -198,8 +206,9 @@ export default function TaskItem({
                     color: isOverdue ? 'var(--red)' : 'var(--muted)',
                     fontSize: 13,
                     fontWeight: 500,
-                    transition: 'color 0.2s',
+                    transition: 'all 0.2s',
                     whiteSpace: 'nowrap',
+                    borderRadius: 4,
                   }}
                 >
                   {isToday(taskDate) ? 'Today' : format(taskDate, 'MMM d')}
