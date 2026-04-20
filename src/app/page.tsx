@@ -215,6 +215,11 @@ export default function HomePage() {
         const el = document.activeElement;
         if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
           e.preventDefault();
+          if (selectedDateFilter) {
+            setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+          } else {
+            setInitialDate(null);
+          }
           setIsModalOpen(true);
         }
       }
@@ -246,7 +251,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
@@ -689,6 +694,8 @@ export default function HomePage() {
             onClick={() => {
               if (selectedDateFilter) {
                 setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+              } else {
+                setInitialDate(null);
               }
               setIsModalOpen(true);
             }}
