@@ -25,7 +25,6 @@ export default function HomePage() {
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
-  const [sideView, setSideView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -431,9 +430,9 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Calendar View - shown in calendar view OR split view OR side toggled */}
-      {(view === 'calendar' || showSplitView || sideView === 'calendar') && isLoaded && (
-        <div style={{ flex: 1, overflow: 'auto', height: (isWideScreen || showSplitView) ? '100vh' : 'auto', borderLeft: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none', paddingBottom: (isWideScreen || showSplitView) ? 80 : 0 }}>
+      {/* Calendar View - shown in calendar view OR split view */}
+      {(view === 'calendar' || showSplitView) && isLoaded && (
+        <div style={{ flex: 1, overflow: 'auto', height: (isWideScreen || showSplitView) ? '100vh' : 'auto', borderLeft: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none' }}>
           <CalendarView
             tasks={tasks}
             onDaySelect={handleDaySelect}
@@ -443,39 +442,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Toggle Arrow - visible when width < 1000 */}
-      {showToggle && (
-        <button
-          onClick={() => setSideView(sideView === 'list' ? 'calendar' : 'list')}
-          style={{
-            position: 'fixed',
-            left: sideView === 'list' ? '49.5%' : '50%',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 28,
-            height: 56,
-            background: 'var(--surface-inset)',
-            border: '1px solid var(--border)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 20,
-            color: 'var(--muted)',
-          }}
-        >
-          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            {sideView === 'list' ? (
-              <path d="M9 18l6-6-6-6"/>
-            ) : (
-              <path d="M15 18l-6-6 6-6"/>
-            )}
-          </svg>
-        </button>
-      )}
-
-      {/* Main Content - List View - shown in list view OR split view (full width) OR when not toggled to calendar */}
-      {(view === 'list' || showSplitView || (showToggle && sideView === 'list')) && (
+      {/* Main Content - List View - shown in list view OR split view */}
+      {(view === 'list' || showSplitView) && (
       <main style={{ 
         flex: 1, 
         padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', 
@@ -687,7 +655,7 @@ Clear Completed
       </main>
 )}
 
-      {/* Bottom Action Buttons */}
+{/* Bottom Action Buttons */}
       <footer style={{
         position: 'fixed',
         bottom: 0,
@@ -701,38 +669,42 @@ Clear Completed
         justifyContent: 'space-between',
         gap: 16,
         borderTop: '1px solid var(--border)',
-        maxWidth: (isWideScreen || showSplitView) ? '50%' : 'none',
       }}>
-          {/* Toggle Calendar/List Button - show in both views when < 1000px */}
+          {/* Toggle Calendar/List Button & View indicator - show in both views when < 1000px */}
           {!showSplitView && (
-            <button
-              onClick={() => setView(view === 'list' ? 'calendar' : 'list')}
-              style={{
-                width: 60,
-                height: 60,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--foreground)',
-                background: 'var(--surface-inset)',
-                border: '1px solid var(--border)',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-md)',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {view === 'list' ? (
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-              ) : (
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 6v6l4 2"/>
-                </svg>
-              )}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                onClick={() => setView(view === 'list' ? 'calendar' : 'list')}
+                style={{
+                  width: 60,
+                  height: 60,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--foreground)',
+                  background: 'var(--surface-inset)',
+                  border: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  boxShadow: 'var(--shadow-md)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {view === 'list' ? (
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
+                ) : (
+                  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                  </svg>
+                )}
+              </button>
+              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', display: showSplitView ? 'none' : 'block' }}>
+                {view === 'list' ? 'List' : 'Calendar'}
+              </span>
+            </div>
           )}
 
           {/* FAB - Add Task */}

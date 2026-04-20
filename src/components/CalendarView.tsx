@@ -60,7 +60,7 @@ export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isS
   const topPadding = (isGistConfigured && isSyncing) ? 44 : 20;
   
   return (
-    <div style={{ padding: `${topPadding}px 16px 120px` }}>
+    <div style={{ padding: `${topPadding}px 16px 120px`, minWidth: 0 }}>
       {monthsWithTasks.map(month => (
         <MonthGrid 
           key={month.toISOString()} 
@@ -139,8 +139,9 @@ function MonthGrid({
       {/* Calendar grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
+        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         gap: 3,
+        width: '100%',
       }}>
         {allDays.map(day => {
           const inMonth = isSameMonth(day, month);
@@ -158,7 +159,7 @@ function MonthGrid({
                 flexDirection: 'column',
                 alignItems: 'flex-start',
                 justifyContent: 'flex-start',
-                padding: '6px 8px',
+                padding: '6px 4px',
                 minHeight: 90,
                 fontSize: 13,
                 fontWeight: isToday ? 600 : 400,
@@ -171,6 +172,7 @@ function MonthGrid({
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 textAlign: 'left',
+                overflow: 'hidden',
               }}
             >
               <span style={{ 
