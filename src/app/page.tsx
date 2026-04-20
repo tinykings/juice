@@ -617,41 +617,6 @@ Clear Completed
             )}
           </div>
         )}
-        
-        {/* Settings Button at bottom of task list */}
-        <div style={{ padding: '24px 0 100px' }}>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '12px 16px',
-              background: 'none',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              fontSize: 15,
-              fontWeight: 500,
-              width: '100%',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-            </svg>
-            Settings
-          </button>
-        </div>
       </main>
 )}
 
@@ -701,11 +666,31 @@ Clear Completed
                   </svg>
                 )}
               </button>
-              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--muted)', display: showSplitView ? 'none' : 'block' }}>
-                {view === 'list' ? 'List' : 'Calendar'}
-              </span>
             </div>
           )}
+
+          {/* Settings Button - show in all views */}
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            style={{
+              width: 48,
+              height: 48,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'none',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              color: 'var(--muted)',
+              transition: 'all 0.2s ease',
+            }}
+            aria-label="Settings"
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </button>
 
           {/* FAB - Add Task */}
           <button
