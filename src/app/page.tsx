@@ -120,25 +120,53 @@ export default function HomePage() {
       return isSameDay(d, today);
     });
     // Sort: timed tasks first (by time), then alphabetically
+    // Handle AM/PM: times without AM/PM default to PM (like standard 12-hour clock convention for times like @12 meaning 12pm)
+    const currentHour = new Date().getHours();
     const sortByTime = (a: Task, b: Task) => {
       const timeA = a.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
       const timeB = b.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
       if (timeA && !timeB) return -1;
       if (!timeA && timeB) return 1;
       if (timeA && timeB) {
-        // Normalize to minutes for comparison
-        const normalizeTime = (t: string): number => {
+        const parseTime = (t: string): number => {
           const clean = t.replace('@', '').toLowerCase();
+          const hasAmPm = clean.includes('am') || clean.includes('pm');
+          let hours: number;
+          let minutes = 0;
+          
           if (clean.includes(':')) {
             const [h, m] = clean.split(':').map(Number);
-            return h * 60 + (m || 0);
+            hours = h;
+            minutes = m || 0;
+          } else {
+            const num = parseInt(clean.replace(/\D/g, ''), 10) || 0;
+            if (num >= 100) {
+              hours = Math.floor(num / 100);
+              minutes = num % 100;
+            } else {
+              hours = num;
+              minutes = 0;
+            }
           }
-          const num = parseInt(clean.replace(/\D/g, ''), 10) || 0;
-          if (num >= 100) return num; // 530 -> 530 minutes
-          return num * 60; // 1 -> 60, 5 -> 300
+          
+          // Convert to 24-hour format
+          if (hasAmPm) {
+            if (clean.includes('pm') && hours < 12) hours += 12;
+            if (clean.includes('am') && hours === 12) hours = 0;
+          } else {
+            // No AM/PM specified - assume PM if time < current hour (after current time has passed for AM)
+            // This handles @12 as 12pm, @530 as 5:30am (since 530 < current hour which is 11)
+            // Actually user wants @12 (12pm) before @530 (5:30pm), so assume PM for times that could be PM
+            if (hours < 12 && (hours * 60 + minutes) < (currentHour * 60)) {
+              hours += 12; // Convert to PM (e.g., 5:30 becomes 17:30)
+            }
+          }
+          
+          return hours * 60 + minutes;
         };
-        const normalizedA = normalizeTime(timeA[1]);
-        const normalizedB = normalizeTime(timeB[1]);
+        
+        const normalizedA = parseTime(timeA[1]);
+        const normalizedB = parseTime(timeB[1]);
         return normalizedA - normalizedB;
       }
       return a.title.localeCompare(b.title);

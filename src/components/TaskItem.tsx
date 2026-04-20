@@ -146,36 +146,34 @@ export default function TaskItem({
                   {task.notes}
                 </p>
               )}
-              {task.isRecurring && (
-                <span style={{ 
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  margin: '6px 0 0',
-                  fontSize: 12, 
-                  color: 'var(--accent)',
-                  fontWeight: 500,
-                }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 4 }}>
-                    <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
-                  </svg>
-                  {task.recurrenceType}
-                </span>
-              )}
-              {taskTime && (
+              {(task.isRecurring || taskTime) && (
                 <div style={{
-                  display: 'inline-flex',
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: 4,
+                  flexWrap: 'wrap',
+                  gap: 8,
                   margin: '6px 0 0',
                   fontSize: 12,
                   fontWeight: 500,
                   color: 'var(--accent)',
                 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M12 6v6l4 2"/>
-                  </svg>
-                  {taskTime}
+                  {task.isRecurring && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
+                      </svg>
+                      {task.recurrenceType}
+                    </span>
+                  )}
+                  {taskTime && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                      </svg>
+                      {taskTime}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
