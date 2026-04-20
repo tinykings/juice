@@ -4,40 +4,67 @@
 
 :root,
 [data-theme="light"] {
-  --background: #EBE9E4;
-  --foreground: #1C1B1A;
-  --card: #F5F3EF;
-  --muted: #A8A6A1;
-  --muted-light: #D6D4CF;
-  --border: #D6D4CF;
-  --accent: #FF5E00;
-  --accent-light: #FFE0CC;
-  --yellow: #FFC000;
-  --red: #FF3B30;
-  --green: #34C759;
-  --purple: #9D00FF;
+  /* Base colors - warm off-white palette */
+  --background: #F8F6F3;
+  --foreground: #1A1A18;
+  --card: #FFFFFF;
+  --muted: #8A8A85;
+  --muted-light: #E5E3DF;
+  --border: #E5E3DF;
   
-  /* Calendar specific - warm tones */
-  --calendar-bg: #EBE9E4;
-  --calendar-text: #1C1B1A;
+  /* Accent - refined coral/red */
+  --accent: #E84545;
+  --accent-light: #FDEaea;
+  --accent-subtle: #FCE8E8;
+  
+  /* Semantic colors */
+  --yellow: #F5B041;
+  --red: #E84545;
+  --green: #2ECC71;
+  --purple: #9B59B6;
+  
+  /* UI elements */
+  --surface-raised: #FFFFFF;
+  --surface-inset: #F2F0ED;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  
+  /* Calendar */
+  --calendar-bg: #F8F6F3;
+  --calendar-text: #1A1A18;
 }
 
 [data-theme="dark"] {
-  --background: #0D0D0D;
-  --foreground: #E6E6E6;
-  --card: #171717;
-  --muted: #666666;
+  /* Base colors - warm dark grey */
+  --background: #1C1C1C;
+  --foreground: #ECECEB;
+  --card: #252525;
+  --muted: #8A8A85;
   --muted-light: #333333;
-  --border: #262626;
-  --accent: #D4FF00;
-  --accent-light: #2A3300;
-  --yellow: #F1FA8C;
-  --red: #FF5555;
-  --green: #50FA7B;
-  --purple: #BD93F9;
+  --border: #333333;
   
-  --calendar-bg: #0D0D0D;
-  --calendar-text: #E6E6E6;
+  /* Accent - lime green */
+  --accent: #A5F542;
+  --accent-light: #2A3A10;
+  --accent-subtle: #1A2510;
+  
+  /* Semantic colors */
+  --yellow: #FBBF24;
+  --red: #EF4444;
+  --green: #10B981;
+  --purple: #A855F7;
+  
+  /* UI elements */
+  --surface-raised: #252525;
+  --surface-inset: #1C1C1C;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
+  
+  /* Calendar */
+  --calendar-bg: #1C1C1C;
+  --calendar-text: #ECECEB;
 }
 
 * {
@@ -51,17 +78,19 @@ html {
 }
 
 body {
-  font-family: var(--font-body), sans-serif;
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   min-height: 100dvh;
-  transition: background 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.3s ease;
+  transition: background 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
+  line-height: 1.5;
 }
 
-/* Noise Texture */
+/* Noise texture - subtle */
 body::before {
   content: "";
   position: fixed;
@@ -70,71 +99,153 @@ body::before {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1;
-  opacity: 0.03;
+  z-index: 9999;
+  opacity: 0.015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   mix-blend-mode: overlay;
 }
 
-[data-theme="dark"] body::before {
-  opacity: 0.05;
-}
-
-/* Headings */
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display), serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 /* Selection */
 ::selection {
   background-color: var(--accent);
-  color: var(--background);
+  color: white;
 }
 
+/* Safe area padding */
 @supports (padding: max(0px)) {
   .safe-bottom {
     padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
 }
 
-/* Hide scrollbars for native app feel on mobile PWA */
+/* Hide scrollbars */
 html,
 body {
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
 
 ::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+  display: none;
 }
 
 input, textarea, button {
   font-family: inherit;
+  border: none;
+  outline: none;
+  background: none;
 }
 
-.line-clamp-1 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Utility Animations */
+/* Utility animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateY(8px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes scaleIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}
+
+@keyframes checkmark {
+  0% { 
+    stroke-dashoffset: 20; 
+  }
+  100% { 
+    stroke-dashoffset: 0; 
+  }
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Stagger delays */
+.delay-50 { animation-delay: 50ms; }
 .delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
 
-@keyframes checkSlide {
-  0% { opacity: 0; transform: translateX(-8px); }
-  100% { opacity: 1; transform: translateX(0); }
+/* Card base */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Button base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--accent) 85%, black);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-inset);
 }

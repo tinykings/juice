@@ -25,24 +25,26 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)'
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(8px)'
         }}
       />
 
       {/* Modal */}
       <div style={{
         position: 'absolute',
-        left: 20,
-        right: 20,
-        top: '10%',
-        maxWidth: 500,
+        left: 16,
+        right: 16,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        maxWidth: 420,
         margin: '0 auto',
         background: 'var(--card)',
-        borderRadius: 0,
-        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
+        borderRadius: 16,
+        boxShadow: 'var(--shadow-lg)',
         overflow: 'auto',
-        border: '1px solid var(--border)'
+        border: '1px solid var(--border)',
+        animation: 'scaleIn 0.2s ease',
       }}>
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 
