@@ -633,6 +633,7 @@ Clear Completed
         alignItems: 'flex-end',
         justifyContent: 'space-between',
         gap: 16,
+        boxShadow: '0 -8px 40px rgba(0, 0, 0, 0.35)',
       }}>
           {/* Toggle Calendar/List Button & View indicator - show in both views when < 1000px */}
           {!showSplitView && (
@@ -729,27 +730,28 @@ Clear Completed
             aria-label="Add task"
             title="New (n)"
             style={{
-              width: 48,
-              height: 48,
+              width: 60,
+              height: 60,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'white',
-              background: 'var(--accent)',
-              border: 'none',
+              color: 'var(--foreground)',
+              background: 'var(--surface-inset)',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
-              flexShrink: 0,
-              boxShadow: 'var(--shadow-lg)',
+              boxShadow: 'var(--shadow-md)',
               transition: 'all 0.2s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = 'var(--accent-subtle)';
+              e.currentTarget.style.color = 'var(--accent)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.color = 'var(--foreground)';
             }}
           >
-            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" />
             </svg>
           </button>
