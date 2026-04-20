@@ -480,9 +480,23 @@ export default function HomePage() {
 Back
           </button>
         )}
-        {/* Task Groups */}
+        {/* Task Groups - show image at top when no incomplete tasks */}
         {isLoaded && (
           <div>
+            {incompleteTasks.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <img 
+                  src="/juice.webp" 
+                  alt="All done!" 
+                  style={{ 
+                    width: 200, 
+                    height: 'auto',
+                    margin: '0 auto',
+                    display: 'block',
+                  }} 
+                />
+              </div>
+            )}
             {visibleGroups.map((group, index) => (
               <section 
                 key={group.label} 
@@ -531,34 +545,6 @@ Back
                 </div>
               </section>
             ))}
-            
-            {incompleteTasks.length === 0 && completedTasks.length === 0 && !searchQuery && (
-              <div style={{ textAlign: 'center', padding: '80px 0 120px' }}>
-                {/* Empty state illustration */}
-                <div style={{ 
-                  width: 80, 
-                  height: 80, 
-                  background: 'var(--surface-inset)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  margin: '0 auto 24px',
-                  borderRadius: 20,
-                  border: '1px solid var(--border)',
-                }}>
-                  <svg width="36" height="36" fill="none" stroke="var(--accent)" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M8 12h8"/>
-                  </svg>
-                </div>
-                <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 8, fontFamily: 'var(--font-body)', color: 'var(--foreground)' }}>
-                  Ready to focus?
-                </h3>
-                <p style={{ color: 'var(--muted)', fontSize: 15, maxWidth: 240, margin: '0 auto', lineHeight: 1.5 }}>
-                  Add your first task with the + button below
-                </p>
-              </div>
-            )}
 
             {/* Completed Section */}
             {completedTasks.length > 0 && (
@@ -633,7 +619,6 @@ Clear Completed
         alignItems: 'flex-end',
         justifyContent: 'space-between',
         gap: 16,
-        boxShadow: '0 -8px 40px rgba(0, 0, 0, 0.35)',
       }}>
           {/* Toggle Calendar/List Button & View indicator - show in both views when < 1000px */}
           {!showSplitView && (
