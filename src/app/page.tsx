@@ -360,6 +360,16 @@ export default function HomePage() {
               color: 'var(--muted)',
               transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--highlight)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
             aria-label="Search"
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -380,6 +390,16 @@ export default function HomePage() {
               cursor: 'pointer',
               color: 'var(--muted)',
               transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--highlight)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
             }}
             aria-label="Settings"
           >
@@ -409,6 +429,16 @@ export default function HomePage() {
               color: 'var(--foreground)',
               transition: 'all 0.2s ease',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--highlight)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--foreground)';
+            }}
             aria-label="Add task"
             title="New (n)"
           >
@@ -429,6 +459,7 @@ export default function HomePage() {
           zIndex: 20,
           background: 'var(--background)',
           padding: '16px 24px',
+          paddingRight: showSplitView ? 164 : 24,
           borderBottom: '2px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
@@ -529,10 +560,10 @@ export default function HomePage() {
       {(view === 'list' || showSplitView) && (
       <main style={{ 
         flex: 1, 
-        padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', 
+        padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
         paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24),
         overflow: 'auto',
-        height: (isWideScreen || showSplitView) ? 'calc(100vh - 80px)' : 'auto',
+        height: (isWideScreen || showSplitView) && !isSearchExpanded ? '100vh' : 'auto',
         borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
