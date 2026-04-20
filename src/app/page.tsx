@@ -224,6 +224,14 @@ export default function HomePage() {
     return groupedTasks.filter(g => g.tasks.length > 0);
   }, [groupedTasks]);
 
+  const allTodayTasksCompleted = useMemo(() => {
+    const today = startOfDay(currentDate);
+    const todayTasks = tasks.filter(t => isSameDay(new Date(t.dueDate), today));
+    const hasTodayTasks = todayTasks.length > 0;
+    const allCompleted = todayTasks.every(t => t.completed);
+    return hasTodayTasks && allCompleted;
+  }, [tasks, currentDate]);
+
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
     if (isTodayOrOverdue) {
@@ -563,7 +571,7 @@ export default function HomePage() {
         padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
         paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24),
         overflow: 'auto',
-        height: (isWideScreen || showSplitView) && !isSearchExpanded ? '100vh' : 'auto',
+        minHeight: (isWideScreen || showSplitView) && !isSearchExpanded ? '100vh' : 'auto',
         borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
@@ -594,11 +602,11 @@ export default function HomePage() {
 Back
           </button>
         )}
-        {/* Task Groups - show image at top when no incomplete tasks */}
+        {/* Task Groups - show image at top when no incomplete tasks or all today tasks completed */}
         {isLoaded && (
           <div>
-            {incompleteTasks.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            {(incompleteTasks.length === 0 || allTodayTasksCompleted) && (
+              <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
                 <img 
                   src="/juice.webp" 
                   alt="All done!" 
