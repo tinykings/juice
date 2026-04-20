@@ -56,7 +56,7 @@ export default function UpcomingPage() {
   }, [tasks, today]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: 600, margin: '0 auto' }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

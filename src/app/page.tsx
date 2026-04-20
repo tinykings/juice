@@ -25,6 +25,7 @@ export default function HomePage() {
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [sideView, setSideView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -35,10 +36,23 @@ export default function HomePage() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [mounted, setMounted] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Track window width for responsive layout
+  useEffect(() => {
+    const updateWidth = () => setWindowWidth(window.innerWidth);
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  const showSplitView = windowWidth >= 1000;
+  const showToggle = windowWidth < 1000; // Show toggle arrow when NOT split view
+  const isWideScreen = windowWidth > 600;
 
   const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks, currentDate]);
   useAppBadge(todayTaskCount, badgeEnabled);
@@ -303,7 +317,7 @@ export default function HomePage() {
   }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: (isWideScreen || showSplitView) ? 'flex' : 'block', height: '100vh' }}>
       {/* Gist Sync Message */}
       {isGistConfigured && isSyncing && (
         <div style={{
@@ -417,19 +431,59 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Calendar View */}
-      {view === 'calendar' && isLoaded && (
-        <CalendarView
-          tasks={tasks}
-          onDaySelect={handleDaySelect}
-          isGistConfigured={isGistConfigured}
-          isSyncing={isSyncing}
-        />
+      {/* Calendar View - shown in calendar view OR split view OR side toggled */}
+      {(view === 'calendar' || showSplitView || sideView === 'calendar') && isLoaded && (
+        <div style={{ flex: 1, overflow: 'auto', height: (isWideScreen || showSplitView) ? '100vh' : 'auto', borderLeft: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none', paddingBottom: (isWideScreen || showSplitView) ? 80 : 0 }}>
+          <CalendarView
+            tasks={tasks}
+            onDaySelect={handleDaySelect}
+            isGistConfigured={isGistConfigured}
+            isSyncing={isSyncing}
+          />
+        </div>
       )}
 
-      {/* Main Content */}
-      {view === 'list' && (
-      <main style={{ padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24) }}>
+      {/* Toggle Arrow - visible when width < 1000 */}
+      {showToggle && (
+        <button
+          onClick={() => setSideView(sideView === 'list' ? 'calendar' : 'list')}
+          style={{
+            position: 'fixed',
+            left: sideView === 'list' ? '49.5%' : '50%',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 28,
+            height: 56,
+            background: 'var(--surface-inset)',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 20,
+            color: 'var(--muted)',
+          }}
+        >
+          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            {sideView === 'list' ? (
+              <path d="M9 18l6-6-6-6"/>
+            ) : (
+              <path d="M15 18l-6-6 6-6"/>
+            )}
+          </svg>
+        </button>
+      )}
+
+      {/* Main Content - List View - shown in list view OR split view (full width) OR when not toggled to calendar */}
+      {(view === 'list' || showSplitView || (showToggle && sideView === 'list')) && (
+      <main style={{ 
+        flex: 1, 
+        padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', 
+        paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24),
+        overflow: 'auto',
+        height: (isWideScreen || showSplitView) ? 'calc(100vh - 80px)' : 'auto',
+        borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
+      }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
           <button
@@ -602,7 +656,7 @@ export default function HomePage() {
       <footer style={{
         position: 'fixed',
         bottom: 0,
-        left: 0,
+        left: isWideScreen ? 0 : 0,
         right: 0,
         zIndex: 10,
         background: 'var(--background)',
@@ -613,6 +667,7 @@ export default function HomePage() {
         justifyContent: 'space-between',
         gap: 16,
         borderTop: '1px solid var(--border)',
+        maxWidth: (isWideScreen || showSplitView) ? '50%' : 'none',
       }}>
           {/* Bottom Navigation Tabs */}
           <nav style={{

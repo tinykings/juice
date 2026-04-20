@@ -90,6 +90,13 @@ body {
   line-height: 1.5;
 }
 
+/* Mobile-first constrained width */
+.app-container {
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
 /* Noise texture - subtle */
 body::before {
   content: "";
