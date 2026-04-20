@@ -608,7 +608,7 @@ Back
             {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
               <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
                 <img 
-                  src="/juice.webp" 
+                  src={`${process.env.NODE_ENV === 'production' ? '/juice' : ''}/juice.webp`} 
                   alt="All done!" 
                   style={{ 
                     width: 200, 
