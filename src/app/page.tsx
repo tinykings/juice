@@ -605,7 +605,7 @@ Back
         {/* Task Groups - show image at top when no incomplete tasks or all today tasks completed */}
         {isLoaded && (
           <div>
-            {(incompleteTasks.length === 0 || allTodayTasksCompleted) && (
+            {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
               <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
                 <img 
                   src="/juice.webp" 
