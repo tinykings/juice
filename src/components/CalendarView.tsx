@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   format,
   startOfMonth,
@@ -144,77 +144,103 @@ function MonthGrid({
         width: '100%',
       }}>
         {allDays.map(day => {
-          const inMonth = isSameMonth(day, month);
-          const isToday = isSameDay(day, today);
           const key = format(day, 'yyyy-MM-dd');
-          const [isHovered, setIsHovered] = useState(false);
           const dayTasks = tasksByDate[key] || [];
-          const hasTasks = dayTasks.length > 0;
 
           return (
-            <button
+            <DayCell
               key={day.toISOString()}
-              onClick={() => onDaySelect(day, dayTasks)}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                justifyContent: 'flex-start',
-                padding: '6px 4px',
-                minHeight: 150,
-                fontSize: 13,
-                fontWeight: isToday ? 600 : 400,
-                background: isHovered ? 'var(--accent-subtle)' : (isToday ? 'var(--accent-subtle)' : (inMonth ? 'var(--surface-inset)' : 'transparent')),
-                color: inMonth 
-                  ? (isToday ? 'var(--accent)' : 'var(--foreground)') 
-                  : 'var(--muted-light)',
-                border: isToday ? '1px solid var(--accent)' : '1px solid transparent',
-                borderRadius: 8,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                textAlign: 'left',
-                overflow: 'hidden',
-              }}
-            >
-              <span style={{ 
-                fontSize: 12, 
-                fontWeight: isToday ? 600 : 400,
-                marginBottom: hasTasks ? 4 : 0,
-              }}>
-                {day.getDate()}
-              </span>
-              
-              {/* Task names */}
-              {hasTasks && (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
-                  width: '100%',
-                }}>
-                  {dayTasks.map(task => (
-                    <div
-                      key={task.id}
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 500,
-                        color: 'var(--accent)',
-                        whiteSpace: 'normal',
-                        overflowWrap: 'anywhere',
-                        lineHeight: 1.25,
-                      }}
-                    >
-                      {task.title}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </button>
+              day={day}
+              month={month}
+              today={today}
+              dayTasks={dayTasks}
+              onDaySelect={onDaySelect}
+            />
           );
         })}
       </div>
     </div>
+  );
+}
+
+function DayCell({
+  day,
+  month,
+  today,
+  dayTasks,
+  onDaySelect,
+}: {
+  day: Date;
+  month: Date;
+  today: Date;
+  dayTasks: Task[];
+  onDaySelect: (date: Date, tasks: Task[]) => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const inMonth = isSameMonth(day, month);
+  const isTodayCell = isSameDay(day, today);
+  const hasTasks = dayTasks.length > 0;
+
+  return (
+    <button
+      onClick={() => onDaySelect(day, dayTasks)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+        padding: '6px 4px',
+        minHeight: 150,
+        fontSize: 13,
+        fontWeight: isTodayCell ? 600 : 400,
+        background: isHovered
+          ? 'var(--accent-subtle)'
+          : (isTodayCell ? 'var(--accent-subtle)' : (inMonth ? 'var(--surface-inset)' : 'transparent')),
+        color: inMonth
+          ? (isTodayCell ? 'var(--accent)' : 'var(--foreground)')
+          : 'var(--muted-light)',
+        border: isTodayCell ? '1px solid var(--accent)' : '1px solid transparent',
+        borderRadius: 8,
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        textAlign: 'left',
+        overflow: 'hidden',
+      }}
+    >
+      <span style={{
+        fontSize: 12,
+        fontWeight: isTodayCell ? 600 : 400,
+        marginBottom: hasTasks ? 4 : 0,
+      }}>
+        {day.getDate()}
+      </span>
+
+      {hasTasks && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          width: '100%',
+        }}>
+          {dayTasks.map(task => (
+            <div
+              key={task.id}
+              style={{
+                fontSize: 10,
+                fontWeight: 500,
+                color: 'var(--accent)',
+                whiteSpace: 'normal',
+                overflowWrap: 'anywhere',
+                lineHeight: 1.25,
+              }}
+            >
+              {task.title}
+            </div>
+          ))}
+        </div>
+      )}
+    </button>
   );
 }

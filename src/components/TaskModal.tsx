@@ -62,51 +62,42 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
   const titleRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLInputElement>(null);
   const hasFocusedRef = useRef(false);
+  const initialDueDate = editTask
+    ? `${new Date(editTask.dueDate).getUTCFullYear()}-${String(new Date(editTask.dueDate).getUTCMonth() + 1).padStart(2, '0')}-${String(new Date(editTask.dueDate).getUTCDate()).padStart(2, '0')}`
+    : (initialDate || format(new Date(), 'yyyy-MM-dd'));
   
-  const [dueDate, setDueDate] = useState(() => {
-    if (editTask) {
-      const date = new Date(editTask.dueDate);
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-    return format(new Date(), 'yyyy-MM-dd');
-  });
+  const [dueDate, setDueDate] = useState(initialDueDate);
 
   const [hasChanges, setHasChanges] = useState(false);
   const originalData = useRef({
     title: editTask?.title || '',
     notes: editTask?.notes || '',
-    dueDate: dueDate,
+    dueDate: initialDueDate,
     isRecurring: editTask?.isRecurring || false,
     recurrenceType: editTask?.recurrenceType || 'daily'
   });
 
-  useEffect(() => {
-    if (initialDate && !editTask) {
-      setDueDate(initialDate);
-    }
-  }, [initialDate, editTask]);
-
   const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
 
-  const checkForChanges = () => {
+  const checkForChanges = useCallback((overrides?: {
+    dueDate?: string;
+    isRecurring?: boolean;
+    recurrenceType?: RecurrenceType;
+  }) => {
     const currentTitle = titleRef.current?.value || '';
     const currentNotes = notesRef.current?.value || '';
+    const nextDueDate = overrides?.dueDate ?? dueDate;
+    const nextIsRecurring = overrides?.isRecurring ?? isRecurring;
+    const nextRecurrenceType = overrides?.recurrenceType ?? recurrenceType;
     const changed = 
       currentTitle !== originalData.current.title ||
       currentNotes !== originalData.current.notes ||
-      dueDate !== originalData.current.dueDate ||
-      isRecurring !== originalData.current.isRecurring ||
-      (isRecurring && recurrenceType !== originalData.current.recurrenceType);
+      nextDueDate !== originalData.current.dueDate ||
+      nextIsRecurring !== originalData.current.isRecurring ||
+      (nextIsRecurring && nextRecurrenceType !== originalData.current.recurrenceType);
     
     setHasChanges(changed);
-  };
-
-  useEffect(() => {
-    checkForChanges();
   }, [dueDate, isRecurring, recurrenceType]);
 
   const focusTitle = useCallback(() => {
@@ -135,23 +126,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     }
   }, [editTask]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-      if (e.key === 'Enter' && editTask && hasChanges) {
-        e.preventDefault();
-        handleSubmit(e as unknown as React.FormEvent);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-    };
-  }, [onClose, editTask, hasChanges]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     
     const title = titleRef.current?.value.trim() || '';
@@ -181,7 +156,23 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
 
     onClose();
     if (onSave) onSave();
-  };
+  }, [addTask, dueDate, editTask, isRecurring, onClose, onSave, recurrenceType, updateTask]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'Enter' && editTask && hasChanges) {
+        e.preventDefault();
+        handleSubmit(e as unknown as React.FormEvent);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [editTask, handleSubmit, hasChanges, onClose]);
 
   const handleDelete = () => {
     if (editTask) {
@@ -253,11 +244,15 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
 
       {/* Options */}
       <div style={{ padding: '0 24px 24px', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-        <CalendarPicker value={dueDate} onChange={(val) => { setDueDate(val); checkForChanges(); }} />
+        <CalendarPicker value={dueDate} onChange={(val) => { setDueDate(val); checkForChanges({ dueDate: val }); }} />
 
         <button
           type="button"
-          onClick={() => { setIsRecurring(!isRecurring); checkForChanges(); }}
+          onClick={() => {
+            const nextIsRecurring = !isRecurring;
+            setIsRecurring(nextIsRecurring);
+            checkForChanges({ isRecurring: nextIsRecurring });
+          }}
           onMouseEnter={(e) => {
             if (!isRecurring) {
               e.currentTarget.style.borderColor = 'var(--accent)';
@@ -305,7 +300,10 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             <button
               key={type}
               type="button"
-              onClick={() => { setRecurrenceType(type); checkForChanges(); }}
+              onClick={() => {
+                setRecurrenceType(type);
+                checkForChanges({ recurrenceType: type });
+              }}
               onMouseEnter={(e) => {
                 if (recurrenceType !== type) {
                   e.currentTarget.style.borderColor = 'var(--accent)';

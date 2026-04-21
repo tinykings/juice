@@ -1,4 +1,4 @@
-const CACHE_NAME = 'juice-v7.5';
+const CACHE_NAME = 'juice-v7.6';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -83,4 +83,3 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
-
