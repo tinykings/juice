@@ -645,9 +645,11 @@ Back
                     }} 
                   />
                   <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
-                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>
-                      {randomMessage}
-                    </div>
+                    {completedTasks.length > 0 && (
+                      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>
+                        {randomMessage}
+                      </div>
+                    )}
                     {tomorrowTasksCount > 0 && (
                       <div style={{ marginTop: 10, fontSize: 15, fontWeight: 600, color: 'var(--foreground)' }}>
                         Get ready, {tomorrowTasksCount} task{tomorrowTasksCount !== 1 ? 's' : ''} upcoming
