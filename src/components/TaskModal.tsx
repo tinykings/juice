@@ -200,7 +200,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           placeholder="New To-Do"
           defaultValue={editTask?.title || ''}
           autoFocus={!editTask}
-          onChange={checkForChanges}
+          onChange={() => checkForChanges()}
           style={{
             width: '100%',
             fontSize: 22,
@@ -228,7 +228,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           name="notes"
           placeholder="Notes"
           defaultValue={editTask?.notes || ''}
-          onChange={checkForChanges}
+          onChange={() => checkForChanges()}
           style={{
             width: '100%',
             fontSize: 17,
