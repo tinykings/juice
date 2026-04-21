@@ -16,13 +16,11 @@ import { Task } from '@/types/task';
 interface CalendarViewProps {
   tasks: Task[];
   onDaySelect: (date: Date, tasks: Task[]) => void;
-  isGistConfigured?: boolean;
-  isSyncing?: boolean;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isSyncing }: CalendarViewProps) {
+export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) {
   // Get unique months that have tasks
   const monthsWithTasks = useMemo(() => {
     const monthSet = new Set<string>();
@@ -57,10 +55,8 @@ export default function CalendarView({ tasks, onDaySelect, isGistConfigured, isS
     return map;
   }, [tasks]);
 
-  const topPadding = (isGistConfigured && isSyncing) ? 44 : 20;
-  
   return (
-    <div style={{ padding: `${topPadding}px 16px 120px`, minWidth: 0 }}>
+    <div style={{ padding: '20px 16px 120px', minWidth: 0 }}>
       {monthsWithTasks.map(month => (
         <MonthGrid 
           key={month.toISOString()} 

@@ -347,22 +347,36 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: (isWideScreen || showSplitView) ? 'flex' : 'block', height: '100vh' }}>
-      {/* Gist Sync Message */}
+      {/* Gist Sync Notice */}
       {isGistConfigured && isSyncing && (
         <div style={{
           position: 'fixed',
-          top: showSplitView ? 60 : 0,
-          left: 0,
-          right: 0,
+          inset: 0,
           zIndex: 30,
-          background: 'var(--accent)',
-          color: 'var(--background)',
-          padding: '10px 24px',
-          textAlign: 'center',
-          fontSize: 14,
-          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          padding: 24,
         }}>
-          Syncing tasks from Gist...
+          <div style={{
+            minWidth: 240,
+            maxWidth: '90vw',
+            padding: '16px 20px',
+            borderRadius: 16,
+            background: 'rgba(28, 28, 28, 0.88)',
+            color: 'var(--background)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 16px 48px rgba(0, 0, 0, 0.28)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            textAlign: 'center',
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: 0.2,
+          }}>
+            Syncing tasks from Gist...
+          </div>
         </div>
       )}
 
@@ -370,7 +384,7 @@ export default function HomePage() {
       {showSplitView && (
         <div style={{
           position: 'fixed',
-          top: isGistConfigured && isSyncing ? 52 : 16,
+          top: 16,
           right: 24,
           zIndex: 25,
           display: 'flex',
@@ -580,8 +594,6 @@ export default function HomePage() {
           <CalendarView
             tasks={tasks}
             onDaySelect={handleDaySelect}
-            isGistConfigured={isGistConfigured}
-            isSyncing={isSyncing}
           />
         </div>
       )}
@@ -591,7 +603,6 @@ export default function HomePage() {
       <main style={{ 
         flex: 1, 
         padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
-        paddingTop: (isGistConfigured && isSyncing) ? (isSearchExpanded ? 108 : 44) : (isSearchExpanded ? 88 : 24),
         overflow: 'auto',
         minHeight: (isWideScreen || showSplitView) && !isSearchExpanded ? '100vh' : 'auto',
         borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
