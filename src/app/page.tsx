@@ -636,7 +636,7 @@ Back
                   <span className="sparkle-4" />
                   <span className="sparkle-5" />
                   <img 
-                    src={`${process.env.NODE_ENV === 'production' ? '/juice' : ''}/juice.webp`} 
+                    src={`${process.env.NODE_ENV === 'production' ? '/juice' : ''}/juice.png`} 
                     alt="All done!" 
                     style={{ 
                       width: 200, 
