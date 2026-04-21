@@ -106,6 +106,28 @@ export default function HomePage() {
     );
   }, [getCompletedTasks, searchQuery, selectedDateFilter]);
 
+  // Get tomorrow's task count
+  const tomorrowTasksCount = useMemo(() => {
+    if (selectedDateFilter) return 0;
+    const tomorrow = addDays(startOfDay(currentDate), 1);
+    return incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), tomorrow)).length;
+  }, [incompleteTasks, selectedDateFilter, currentDate]);
+
+  // Random motivational messages
+  const motivationalMessages = [
+    "Great work today!",
+    "You crushed it!",
+    "Outstanding!",
+    "Way to go!",
+    "Incredible work!",
+    "You're on fire!",
+    "Fantastic job!",
+    "Keep it up!",
+    "Mission accomplished!",
+    "What a day!",
+  ];
+  const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
     const today = startOfDay(currentDate);
@@ -622,6 +644,16 @@ Back
                       display: 'block',
                     }} 
                   />
+                  <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>
+                      {randomMessage}
+                    </div>
+                    {tomorrowTasksCount > 0 && (
+                      <div style={{ marginTop: 10, fontSize: 15, fontWeight: 600, color: 'var(--foreground)' }}>
+                        Get ready, {tomorrowTasksCount} task{tomorrowTasksCount !== 1 ? 's' : ''} upcoming
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
