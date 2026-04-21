@@ -1,5 +1,5 @@
 <p align="center">
-<img src="public/juice.webp" alt="Juice Logo" width="200" />
+<img src="public/juice.png" alt="Juice Logo" width="200" />
 </p>
 
 <h3 align="center">A minimal task manager — installable as a PWA, hosted on GitHub Pages.</h3>
