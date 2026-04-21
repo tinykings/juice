@@ -163,7 +163,7 @@ function MonthGrid({
                 alignItems: 'flex-start',
                 justifyContent: 'flex-start',
                 padding: '6px 4px',
-                minHeight: 90,
+                minHeight: 150,
                 fontSize: 13,
                 fontWeight: isToday ? 600 : 400,
                 background: isHovered ? 'var(--accent-subtle)' : (isToday ? 'var(--accent-subtle)' : (inMonth ? 'var(--surface-inset)' : 'transparent')),
@@ -193,20 +193,17 @@ function MonthGrid({
                   flexDirection: 'column',
                   gap: 1,
                   width: '100%',
-                  overflow: 'hidden',
                 }}>
                   {dayTasks.map(task => (
                     <div
                       key={task.id}
                       style={{
-                        fontSize: 9,
+                        fontSize: 10,
                         fontWeight: 500,
                         color: 'var(--accent)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '100%',
-                        lineHeight: 1.3,
+                        whiteSpace: 'normal',
+                        overflowWrap: 'anywhere',
+                        lineHeight: 1.25,
                       }}
                     >
                       {task.title}
