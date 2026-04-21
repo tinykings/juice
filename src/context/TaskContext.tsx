@@ -477,27 +477,47 @@ return new Date(task.completedAt) > oneDayAgo;
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
-  // Sync from Gist when app comes into focus
+  // Sync from Gist when app comes into focus and clean up old completed tasks on new day
   useEffect(() => {
-    if (!isGistConfigured) return;
-
-    const handleVisibilityChange = () => {
+    const handleFocus = () => {
       if (document.visibilityState === 'visible') {
-        // App came into focus - sync from Gist to get latest updates
-        syncFromGist();
+        // Sync from Gist to get latest updates
+        if (isGistConfigured) {
+          syncFromGist();
+        }
+
+        // Clean up completed tasks on new day
+        const lastCleanup = localStorage.getItem('juice-last-completed-cleanup');
+        const now = new Date();
+        const today = startOfDay(now);
+
+        const shouldCleanup = !lastCleanup || startOfDay(new Date(lastCleanup)) < today;
+        
+        if (shouldCleanup) {
+          setTasks((currentTasks) => {
+            const cleanedTasks = currentTasks.filter((task) => {
+              if (!task.completed || !task.completedAt) return true;
+              return new Date(task.completedAt) >= today;
+            });
+
+            if (cleanedTasks.length !== currentTasks.length) {
+              localStorage.setItem('juice-last-completed-cleanup', now.toISOString());
+              return cleanedTasks;
+            }
+            return currentTasks;
+          });
+        }
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Also sync when the window regains focus (for cases where visibilitychange doesn't fire)
-    window.addEventListener('focus', handleVisibilityChange);
+    document.addEventListener('visibilitychange', handleFocus);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleFocus);
+      window.removeEventListener('focus', handleFocus);
     };
-  }, [isGistConfigured, syncFromGist]);
+  }, [isGistConfigured, syncFromGist, setTasks]);
 
   return (
     <TaskContext.Provider
