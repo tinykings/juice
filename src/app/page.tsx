@@ -605,18 +605,24 @@ Back
         {/* Task Groups - show image at top when no incomplete tasks or all today tasks completed */}
         {isLoaded && (
           <div>
-            {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
+              {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
               <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
-                <img 
-                  src={`${process.env.NODE_ENV === 'production' ? '/juice' : ''}/juice.webp`} 
-                  alt="All done!" 
-                  style={{ 
-                    width: 200, 
-                    height: 'auto',
-                    margin: '0 auto',
-                    display: 'block',
-                  }} 
-                />
+                <div className="shine-animate" style={{ width: 200, margin: '0 auto', display: 'inline-block' }}>
+                  <span className="sparkle-1" />
+                  <span className="sparkle-2" />
+                  <span className="sparkle-3" />
+                  <span className="sparkle-4" />
+                  <span className="sparkle-5" />
+                  <img 
+                    src={`${process.env.NODE_ENV === 'production' ? '/juice' : ''}/juice.webp`} 
+                    alt="All done!" 
+                    style={{ 
+                      width: 200, 
+                      height: 'auto',
+                      display: 'block',
+                    }} 
+                  />
+                </div>
               </div>
             )}
             {allTodayTasksCompleted && completedTasks.length > 0 && !selectedDateFilter && (
