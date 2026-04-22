@@ -106,27 +106,14 @@ export default function HomePage() {
     );
   }, [getCompletedTasks, searchQuery, selectedDateFilter]);
 
-  // Get tomorrow's task count
-  const tomorrowTasksCount = useMemo(() => {
-    if (selectedDateFilter) return 0;
+  // Get tomorrow's tasks
+  const tomorrowTasks = useMemo(() => {
+    if (selectedDateFilter) return [];
     const tomorrow = addDays(startOfDay(currentDate), 1);
-    return incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), tomorrow)).length;
+    return incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), tomorrow));
   }, [incompleteTasks, selectedDateFilter, currentDate]);
 
-  // Random motivational messages
-  const motivationalMessages = [
-    "Great work today!",
-    "You crushed it!",
-    "Outstanding!",
-    "Way to go!",
-    "Incredible work!",
-    "You're on fire!",
-    "Fantastic job!",
-    "Keep it up!",
-    "Mission accomplished!",
-    "What a day!",
-  ];
-  const randomMessage = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+  const hasNoTasks = tasks.length === 0;
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
@@ -640,7 +627,7 @@ Back
           <div>
               {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
               <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
-                <div className="shine-animate" style={{ width: 200, margin: '0 auto', display: 'inline-block' }}>
+                <div className="shine-animate" style={{ width: 200, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <span className="sparkle-1" />
                   <span className="sparkle-2" />
                   <span className="sparkle-3" />
@@ -656,14 +643,34 @@ Back
                     }} 
                   />
                   <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
-                    {completedTasks.length > 0 && (
-                      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.5px', whiteSpace: 'nowrap' }}>
-                        {randomMessage}
+                    <div style={{ width: '100%', fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.5px', textAlign: 'center', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.15 }}>
+                      All tasks completed today!
+                    </div>
+                    {hasNoTasks && (
+                      <div style={{ marginTop: 14, width: '100%', textAlign: 'center', color: 'var(--muted)', fontSize: 15, lineHeight: 1.6 }}>
+                        <p style={{ marginBottom: 10 }}>
+                          Add your first task with the <strong style={{ color: 'var(--foreground)' }}>Add task</strong> button.
+                        </p>
+                        <p style={{ marginBottom: 10 }}>
+                          To sync across devices, open <strong style={{ color: 'var(--foreground)' }}>Settings</strong> and set up GitHub Gist Sync.
+                        </p>
+                        <p>
+                          Create a GitHub Gist, copy its <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>Gist ID</code>, then paste that plus a GitHub personal access token with <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>gist</code> scope into Settings.
+                        </p>
                       </div>
                     )}
-                    {tomorrowTasksCount > 0 && (
-                      <div style={{ marginTop: 10, fontSize: 15, fontWeight: 600, color: 'var(--foreground)' }}>
-                        Get ready, {tomorrowTasksCount} task{tomorrowTasksCount !== 1 ? 's' : ''} upcoming
+                    {tomorrowTasks.length > 0 && (
+                      <div style={{ marginTop: 14, width: '100%' }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                          Tomorrow
+                        </div>
+                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {tomorrowTasks.map((task) => (
+                            <div key={task.id} style={{ padding: '7px 10px', borderRadius: 999, border: '1px solid var(--border)', background: 'var(--surface-inset)', color: 'var(--foreground)', fontSize: 14, fontWeight: 500, lineHeight: 1.2, textAlign: 'center', whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+                              {task.title}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
