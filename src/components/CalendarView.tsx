@@ -266,6 +266,9 @@ function DayCell({
             <div
               key={task.id}
               style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 4,
                 fontSize: 10,
                 fontWeight: 500,
                 color: 'var(--accent)',
@@ -274,7 +277,8 @@ function DayCell({
                 lineHeight: 1.25,
               }}
             >
-              {task.title}
+              <span style={{ flex: '0 0 auto' }}>•</span>
+              <span style={{ minWidth: 0 }}>{task.title}</span>
             </div>
           ))}
         </div>
