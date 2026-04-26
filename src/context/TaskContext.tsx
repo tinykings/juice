@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDays, addWeeks, addMonths, addYears, format, startOfDay, subDays } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, format, startOfDay } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSettings } from '@/context/SettingsContext';
@@ -43,6 +43,14 @@ function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceTy
   }
 }
 
+function cleanupCompletedTasksFromPreviousDays(taskList: Task[]): Task[] {
+  const today = startOfDay(new Date());
+  return taskList.filter((task) => {
+    if (!task.completed || !task.completedAt) return true;
+    return new Date(task.completedAt) >= today;
+  });
+}
+
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<Task[]>('juice-tasks', []);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -80,12 +88,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         
         // Only update if Gist has different data than what we last synced
         if (gistTasksJson !== lastSyncedRef.current) {
-          // Clean up tasks older than 1 day before setting
-          const oneDayAgo = subDays(new Date(), 1);
-          const cleanedTasks = gistTasks.filter((task) => {
-            if (!task.completed || !task.completedAt) return true;
-return new Date(task.completedAt) > oneDayAgo;
-          });
+          // Remove completed tasks from prior days before setting
+          const cleanedTasks = cleanupCompletedTasksFromPreviousDays(gistTasks);
           
           // Merge with current local tasks to preserve any unsynced local changes
           setTasks((currentLocalTasks) => {
@@ -188,12 +192,8 @@ return new Date(task.completedAt) > oneDayAgo;
       try {
         const gistTasks = await loadTasksFromGist(gistSettings);
         
-        // Clean up tasks older than 1 day
-        const oneDayAgo = subDays(new Date(), 1);
-        const cleanedTasks = gistTasks.filter((task) => {
-          if (!task.completed || !task.completedAt) return true;
-          return new Date(task.completedAt) > oneDayAgo;
-        });
+        // Remove completed tasks from prior days
+        const cleanedTasks = cleanupCompletedTasksFromPreviousDays(gistTasks);
         
         const gistTasksJson = JSON.stringify(cleanedTasks);
         
@@ -289,12 +289,8 @@ return new Date(task.completedAt) > oneDayAgo;
       return;
     }
     
-    // Clean up old tasks before syncing
-    const thirtyDaysAgo = subDays(new Date(), 30);
-    const cleanedTasks = tasks.filter((task) => {
-      if (!task.completed || !task.completedAt) return true;
-      return new Date(task.completedAt) > thirtyDaysAgo;
-    });
+    // Remove completed tasks from prior days before syncing
+    const cleanedTasks = cleanupCompletedTasksFromPreviousDays(tasks);
     
     const tasksJson = JSON.stringify(cleanedTasks);
     // Skip if nothing changed
@@ -354,8 +350,9 @@ return new Date(task.completedAt) > oneDayAgo;
   }, [tasks, isLoaded, isGistConfigured, gistSettings]);
 
   const loadFromGist = useCallback((loadedTasks: Task[]) => {
-    lastSyncedRef.current = JSON.stringify(loadedTasks);
-    setTasks(loadedTasks);
+    const cleanedTasks = cleanupCompletedTasksFromPreviousDays(loadedTasks);
+    lastSyncedRef.current = JSON.stringify(cleanedTasks);
+    setTasks(cleanedTasks);
   }, [setTasks]);
 
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completed' | 'completedAt'>) => {
@@ -369,15 +366,11 @@ return new Date(task.completedAt) > oneDayAgo;
     console.log('Adding new task:', newTask);
     
     setTasks((prev) => {
-      // Clean up old tasks when adding a new task
-      const oneDayAgo = subDays(new Date(), 1);
-      const cleaned = prev.filter((task) => {
-        if (!task.completed || !task.completedAt) return true;
-        return new Date(task.completedAt) > oneDayAgo;
-      });
+      // Clean up completed tasks from prior days when adding a new task
+      const cleaned = cleanupCompletedTasksFromPreviousDays(prev);
       
       if (cleaned.length < prev.length) {
-        console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks (older than 1 day)`);
+        console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks from prior days`);
       }
       
       const updated = [...cleaned, newTask];
@@ -469,16 +462,33 @@ return new Date(task.completedAt) > oneDayAgo;
     }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [tasks]);
 
-  // Get all completed tasks from the last 1 day
+  // Get all completed tasks from today
   const getCompletedTasks = useCallback(() => {
-    const oneDayAgo = subDays(new Date(), 1);
+    const today = startOfDay(new Date());
     return tasks
-      .filter((task) => task.completed && task.completedAt && new Date(task.completedAt) > oneDayAgo)
+      .filter((task) => task.completed && task.completedAt && new Date(task.completedAt) >= today)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
-  // Sync from Gist when app comes into focus and clean up old completed tasks on new day
+  // Sync from Gist when app comes into focus and clean up completed tasks once the day changes
   useEffect(() => {
+    const cleanupNow = () => {
+      setTasks((currentTasks) => cleanupCompletedTasksFromPreviousDays(currentTasks));
+      localStorage.setItem('juice-last-completed-cleanup', new Date().toISOString());
+    };
+
+    const scheduleMidnightCleanup = () => {
+      const now = new Date();
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+      const delay = nextMidnight.getTime() - now.getTime();
+
+      return window.setTimeout(() => {
+        cleanupNow();
+        timerRef.current = scheduleMidnightCleanup();
+      }, delay);
+    };
+
     const handleFocus = () => {
       if (document.visibilityState === 'visible') {
         // Sync from Gist to get latest updates
@@ -486,7 +496,7 @@ return new Date(task.completedAt) > oneDayAgo;
           syncFromGist();
         }
 
-        // Clean up completed tasks on new day
+        // Clean up completed tasks from prior days
         const lastCleanup = localStorage.getItem('juice-last-completed-cleanup');
         const now = new Date();
         const today = startOfDay(now);
@@ -494,26 +504,19 @@ return new Date(task.completedAt) > oneDayAgo;
         const shouldCleanup = !lastCleanup || startOfDay(new Date(lastCleanup)) < today;
         
         if (shouldCleanup) {
-          setTasks((currentTasks) => {
-            const cleanedTasks = currentTasks.filter((task) => {
-              if (!task.completed || !task.completedAt) return true;
-              return new Date(task.completedAt) >= today;
-            });
-
-            if (cleanedTasks.length !== currentTasks.length) {
-              localStorage.setItem('juice-last-completed-cleanup', now.toISOString());
-              return cleanedTasks;
-            }
-            return currentTasks;
-          });
+          cleanupNow();
         }
       }
     };
+
+    const timerRef = { current: 0 as number | ReturnType<typeof window.setTimeout> };
+    timerRef.current = scheduleMidnightCleanup();
 
     document.addEventListener('visibilitychange', handleFocus);
     window.addEventListener('focus', handleFocus);
 
     return () => {
+      window.clearTimeout(timerRef.current);
       document.removeEventListener('visibilitychange', handleFocus);
       window.removeEventListener('focus', handleFocus);
     };

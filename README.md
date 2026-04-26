@@ -15,7 +15,7 @@ Tasks are stored in your browser's local storage. Connect a GitHub Gist for opti
 - **Recurring tasks** — daily, weekly, monthly, or yearly recurrence
 - **Calendar view** — month grid showing tasks by date
 - **Search** — filter tasks by title or notes
-- **Completed tasks** — view completions from the last 30 days
+- **Completed tasks** — view completions from today
 - **GitHub Gist sync** — two-way sync across devices using a private Gist
 - **Dark / light theme** — follows system preference, manually overridable
 - **PWA** — installable on mobile and desktop, works offline
@@ -38,7 +38,7 @@ By default, tasks are saved to `localStorage` in your browser. To sync between d
 
 The app syncs automatically 1 second after changes and whenever the tab regains focus. Conflict resolution uses timestamps — the Gist is treated as the source of truth on first load, with very recent local changes (under 5 seconds old) preserved.
 
-Completed tasks older than 30 days are deleted automatically.
+Completed tasks from previous days are deleted automatically once a new day starts.
 
 ## Getting Started
 
