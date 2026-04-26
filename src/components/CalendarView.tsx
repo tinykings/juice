@@ -56,130 +56,170 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
   }, [tasks]);
 
   return (
-    <div style={{ padding: '20px 16px 120px', minWidth: 0 }}>
-      {monthsWithTasks.map(month => (
-        <MonthGrid 
-          key={month.toISOString()} 
-          month={month} 
-          tasksByDate={tasksByDate}
-          onDaySelect={onDaySelect}
-        />
-      ))}
+    <div style={{ padding: '20px 20px 120px', minWidth: 0, width: '100%', maxWidth: 1120, margin: '0 auto' }}>
+      <ContinuousCalendar
+        months={monthsWithTasks}
+        tasksByDate={tasksByDate}
+        onDaySelect={onDaySelect}
+      />
     </div>
   );
 }
 
-function MonthGrid({ 
-  month, 
+function ContinuousCalendar({
+  months,
   tasksByDate,
-  onDaySelect 
-}: { 
-  month: Date;
+  onDaySelect,
+}: {
+  months: Date[];
   tasksByDate: Record<string, Task[]>;
   onDaySelect: (date: Date, tasks: Task[]) => void;
 }) {
   const today = new Date();
-  const monthStart = startOfMonth(month);
-  const monthEnd = endOfMonth(month);
-  const calStart = startOfWeek(monthStart);
-  const calEnd = endOfWeek(monthEnd);
-  const allDays = eachDayOfInterval({ start: calStart, end: calEnd });
 
-  // Check if this month has any tasks
-  const hasTasksInMonth = allDays.some(day => {
-    const key = format(day, 'yyyy-MM-dd');
-    return tasksByDate[key] && tasksByDate[key].length > 0;
-  });
+  const calendarDays = useMemo(() => {
+    if (months.length === 0) return [];
 
-  // Don't render months without tasks (except current month)
-  const isCurrentMonth = isSameMonth(month, today);
-  if (!hasTasksInMonth && !isCurrentMonth) return null;
+    const firstMonth = months[0];
+    const lastMonth = months[months.length - 1];
+    const calendarStart = startOfWeek(startOfMonth(firstMonth));
+    const calendarEnd = endOfWeek(endOfMonth(lastMonth));
+
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  }, [months]);
+
+  const monthSpans = useMemo(() => {
+    return months.map(month => {
+      const monthKey = format(month, 'yyyy-MM');
+      const startIndex = calendarDays.findIndex(day => format(day, 'yyyy-MM-dd') === format(month, 'yyyy-MM-01'));
+      const endIndex = calendarDays.reduce((acc, day, index) => (
+        isSameMonth(day, month) ? index : acc
+      ), startIndex);
+
+      return {
+        monthKey,
+        label: format(month, 'MMMM yyyy'),
+        startRow: startIndex >= 0 ? Math.floor(startIndex / 7) + 2 : 2,
+        endRow: endIndex >= 0 ? Math.floor(endIndex / 7) + 2 : 2,
+      };
+    });
+  }, [calendarDays, months]);
 
   return (
-    <div style={{ marginBottom: 32 }}>
-      {/* Month header */}
-      <h2 style={{
-        fontSize: 18,
-        fontWeight: 600,
-        fontFamily: 'var(--font-body)',
-        color: 'var(--foreground)',
-        marginBottom: 16,
-        paddingBottom: 8,
-        borderBottom: '1px solid var(--border)',
-      }}>
-        {format(month, 'MMMM yyyy')}
-      </h2>
-
-      {/* Weekday headers */}
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '60px repeat(7, minmax(0, 1fr))',
+      columnGap: 4,
+      rowGap: 3,
+      width: '100%',
+    }}>
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
-        gap: 4,
-        marginBottom: 4,
-      }}>
-        {WEEKDAYS.map(day => (
-          <div key={day} style={{
-            textAlign: 'center',
-            fontSize: 10,
-            fontWeight: 600,
-            color: 'var(--muted)',
-            padding: '6px 0',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            {day}
+        gridColumn: '1 / 2',
+        gridRow: 1,
+      }} />
+
+      {WEEKDAYS.map((day, index) => (
+        <div style={{
+          gridColumn: `${index + 2} / ${index + 3}`,
+          gridRow: 1,
+          textAlign: 'center',
+          fontSize: 10,
+          fontWeight: 600,
+          color: 'var(--muted)',
+          padding: '6px 0',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+        }} key={day}>
+          {day}
+        </div>
+      ))}
+
+      {monthSpans.map(span => (
+        <div
+          key={span.monthKey}
+          style={{
+            gridColumn: '1 / 2',
+            gridRow: `${span.startRow} / ${span.endRow + 1}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              writingMode: 'vertical-rl',
+              transform: 'rotate(180deg)',
+              textAlign: 'center',
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'var(--muted)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              lineHeight: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {span.label}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
 
-      {/* Calendar grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-        gap: 3,
-        width: '100%',
-      }}>
-        {allDays.map(day => {
-          const key = format(day, 'yyyy-MM-dd');
-          const dayTasks = tasksByDate[key] || [];
+      {calendarDays.map((day, index) => {
+        const key = format(day, 'yyyy-MM-dd');
+        const dayTasks = tasksByDate[key] || [];
+        const inVisibleMonth = months.some(month => isSameMonth(day, month));
+        const isMonthStart = day.getDate() === 1 && inVisibleMonth;
+        const row = Math.floor(index / 7) + 2;
+        const column = (index % 7) + 2;
 
-          return (
-            <DayCell
-              key={day.toISOString()}
-              day={day}
-              month={month}
-              today={today}
-              dayTasks={dayTasks}
-              onDaySelect={onDaySelect}
-            />
-          );
-        })}
-      </div>
+        return (
+          <DayCell
+            key={day.toISOString()}
+            day={day}
+            inVisibleMonth={inVisibleMonth}
+            isMonthStart={isMonthStart}
+            today={today}
+            dayTasks={dayTasks}
+            onDaySelect={onDaySelect}
+            gridColumn={column}
+            gridRow={row}
+          />
+        );
+      })}
     </div>
   );
 }
 
 function DayCell({
   day,
-  month,
+  inVisibleMonth,
+  isMonthStart,
   today,
   dayTasks,
   onDaySelect,
+  gridColumn,
+  gridRow,
 }: {
   day: Date;
-  month: Date;
+  inVisibleMonth: boolean;
+  isMonthStart: boolean;
   today: Date;
   dayTasks: Task[];
   onDaySelect: (date: Date, tasks: Task[]) => void;
+  gridColumn: number;
+  gridRow: number;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const inMonth = isSameMonth(day, month);
   const isTodayCell = isSameDay(day, today);
   const hasTasks = dayTasks.length > 0;
+  const showTasks = hasTasks;
+  const selectableTasks = dayTasks;
 
   return (
     <button
-      onClick={() => onDaySelect(day, dayTasks)}
+      onClick={() => onDaySelect(day, selectableTasks)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
@@ -193,27 +233,29 @@ function DayCell({
         fontWeight: isTodayCell ? 600 : 400,
         background: isHovered
           ? 'var(--accent-subtle)'
-          : (isTodayCell ? 'var(--accent-subtle)' : (inMonth ? 'var(--surface-inset)' : 'transparent')),
-        color: inMonth
+          : (isTodayCell ? 'var(--accent-subtle)' : (inVisibleMonth ? 'var(--surface-inset)' : 'transparent')),
+        color: inVisibleMonth
           ? (isTodayCell ? 'var(--accent)' : 'var(--foreground)')
           : 'var(--muted-light)',
-        border: isTodayCell ? '1px solid var(--accent)' : '1px solid transparent',
+        border: (isTodayCell || isMonthStart) ? '1px solid var(--accent)' : '1px solid transparent',
         borderRadius: 8,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         textAlign: 'left',
         overflow: 'hidden',
+        gridColumn: `${gridColumn} / ${gridColumn + 1}`,
+        gridRow: `${gridRow} / ${gridRow + 1}`,
       }}
     >
       <span style={{
         fontSize: 12,
         fontWeight: isTodayCell ? 600 : 400,
-        marginBottom: hasTasks ? 4 : 0,
+        marginBottom: showTasks ? 4 : 0,
       }}>
         {day.getDate()}
       </span>
 
-      {hasTasks && (
+      {showTasks && (
         <div style={{
           display: 'flex',
           flexDirection: 'column',
