@@ -218,7 +218,7 @@ function DayCell({
   const selectableTasks = dayTasks;
 
   return (
-    <button
+      <button
       onClick={() => onDaySelect(day, selectableTasks)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -233,11 +233,15 @@ function DayCell({
         fontWeight: isTodayCell ? 600 : 400,
         background: isHovered
           ? 'var(--accent-subtle)'
-          : (isTodayCell ? 'var(--accent-subtle)' : (inVisibleMonth ? 'var(--surface-inset)' : 'transparent')),
+          : (isTodayCell
+            ? 'var(--accent-subtle)'
+            : (isMonthStart && inVisibleMonth
+              ? 'var(--calendar-month-start)'
+              : (inVisibleMonth ? 'var(--surface-inset)' : 'transparent'))),
         color: inVisibleMonth
           ? (isTodayCell ? 'var(--accent)' : 'var(--foreground)')
           : 'var(--muted-light)',
-        border: (isTodayCell || isMonthStart) ? '1px solid var(--accent)' : '1px solid transparent',
+        border: isTodayCell ? '1px solid var(--accent)' : '1px solid transparent',
         borderRadius: 8,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
