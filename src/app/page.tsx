@@ -643,9 +643,6 @@ Back
                     }} 
                   />
                   <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
-                    <div style={{ width: '100%', fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.5px', textAlign: 'center', whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.15 }}>
-                      All tasks completed today!
-                    </div>
                     {hasNoTasks && (
                       <div style={{ marginTop: 14, width: '100%', textAlign: 'center', color: 'var(--muted)', fontSize: 15, lineHeight: 1.6 }}>
                         <p style={{ marginBottom: 10 }}>
@@ -661,15 +658,8 @@ Back
                     )}
                     {tomorrowTasks.length > 0 && (
                       <div style={{ marginTop: 14, width: '100%' }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                          Tomorrow
-                        </div>
-                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {tomorrowTasks.map((task) => (
-                            <div key={task.id} style={{ padding: '7px 10px', borderRadius: 999, border: '1px solid var(--border)', background: 'var(--surface-inset)', color: 'var(--foreground)', fontSize: 14, fontWeight: 500, lineHeight: 1.2, textAlign: 'center', whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
-                              {task.title}
-                            </div>
-                          ))}
+                        <div style={{ marginTop: 8, textAlign: 'center', color: 'var(--foreground)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+                          {`You have ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? 'task' : 'tasks'} tomorrow. ${tomorrowTasks.map((task) => task.title).join(', ')}.`}
                         </div>
                       </div>
                     )}
