@@ -52,6 +52,12 @@ export default function HomePage() {
   const showSplitView = windowWidth >= 1000;
   const showToggle = windowWidth < 1000; // Show toggle arrow when NOT split view
   const isWideScreen = windowWidth > 600;
+  const handleSearchClick = useCallback(() => {
+    if (view === 'calendar') {
+      setView('list');
+    }
+    setIsSearchExpanded(true);
+  }, [view]);
 
   const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks, currentDate]);
   useAppBadge(todayTaskCount, badgeEnabled);
@@ -789,7 +795,7 @@ Back
 
           {/* Search Button */}
           <button
-            onClick={() => setIsSearchExpanded(true)}
+            onClick={handleSearchClick}
             style={{
               width: 48,
               height: 48,
