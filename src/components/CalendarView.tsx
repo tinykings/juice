@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   format,
   startOfMonth,
@@ -54,6 +54,23 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
     Object.values(map).forEach(arr => arr.sort((a, b) => a.title.localeCompare(b.title)));
     return map;
   }, [tasks]);
+
+  const hasAutoScrolledRef = useRef(false);
+
+  useEffect(() => {
+    if (hasAutoScrolledRef.current || monthsWithTasks.length === 0) return;
+
+    const targetDate = format(startOfWeek(new Date()), 'yyyy-MM-dd');
+    const timer = window.setTimeout(() => {
+      document.querySelector<HTMLElement>(`[data-date="${targetDate}"]`)?.scrollIntoView({
+        block: 'start',
+        behavior: 'auto',
+      });
+      hasAutoScrolledRef.current = true;
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [monthsWithTasks.length]);
 
   return (
     <div style={{ padding: '20px 20px 120px', minWidth: 0, width: '100%', maxWidth: 1120, margin: '0 auto' }}>
@@ -132,6 +149,7 @@ function ContinuousCalendar({
             gridColumn={column}
             gridRow={row}
             monthLabel={isMonthStart ? format(day, 'MMMM') : undefined}
+            dayKey={key}
           />
         );
       })}
@@ -149,6 +167,7 @@ function DayCell({
   gridColumn,
   gridRow,
   monthLabel,
+  dayKey,
 }: {
   day: Date;
   inVisibleMonth: boolean;
@@ -159,6 +178,7 @@ function DayCell({
   gridColumn: number;
   gridRow: number;
   monthLabel?: string;
+  dayKey: string;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const isTodayCell = isSameDay(day, today);
@@ -171,6 +191,7 @@ function DayCell({
       onClick={() => onDaySelect(day, selectableTasks)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      data-date={dayKey}
       style={{
         display: 'flex',
         flexDirection: 'column',

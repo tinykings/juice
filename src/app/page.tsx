@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useSettings } from '@/context/SettingsContext';
@@ -36,6 +36,7 @@ export default function HomePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [mounted, setMounted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
+  const listScrollRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -58,6 +59,17 @@ export default function HomePage() {
     }
     setIsSearchExpanded(true);
   }, [view]);
+
+  useEffect(() => {
+    if (view !== 'list' || showSplitView) return;
+
+    const timer = window.setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      listScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [view, showSplitView]);
 
   const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks, currentDate]);
   useAppBadge(todayTaskCount, badgeEnabled);
@@ -593,7 +605,7 @@ export default function HomePage() {
 
       {/* Main Content - List View - shown in list view OR split view */}
       {(view === 'list' || showSplitView) && (
-      <main style={{ 
+      <main ref={listScrollRef} style={{ 
         flex: 1, 
         padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
         overflow: 'auto',
