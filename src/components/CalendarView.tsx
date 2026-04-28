@@ -88,39 +88,17 @@ function ContinuousCalendar({
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [months]);
 
-  const monthSpans = useMemo(() => {
-    return months.map(month => {
-      const monthKey = format(month, 'yyyy-MM');
-      const startIndex = calendarDays.findIndex(day => format(day, 'yyyy-MM-dd') === format(month, 'yyyy-MM-01'));
-      const endIndex = calendarDays.reduce((acc, day, index) => (
-        isSameMonth(day, month) ? index : acc
-      ), startIndex);
-
-      return {
-        monthKey,
-        label: format(month, 'MMMM yyyy'),
-        startRow: startIndex >= 0 ? Math.floor(startIndex / 7) + 2 : 2,
-        endRow: endIndex >= 0 ? Math.floor(endIndex / 7) + 2 : 2,
-      };
-    });
-  }, [calendarDays, months]);
-
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '60px repeat(7, minmax(0, 1fr))',
+      gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
       columnGap: 4,
       rowGap: 3,
       width: '100%',
     }}>
-      <div style={{
-        gridColumn: '1 / 2',
-        gridRow: 1,
-      }} />
-
       {WEEKDAYS.map((day, index) => (
         <div style={{
-          gridColumn: `${index + 2} / ${index + 3}`,
+          gridColumn: `${index + 1} / ${index + 2}`,
           gridRow: 1,
           textAlign: 'center',
           fontSize: 10,
@@ -134,45 +112,13 @@ function ContinuousCalendar({
         </div>
       ))}
 
-      {monthSpans.map(span => (
-        <div
-          key={span.monthKey}
-          style={{
-            gridColumn: '1 / 2',
-            gridRow: `${span.startRow} / ${span.endRow + 1}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 0,
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              writingMode: 'vertical-rl',
-              transform: 'rotate(180deg)',
-              textAlign: 'center',
-              fontSize: 14,
-              fontWeight: 700,
-              color: 'var(--muted)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              lineHeight: 1,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {span.label}
-          </div>
-        </div>
-      ))}
-
       {calendarDays.map((day, index) => {
         const key = format(day, 'yyyy-MM-dd');
         const dayTasks = tasksByDate[key] || [];
         const inVisibleMonth = months.some(month => isSameMonth(day, month));
         const isMonthStart = day.getDate() === 1 && inVisibleMonth;
         const row = Math.floor(index / 7) + 2;
-        const column = (index % 7) + 2;
+        const column = (index % 7) + 1;
 
         return (
           <DayCell
@@ -185,6 +131,7 @@ function ContinuousCalendar({
             onDaySelect={onDaySelect}
             gridColumn={column}
             gridRow={row}
+            monthLabel={isMonthStart ? format(day, 'MMMM') : undefined}
           />
         );
       })}
@@ -201,6 +148,7 @@ function DayCell({
   onDaySelect,
   gridColumn,
   gridRow,
+  monthLabel,
 }: {
   day: Date;
   inVisibleMonth: boolean;
@@ -210,6 +158,7 @@ function DayCell({
   onDaySelect: (date: Date, tasks: Task[]) => void;
   gridColumn: number;
   gridRow: number;
+  monthLabel?: string;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const isTodayCell = isSameDay(day, today);
@@ -218,7 +167,7 @@ function DayCell({
   const selectableTasks = dayTasks;
 
   return (
-      <button
+    <button
       onClick={() => onDaySelect(day, selectableTasks)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -252,11 +201,29 @@ function DayCell({
       }}
     >
       <span style={{
+        display: 'inline-flex',
+        alignItems: 'baseline',
+        gap: 6,
         fontSize: 12,
         fontWeight: isTodayCell ? 600 : 400,
         marginBottom: showTasks ? 4 : 0,
+        minWidth: 0,
       }}>
         {day.getDate()}
+        {monthLabel && (
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: 'var(--muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}>
+            {monthLabel}
+          </span>
+        )}
       </span>
 
       {showTasks && (
