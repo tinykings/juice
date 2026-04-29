@@ -123,7 +123,7 @@ export default function TaskItem({
 
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ 
                   margin: 0, 
@@ -135,20 +135,19 @@ export default function TaskItem({
                 }}>
                   {displayTitle || task.title}
                 </p>
-              {task.notes && (
-                <p style={{ 
-                  margin: '4px 0 0', 
-                  fontSize: 14, 
-                  color: 'var(--muted)', 
-                  lineHeight: 1.4,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '100%'
-                }}>
-                  {task.notes}
-                </p>
-              )}
+                {task.notes && (
+                  <p style={{ 
+                    margin: '4px 0 0', 
+                    fontSize: 14, 
+                    color: 'var(--muted)', 
+                    lineHeight: 1.4,
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                    maxWidth: '100%'
+                  }}>
+                    {task.notes}
+                  </p>
+                )}
               {(task.isRecurring || taskTime) && (
                 <div style={{
                   display: 'flex',

@@ -60,7 +60,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
 function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null }) {
   const { addTask, updateTask, deleteTask, completeTask } = useTasks();
   const titleRef = useRef<HTMLInputElement>(null);
-  const notesRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
   const initialDueDate = editTask
     ? `${new Date(editTask.dueDate).getUTCFullYear()}-${String(new Date(editTask.dueDate).getUTCMonth() + 1).padStart(2, '0')}-${String(new Date(editTask.dueDate).getUTCDate()).padStart(2, '0')}`
@@ -222,13 +222,13 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
         <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
           Add time with @ (e.g., @9am, @530, @2:30pm)
         </p>
-        <input
+        <textarea
           ref={notesRef}
-          type="text"
           name="notes"
           placeholder="Notes"
           defaultValue={editTask?.notes || ''}
           onChange={() => checkForChanges()}
+          rows={3}
           style={{
             width: '100%',
             fontSize: 17,
@@ -237,7 +237,10 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             outline: 'none',
             color: 'var(--muted)',
             padding: '4px 0',
-            lineHeight: 1.4
+            lineHeight: 1.5,
+            resize: 'vertical',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
           }}
         />
       </div>
