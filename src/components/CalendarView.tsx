@@ -73,7 +73,7 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
   }, [monthsWithTasks.length]);
 
   return (
-    <div style={{ padding: '20px 20px 120px', minWidth: 0, width: '100%', maxWidth: 1120, margin: '0 auto' }}>
+    <div style={{ padding: '20px 2px 120px', minWidth: 0, width: '100%', maxWidth: 1120, margin: '0 auto' }}>
       <ContinuousCalendar
         months={monthsWithTasks}
         tasksByDate={tasksByDate}
@@ -109,7 +109,7 @@ function ContinuousCalendar({
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-      columnGap: 4,
+      columnGap: 2,
       rowGap: 3,
       width: '100%',
     }}>
@@ -197,7 +197,7 @@ function DayCell({
         flexDirection: 'column',
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
-        padding: '6px 4px',
+        padding: '6px 0',
         minHeight: 150,
         fontSize: 13,
         fontWeight: isTodayCell ? 600 : 400,
@@ -259,17 +259,22 @@ function DayCell({
               key={task.id}
               style={{
                 display: 'flex',
-                alignItems: 'flex-start',
-                gap: 4,
+                alignItems: 'center',
+                minWidth: 0,
                 fontSize: 10,
-                fontWeight: 500,
+                fontWeight: 600,
                 color: 'var(--accent)',
+                background: 'var(--accent-subtle)',
+                border: '1px solid rgba(0,0,0,0.08)',
+                borderRadius: 6,
+                padding: '2px 6px 2px',
+                marginBottom: 2,
                 whiteSpace: 'normal',
-                overflowWrap: 'anywhere',
-                lineHeight: 1.25,
+                overflow: 'visible',
+                textOverflow: 'clip',
+                lineHeight: 1.2,
               }}
             >
-              <span style={{ flex: '0 0 auto' }}>•</span>
               <span style={{ minWidth: 0 }}>{task.title}</span>
             </div>
           ))}
