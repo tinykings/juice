@@ -1,11 +1,11 @@
-const CACHE_NAME = 'juice-v8.8';
+const CACHE_NAME = 'juice-v8.9';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-180.png',
-  './icon-192.png',
-  './icon-512.png'
+  './icon-dark-180.png',
+  './icon-dark-192.png',
+  './icon-dark-512.png'
 ];
 
 // Install event - cache static assets
