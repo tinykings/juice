@@ -35,6 +35,7 @@
   /* Calendar */
   --calendar-bg: #F8F6F3;
   --calendar-text: #1A1A18;
+  --calendar-event-border: #E84545;
 }
 
 [data-theme="dark"] {
@@ -69,6 +70,7 @@
   /* Calendar */
   --calendar-bg: #1C1C1C;
   --calendar-text: #ECECEB;
+  --calendar-event-border: #D8B4FE;
 }
 
 * {
