@@ -16,6 +16,7 @@
   --accent: #E84545;
   --accent-light: #FDEaea;
   --accent-subtle: #FCE8E8;
+  --highlight: #FCE8E8;
   
   /* Semantic colors */
   --yellow: #F5B041;
@@ -45,10 +46,11 @@
   --muted-light: #333333;
   --border: #333333;
   
-  /* Accent - lime green */
-  --accent: #A5F542;
-  --accent-light: #2A3A10;
-  --accent-subtle: #1A2510;
+  /* Accent - neon purple */
+  --accent: #C084FC;
+  --accent-light: #4C1D95;
+  --accent-subtle: #2E164B;
+  --highlight: #3B1B62;
   
   /* Semantic colors */
   --yellow: #FBBF24;
