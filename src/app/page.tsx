@@ -645,43 +645,27 @@ Back
           <div>
               {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
               <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
-                <div className="shine-animate" style={{ width: 200, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span className="sparkle-1" />
-                  <span className="sparkle-2" />
-                  <span className="sparkle-3" />
-                  <span className="sparkle-4" />
-                  <span className="sparkle-5" />
-                  <img 
-                    src={`${process.env.NODE_ENV === 'production' ? '/juice' : ''}/juice.png`} 
-                    alt="All done!" 
-                    style={{ 
-                      width: 200, 
-                      height: 'auto',
-                      display: 'block',
-                    }} 
-                  />
-                  <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
-                    {hasNoTasks && (
-                      <div style={{ marginTop: 14, width: '100%', textAlign: 'center', color: 'var(--muted)', fontSize: 15, lineHeight: 1.6 }}>
-                        <p style={{ marginBottom: 10 }}>
-                          Add your first task with the <strong style={{ color: 'var(--foreground)' }}>Add task</strong> button.
-                        </p>
-                        <p style={{ marginBottom: 10 }}>
-                          To sync across devices, open <strong style={{ color: 'var(--foreground)' }}>Settings</strong> and set up GitHub Gist Sync.
-                        </p>
-                        <p>
-                          Create a GitHub Gist, copy its <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>Gist ID</code>, then paste that plus a GitHub personal access token with <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>gist</code> scope into Settings.
-                        </p>
+                <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
+                  {hasNoTasks && (
+                    <div style={{ marginTop: 14, width: '100%', textAlign: 'center', color: 'var(--muted)', fontSize: 15, lineHeight: 1.6 }}>
+                      <p style={{ marginBottom: 10 }}>
+                        Add your first task with the <strong style={{ color: 'var(--foreground)' }}>Add task</strong> button.
+                      </p>
+                      <p style={{ marginBottom: 10 }}>
+                        To sync across devices, open <strong style={{ color: 'var(--foreground)' }}>Settings</strong> and set up GitHub Gist Sync.
+                      </p>
+                      <p>
+                        Create a GitHub Gist, copy its <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>Gist ID</code>, then paste that plus a GitHub personal access token with <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>gist</code> scope into Settings.
+                      </p>
+                    </div>
+                  )}
+                  {tomorrowTasks.length > 0 && (
+                    <div style={{ marginTop: 14, width: '100%' }}>
+                      <div style={{ marginTop: 8, textAlign: 'center', color: 'var(--foreground)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+                        {`You have ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? 'task' : 'tasks'} tomorrow. ${tomorrowTasks.map((task) => task.title).join(', ')}.`}
                       </div>
-                    )}
-                    {tomorrowTasks.length > 0 && (
-                      <div style={{ marginTop: 14, width: '100%' }}>
-                        <div style={{ marginTop: 8, textAlign: 'center', color: 'var(--foreground)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
-                          {`You have ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? 'task' : 'tasks'} tomorrow. ${tomorrowTasks.map((task) => task.title).join(', ')}.`}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -790,6 +774,14 @@ Back
                 boxShadow: 'var(--shadow-md)',
                 transition: 'all 0.2s ease',
               }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--accent-subtle)';
+                e.currentTarget.style.color = 'var(--accent)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--surface-inset)';
+                e.currentTarget.style.color = 'var(--foreground)';
+              }}
             >
               {view === 'list' ? (
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -821,6 +813,14 @@ Back
               transition: 'all 0.2s ease',
             }}
             aria-label="Search"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-subtle)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8"/>
@@ -844,6 +844,14 @@ Back
               transition: 'all 0.2s ease',
             }}
             aria-label="Settings"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-subtle)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="3"/>
