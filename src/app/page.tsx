@@ -21,7 +21,7 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, clearCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
+  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
@@ -607,7 +607,7 @@ export default function HomePage() {
       {(view === 'list' || showSplitView) && (
       <main ref={listScrollRef} style={{ 
         flex: 1, 
-        padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
+        padding: isSearchExpanded ? '88px 24px 96px' : '24px 24px 96px', 
         overflow: 'auto',
         minHeight: (isWideScreen || showSplitView) && !isSearchExpanded ? '100vh' : 'auto',
         borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
