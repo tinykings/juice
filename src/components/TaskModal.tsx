@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { format, startOfDay, parse } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import CalendarPicker from './CalendarPicker';
+import { findDateWord, removeDateWord, DateWordMatch } from '@/utils/dateWords';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -67,6 +68,12 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     : (initialDate || format(new Date(), 'yyyy-MM-dd'));
   
   const [dueDate, setDueDate] = useState(initialDueDate);
+  const [titleValue, setTitleValue] = useState(editTask?.title || '');
+
+  const dateWordMatch = useMemo<DateWordMatch | null>(
+    () => findDateWord(titleValue),
+    [titleValue]
+  );
 
   const [hasChanges, setHasChanges] = useState(false);
   const originalData = useRef({
@@ -85,7 +92,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     isRecurring?: boolean;
     recurrenceType?: RecurrenceType;
   }) => {
-    const currentTitle = titleRef.current?.value || '';
+    const currentTitle = titleValue;
     const currentNotes = notesRef.current?.value || '';
     const nextDueDate = overrides?.dueDate ?? dueDate;
     const nextIsRecurring = overrides?.isRecurring ?? isRecurring;
@@ -98,7 +105,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
       (nextIsRecurring && nextRecurrenceType !== originalData.current.recurrenceType);
     
     setHasChanges(changed);
-  }, [dueDate, isRecurring, recurrenceType]);
+  }, [dueDate, isRecurring, recurrenceType, titleValue]);
 
   const focusTitle = useCallback(() => {
     const input = titleRef.current;
@@ -129,14 +136,22 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     
-    const title = titleRef.current?.value.trim() || '';
+    let title = titleValue.trim();
     const notes = notesRef.current?.value.trim() || '';
     
     if (!title) return;
 
+    let effectiveDueDate = dueDate;
+
+    const match = findDateWord(title);
+    if (match) {
+      effectiveDueDate = format(match.date, 'yyyy-MM-dd');
+      title = removeDateWord(title, match);
+    }
+
     // Parse the date string (YYYY-MM-DD) as a local date at midnight
     // This ensures the selected date is preserved regardless of timezone
-    const parsedDate = parse(dueDate, 'yyyy-MM-dd', new Date());
+    const parsedDate = parse(effectiveDueDate, 'yyyy-MM-dd', new Date());
     const dateAtMidnight = startOfDay(parsedDate);
 
     const taskData = {
@@ -156,7 +171,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
 
     onClose();
     if (onSave) onSave();
-  }, [addTask, dueDate, editTask, isRecurring, onClose, onSave, recurrenceType, updateTask]);
+  }, [addTask, dueDate, editTask, isRecurring, onClose, onSave, recurrenceType, updateTask, titleValue]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -193,32 +208,68 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     <form onSubmit={handleSubmit}>
       {/* Inputs */}
       <div style={{ padding: 24 }}>
-        <input
-          ref={titleRef}
-          type="text"
-          name="title"
-          placeholder="New To-Do"
-          defaultValue={editTask?.title || ''}
-          autoFocus={!editTask}
-          onChange={() => checkForChanges()}
-          style={{
-            width: '100%',
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <input
+            ref={titleRef}
+            type="text"
+            name="title"
+            placeholder="New To-Do"
+            value={titleValue}
+            autoFocus={!editTask}
+            onChange={(e) => {
+              setTitleValue(e.target.value);
+              checkForChanges();
+            }}
+            style={{
+              width: '100%',
+              fontSize: 22,
+              fontWeight: 600,
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '2px solid transparent',
+              outline: 'none',
+              color: 'transparent',
+              caretColor: 'var(--foreground)',
+              padding: '4px 0',
+              lineHeight: 1.4,
+              fontFamily: 'var(--font-body)',
+              transition: 'border-color 0.2s'
+            }}
+            onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
+            onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
+          />
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            padding: '4px 0',
+            pointerEvents: 'none',
             fontSize: 22,
             fontWeight: 600,
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '2px solid transparent',
-            outline: 'none',
-            color: 'var(--foreground)',
-            marginBottom: 12,
-            padding: '4px 0',
             lineHeight: 1.4,
             fontFamily: 'var(--font-body)',
-            transition: 'border-color 0.2s'
-          }}
-          onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
-          onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
-        />
+            color: 'var(--foreground)',
+            whiteSpace: 'pre',
+            overflow: 'hidden',
+          }}>
+            {titleValue ? (
+              <>
+                {dateWordMatch ? (
+                  <>
+                    <span>{titleValue.slice(0, dateWordMatch.index)}</span>
+                    <span style={{ animation: 'rainbow 2s linear infinite' }}>
+                      {titleValue.slice(dateWordMatch.index, dateWordMatch.index + dateWordMatch.word.length)}
+                    </span>
+                    <span>{titleValue.slice(dateWordMatch.index + dateWordMatch.word.length)}</span>
+                  </>
+                ) : (
+                  <span>{titleValue}</span>
+                )}
+              </>
+            ) : (
+              <span style={{ color: 'var(--muted)' }}>New To-Do</span>
+            )}
+          </div>
+        </div>
         <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
           Add time with @ (e.g., @9am, @530, @2:30pm)
         </p>
