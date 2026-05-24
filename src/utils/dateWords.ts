@@ -16,6 +16,21 @@ const dayNames: Record<string, number> = {
   saturday: 6, sat: 6,
 };
 
+const monthNames: Record<string, number> = {
+  january: 0, jan: 0,
+  february: 1, feb: 1,
+  march: 2, mar: 2,
+  april: 3, apr: 3,
+  may: 4,
+  june: 5, jun: 5,
+  july: 6, jul: 6,
+  august: 7, aug: 7,
+  september: 8, sep: 8,
+  october: 9, oct: 9,
+  november: 10, nov: 10,
+  december: 11, dec: 11,
+};
+
 function getNextWeekday(targetDay: number, allowToday: boolean): Date {
   const today = startOfDay(new Date());
   const currentDay = today.getDay();
@@ -36,15 +51,49 @@ function computeNextMonthFirst(): Date {
   return startOfMonth(addMonths(new Date(), 1));
 }
 
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function computeMonthDay(match: RegExpMatchArray): Date {
+  const month = monthNames[match[1].toLowerCase()];
+  const year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
+  const maxDay = daysInMonth(year, month);
+  const day = Math.min(parseInt(match[2], 10), maxDay);
+  const date = startOfDay(new Date(year, month, day));
+  const today = startOfDay(new Date());
+  if (!match[3] && date < today) {
+    date.setFullYear(year + 1);
+  }
+  return date;
+}
+
+function computeDayMonth(match: RegExpMatchArray): Date {
+  const month = monthNames[match[2].toLowerCase()];
+  const year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
+  const maxDay = daysInMonth(year, month);
+  const day = Math.min(parseInt(match[1], 10), maxDay);
+  const date = startOfDay(new Date(year, month, day));
+  const today = startOfDay(new Date());
+  if (!match[3] && date < today) {
+    date.setFullYear(year + 1);
+  }
+  return date;
+}
+
 interface Entry {
   pattern: RegExp;
-  compute: () => Date;
+  compute: (match: RegExpMatchArray) => Date;
 }
 
 function buildEntries(): Entry[] {
+  const monthPattern = Object.keys(monthNames).join('|');
+
   const entries: Entry[] = [
     { pattern: /\bnext week\b/i, compute: computeNextWeekMonday },
     { pattern: /\bnext month\b/i, compute: computeNextMonthFirst },
+    { pattern: new RegExp(`\\b(${monthPattern})\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})?\\b`, 'i'), compute: computeMonthDay },
+    { pattern: new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${monthPattern}),?\\s*(\\d{4})?\\b`, 'i'), compute: computeDayMonth },
     { pattern: /\btomorrow\b/i, compute: () => addDays(startOfDay(new Date()), 1) },
     { pattern: /\btoday\b/i, compute: () => startOfDay(new Date()) },
   ];
@@ -74,7 +123,7 @@ export function findDateWord(title: string): DateWordMatch | null {
       if (!earliest || match.index < earliest.index) {
         earliest = {
           word: match[0],
-          date: entry.compute(),
+          date: entry.compute(match),
           index: match.index,
         };
       }
