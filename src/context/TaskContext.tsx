@@ -73,13 +73,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(syncFromGistTimeoutRef.current);
     }
     
+    // Set loading flag immediately to block auto-sync during debounce window.
+    // Without this, auto-sync (1s debounce) can fire before syncFromGist (2s debounce)
+    // and write stale local data to the gist.
+    isLoadingFromGistRef.current = true;
+    
     syncFromGistTimeoutRef.current = setTimeout(async () => {
       // Double-check we're not syncing to Gist before proceeding
       if (isSyncingToGistRef.current) {
+        isLoadingFromGistRef.current = false;
         return;
       }
-      
-      isLoadingFromGistRef.current = true;
       
       try {
         const gistTasks = await loadTasksFromGist(gistSettings);
@@ -486,7 +490,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     const handleFocus = () => {
       if (document.visibilityState === 'visible') {
-        // Sync from Gist to get latest updates
+        // Sync from Gist to get latest updates (sets isLoadingFromGistRef to block auto-sync writes)
         if (isGistConfigured) {
           syncFromGist();
         }
