@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-26T00:00:00.000Z",
+  "title": "Design System: The Pocket Journal",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Warm Parchment",
+        "canonical": "oklch(96% 0.008 70)",
+        "tonalRamp": ["oklch(15% 0.008 70)", "oklch(26% 0.008 70)", "oklch(37% 0.008 70)", "oklch(49% 0.008 70)", "oklch(60% 0.008 70)", "oklch(72% 0.008 70)", "oklch(83% 0.008 70)", "oklch(96% 0.008 70)"]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Warm Ink",
+        "canonical": "oklch(15% 0.01 70)",
+        "tonalRamp": ["oklch(15% 0.01 70)", "oklch(26% 0.01 70)", "oklch(37% 0.01 70)", "oklch(49% 0.01 70)", "oklch(60% 0.01 70)", "oklch(72% 0.01 70)", "oklch(83% 0.01 70)", "oklch(96% 0.01 70)"]
+      },
+      "accent-coral-ember": {
+        "role": "primary",
+        "displayName": "Coral Ember",
+        "canonical": "oklch(55% 0.2 25)",
+        "tonalRamp": ["oklch(15% 0.2 25)", "oklch(27% 0.2 25)", "oklch(38% 0.2 25)", "oklch(47% 0.2 25)", "oklch(55% 0.2 25)", "oklch(66% 0.2 25)", "oklch(78% 0.2 25)", "oklch(91% 0.2 25)"]
+      },
+      "accent-subtle": {
+        "role": "primary",
+        "displayName": "Coral Tint",
+        "canonical": "oklch(90% 0.04 25)",
+        "tonalRamp": ["oklch(15% 0.04 25)", "oklch(27% 0.04 25)", "oklch(38% 0.04 25)", "oklch(47% 0.04 25)", "oklch(55% 0.04 25)", "oklch(66% 0.04 25)", "oklch(78% 0.04 25)", "oklch(90% 0.04 25)"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Fog Grey",
+        "canonical": "oklch(60% 0.005 70)",
+        "tonalRamp": ["oklch(15% 0.005 70)", "oklch(26% 0.005 70)", "oklch(37% 0.005 70)", "oklch(49% 0.005 70)", "oklch(60% 0.005 70)", "oklch(72% 0.005 70)", "oklch(83% 0.005 70)", "oklch(96% 0.005 70)"]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Cloud Border",
+        "canonical": "oklch(88% 0.005 70)",
+        "tonalRamp": ["oklch(15% 0.005 70)", "oklch(26% 0.005 70)", "oklch(37% 0.005 70)", "oklch(49% 0.005 70)", "oklch(60% 0.005 70)", "oklch(72% 0.005 70)", "oklch(83% 0.005 70)", "oklch(88% 0.005 70)"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Modal titles and settings headers. Largest text in the system."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Task descriptions, settings body copy, input values."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headers, task item titles with notes."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Calendar weekday headers, small meta labels. Uppercase."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Notes preview, supplementary text."
+      }
+    },
+    "shadows": [
+      { "name": "shadow-sm", "value": "0 1px 2px rgba(0, 0, 0, 0.04)", "purpose": "Subtle card separation in dense contexts." },
+      { "name": "shadow-md", "value": "0 4px 12px rgba(0, 0, 0, 0.08)", "purpose": "FAB and toggle buttons — main call-to-action surfaces." },
+      { "name": "shadow-lg", "value": "0 8px 24px rgba(0, 0, 0, 0.12)", "purpose": "Modal and overlay depth." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default easing for state transitions (opacity, transform)." },
+      { "name": "ease-fade", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Fade transitions for overlays and modals." },
+      { "name": "duration-fade", "value": "0.2s", "purpose": "Standard state transition duration." },
+      { "name": "duration-slide", "value": "0.25s", "purpose": "Task completion slide-out duration." }
+    ],
+    "breakpoints": [
+      { "name": "narrow", "value": "600px", "purpose": "Below this: single-column mobile layout." },
+      { "name": "wide", "value": "1000px", "purpose": "Above this: split view (calendar + list side by side)." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Solid accent button. Used for Add, Save, Confirm actions. Square edges, mousedown push effect.",
+      "html": "<button class=\"ds-btn-primary\">Add Task</button>",
+      "css": ".ds-btn-primary { background: #E84545; color: #FFFFFF; padding: 12px 24px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 16px; font-weight: 600; border: none; border-radius: 0; cursor: pointer; min-height: 48px; transition: transform 0.1s; } .ds-btn-primary:hover { background: #d43a3a; } .ds-btn-primary:active { transform: translate(2px, 2px); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined button for Cancel, Dismiss. Square edges, hover tints accent-subtle.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: transparent; color: #1A1A18; padding: 12px 20px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 16px; font-weight: 500; border: 1px solid #E5E3DF; border-radius: 0; cursor: pointer; min-height: 48px; transition: background 0.2s, border-color 0.2s, color 0.2s; } .ds-btn-secondary:hover { background: #FCE8E8; border-color: #E84545; color: #E84545; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard text input. Square edges, 48px min-height. Focus uses the signature 4px offset box-shadow effect.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Add a task...\" />",
+      "css": ".ds-input { width: 100%; padding: 14px 16px; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 16px; color: #1A1A18; background: #FFFFFF; border: 1px solid #E5E3DF; border-radius: 0; outline: none; min-height: 48px; box-sizing: border-box; transition: box-shadow 0.2s; } .ds-input:focus { box-shadow: 4px 4px 0 #E84545; } .ds-input::placeholder { color: #8A8A85; font-style: normal; }"
+    },
+    {
+      "name": "Task Item Row",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Full-width task row with bottom-border separation. Checkbox + title + optional meta. Hover tints background.",
+      "html": "<div class=\"ds-task-row\"><button class=\"ds-task-checkbox\"></button><div class=\"ds-task-body\"><p class=\"ds-task-title\">Buy groceries</p></div></div>",
+      "css": ".ds-task-row { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid #E5E3DF; cursor: pointer; transition: background 0.2s; } .ds-task-row:hover { background: #F2F0ED; } .ds-task-checkbox { flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: transparent; border: 2px solid #E5E3DF; cursor: pointer; padding: 0; transition: border-color 0.2s, background 0.2s; } .ds-task-checkbox:hover { border-color: #E84545; background: #FCE8E8; } .ds-task-body { flex: 1; min-width: 0; } .ds-task-title { margin: 0; font-size: 16px; font-weight: 500; line-height: 1.4; color: #1A1A18; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }"
+    },
+    {
+      "name": "Quick Add Bar",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Primary task input. One of the few rounded elements (12px radius). Focus shifts border to accent.",
+      "html": "<div class=\"ds-quickadd\"><svg class=\"ds-quickadd-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M12 5v14M5 12h14\"/></svg><input class=\"ds-quickadd-input\" type=\"text\" placeholder=\"Add a task for today...\" /></div>",
+      "css": ".ds-quickadd { display: flex; align-items: center; background: #FFFFFF; border: 1px solid #E5E3DF; border-radius: 12px; transition: border-color 0.2s, box-shadow 0.2s; } .ds-quickadd:focus-within { border-color: #E84545; box-shadow: 0 4px 12px rgba(0,0,0,0.05); } .ds-quickadd-icon { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #E5E3DF; flex-shrink: 0; } .ds-quickadd:focus-within .ds-quickadd-icon { color: #E84545; } .ds-quickadd-input { flex: 1; height: 44px; background: transparent; border: none; outline: none; font-size: 16px; color: #1A1A18; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; padding-right: 16px; } .ds-quickadd-input::placeholder { color: #8A8A85; }"
+    },
+    {
+      "name": "Navigation Footer Bar",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Fixed-position bottom bar with four actions. 60px primary buttons, 48px secondary. Square edges with md-shadow on primary.",
+      "html": "<footer class=\"ds-nav-footer\"><button class=\"ds-nav-btn ds-nav-btn-primary\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18\"/></svg></button><button class=\"ds-nav-btn\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"M21 21l-4.35-4.35\"/></svg></button><button class=\"ds-nav-btn ds-nav-btn-primary\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><path d=\"M12 5v14M5 12h14\"/></svg></button></footer>",
+      "css": ".ds-nav-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: #F8F6F3; padding: 0 24px 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; } .ds-nav-btn { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: none; border: 1px solid #E5E3DF; cursor: pointer; color: #8A8A85; transition: all 0.2s; } .ds-nav-btn:hover { background: #FCE8E8; color: #E84545; } .ds-nav-btn-primary { width: 60px; height: 60px; background: #F2F0ED; border: 1px solid #E5E3DF; color: #1A1A18; box-shadow: 0 4px 12px rgba(0,0,0,0.08); } .ds-nav-btn-primary:hover { background: #FCE8E8; color: #E84545; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Pocket Journal",
+    "overview": "Juice looks and feels like a pocket journal you reach for every morning — compact, warm, satisfying to open. The interface is intentionally square (border-radius: 0 almost everywhere), flat by default, and built on a foundation of warm off-white neutrals with a single coral-ember accent that commands attention by being rare.\n\nThis system explicitly rejects everything that makes task management feel like enterprise software: no kanban boards, no Gantt charts, no dense data tables, no status pipelines. It also rejects the \"cool dark mode\" reflex — the dark variant is a warm charcoal, not a blue-black void, and the accent shifts to moss green rather than neon.\n\nThe density is loose. Surfaces breathe. The primary action (adding a task) is always one tap away. The app should get quieter the more you use it.",
+    "keyCharacteristics": [
+      "Flat surfaces with minimal shadows; depth is conveyed through tonal layering (surface-raised vs surface-inset).",
+      "Square edges by default; rounded corners are rare and meaningful (modals, calendar cells, quick-add).",
+      "Single accent used sparingly (≤10% of any screen) — its rarity is the point.",
+      "Warm neutrals with a subtle card tone, never pure #fff or #000.",
+      "Hover and focus states use the accent-subtle tint as a soft glow, not a border or shadow.",
+      "The signature interaction is a micro \"push down\" on primary buttons (2px translate on mousedown), making taps feel tactile."
+    ],
+    "rules": [
+      { "name": "The Pocket Journal Rule", "body": "The accent color is used on no more than 10% of any given screen. Its rarity gives it weight. When everything is highlighted, nothing is.", "section": "colors" },
+      { "name": "The Warm Rules", "body": "Every neutral is tinted toward the warm side of the hue wheel. Even \"white\" has a hint of cream. If a surface looks grey or blue, it's wrong.", "section": "colors" },
+      { "name": "The Single Family Rule", "body": "One typeface for everything. Hierarchy is achieved through weight and size contrast, not font switching. This keeps the interface calm — no competing voices.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. No shadows on cards, list items, or containers in their default state. Shadows only appear as a response to state (hover, interactivity, or overlay).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Coral Ember (light) or Moss Glow (dark) as the sole accent, and keep it to ≤10% of any screen.",
+      "Do keep surfaces flat at rest. No card shadows, no raised containers in their default state.",
+      "Do use warm-tinted neutrals — even \"white\" should have a hint of cream (#F8F6F3 page, #F2F0ED inset).",
+      "Do prefer square edges (0px radius) for buttons, inputs, and containers. Reserve rounding for the Quick Add bar (12px) and modals (16px).",
+      "Do use the 4px offset box-shadow (`4px 4px 0 var(--accent)`) as the focus indicator for inputs — it's distinctive and warm.",
+      "Do apply hover states as accent-subtle background tints with accent-colored icon/border shifts. Never underline, never bold-on-hover.",
+      "Do use the 2px micro-push on primary buttons (mousedown translate 2px 2px) — it makes taps feel physical."
+    ],
+    "donts": [
+      "Don't use #fff or #000. Every neutral must be tinted warm.",
+      "Don't add shadows to cards, list items, or static containers. Flat by default.",
+      "Don't use border-left or border-right greater than 1px as a decorative accent stripe.",
+      "Don't use gradient text (`background-clip: text`). Single solid colors only.",
+      "Don't use glassmorphism as a default.",
+      "Don't use em dashes. Use commas, colons, or periods instead.",
+      "Don't follow the hero-metric template (big number, small label, supporting stats).",
+      "Don't create identical card grids.",
+      "Don't open a modal as the first response to an action.",
+      "Don't use flat typography scales — ensure at least 1.25x ratio between hierarchy steps.",
+      "Don't animate CSS layout properties (width, height, top, padding, margin).",
+      "Don't use bounce or elastic easings.",
+      "Don't reproduce the dense, utilitarian aesthetic of TickTick, Todoist, or any enterprise task manager.",
+      "Don't use blue-black or navy for dark mode. The dark background is warm charcoal (#1C1C1C), not a cool color."
+    ]
+  }
+}

@@ -256,7 +256,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
                 {dateWordMatch ? (
                   <>
                     <span>{titleValue.slice(0, dateWordMatch.index)}</span>
-                    <span style={{ animation: 'rainbow 2s linear infinite' }}>
+                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
                       {titleValue.slice(dateWordMatch.index, dateWordMatch.index + dateWordMatch.word.length)}
                     </span>
                     <span>{titleValue.slice(dateWordMatch.index + dateWordMatch.word.length)}</span>

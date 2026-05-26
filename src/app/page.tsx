@@ -10,6 +10,8 @@ import { Task } from '@/types/task';
 import TaskModal from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
 import TaskItem from '@/components/TaskItem';
+import CompletedTaskItem from '@/components/CompletedTaskItem';
+import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
 
 interface TaskGroup {
@@ -640,33 +642,92 @@ export default function HomePage() {
 Back
           </button>
         )}
-        {/* Task Groups - show image at top when no incomplete tasks or all today tasks completed */}
+        {/* Empty / All-done State */}
         {isLoaded && (
           <div>
-              {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
-              <div style={{ textAlign: 'center', padding: showSplitView ? '40px 0' : '5px 0' }}>
-                <div style={{ marginTop: 16, fontFamily: 'var(--font-body)' }}>
-                  {hasNoTasks && (
-                    <div style={{ marginTop: 14, width: '100%', textAlign: 'center', color: 'var(--muted)', fontSize: 15, lineHeight: 1.6 }}>
-                      <p style={{ marginBottom: 10 }}>
-                        Add your first task with the <strong style={{ color: 'var(--foreground)' }}>Add task</strong> button.
-                      </p>
-                      <p style={{ marginBottom: 10 }}>
-                        To sync across devices, open <strong style={{ color: 'var(--foreground)' }}>Settings</strong> and set up GitHub Gist Sync.
-                      </p>
-                      <p>
-                        Create a GitHub Gist, copy its <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>Gist ID</code>, then paste that plus a GitHub personal access token with <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '2px 5px', fontSize: 13 }}>gist</code> scope into Settings.
-                      </p>
-                    </div>
-                  )}
-                  {tomorrowTasks.length > 0 && (
-                    <div style={{ marginTop: 14, width: '100%' }}>
-                      <div style={{ marginTop: 8, textAlign: 'center', color: 'var(--foreground)', fontSize: 14, lineHeight: 1.6, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
-                        {`You have ${tomorrowTasks.length} ${tomorrowTasks.length === 1 ? 'task' : 'tasks'} tomorrow. ${tomorrowTasks.map((task) => task.title).join(', ')}.`}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
+              <div style={{
+                textAlign: 'center',
+                padding: showSplitView ? '60px 24px' : '40px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 16
+              }}>
+                {/* Journal illustration */}
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.6, marginBottom: 8 }}>
+                  <rect x="10" y="8" width="60" height="64" rx="2" fill="var(--card)" stroke="var(--border)" strokeWidth="1.5"/>
+                  <line x1="10" y1="28" x2="70" y2="28" stroke="var(--border)" strokeWidth="1.5"/>
+                  <line x1="10" y1="44" x2="60" y2="44" stroke="var(--border)" strokeWidth="1.5"/>
+                  <line x1="10" y1="56" x2="50" y2="56" stroke="var(--border)" strokeWidth="1.5"/>
+                  <line x1="10" y1="20" x2="40" y2="20" stroke="var(--accent-subtle)" strokeWidth="2"/>
+                </svg>
+
+                {hasNoTasks ? (
+                  <>
+                    <h2 style={{
+                      fontSize: 20,
+                      fontWeight: 600,
+                      color: 'var(--foreground)',
+                      margin: 0,
+                      fontFamily: 'var(--font-body)',
+                      letterSpacing: '-0.02em'
+                    }}>
+                      You have nothing to do
+                    </h2>
+                    <p style={{
+                      fontSize: 15,
+                      color: 'var(--muted)',
+                      margin: 0,
+                      lineHeight: 1.6,
+                      maxWidth: 280
+                    }}>
+                      Tap the + button below to add your first task.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 style={{
+                      fontSize: 20,
+                      fontWeight: 600,
+                      color: 'var(--foreground)',
+                      margin: 0,
+                      fontFamily: 'var(--font-body)',
+                      letterSpacing: '-0.02em'
+                    }}>
+                      All done for now
+                    </h2>
+                    <p style={{
+                      fontSize: 15,
+                      color: 'var(--muted)',
+                      margin: 0,
+                      lineHeight: 1.6,
+                      maxWidth: 280
+                    }}>
+                      Nothing left to do. Add another task or check tomorrow's.
+                    </p>
+                  </>
+                )}
+
+                {tomorrowTasks.length > 0 && (
+                  <div style={{
+                    marginTop: 8,
+                    padding: '12px 20px',
+                    background: 'var(--surface-inset)',
+                    borderRadius: 8,
+                    textAlign: 'center' as const,
+                    color: 'var(--foreground)',
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    maxWidth: 300,
+                    border: '1px solid var(--border)'
+                  }}>
+                    <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                      {tomorrowTasks.length}
+                    </span>
+                    {' '}task{tomorrowTasks.length !== 1 ? 's' : ''} tomorrow
+                  </div>
+                )}
               </div>
             )}
             {allTodayTasksCompleted && completedTasks.length > 0 && !selectedDateFilter && (
@@ -799,10 +860,12 @@ Back
             onClick={handleSearchClick}
             style={{
               width: 48,
-              height: 48,
+              height: 60,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 2,
               background: 'none',
               border: '1px solid var(--border)',
               cursor: 'pointer',
@@ -823,6 +886,7 @@ Back
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
+            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Find</span>
           </button>
 
           {/* Settings Button */}
@@ -830,10 +894,12 @@ Back
             onClick={() => setIsSettingsOpen(true)}
             style={{
               width: 48,
-              height: 48,
+              height: 60,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 2,
               background: 'none',
               border: '1px solid var(--border)',
               cursor: 'pointer',
@@ -854,6 +920,7 @@ Back
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
+            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Set</span>
           </button>
 
           {/* FAB - Add Task */}
@@ -926,219 +993,4 @@ Back
   );
 }
 
-function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: () => void }) {
-  const [isUncompleting, setIsUncompleting] = useState(false);
-  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
 
-  const handleUncomplete = () => {
-    setIsUncompleting(true);
-    setTimeout(onUncomplete, 300);
-  };
-
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: 16,
-      padding: '16px 0',
-      borderBottom: '1px solid var(--border)',
-      opacity: isUncompleting ? 0.3 : 1,
-      transition: 'opacity 0.15s',
-    }}>
-      {/* Completed checkmark - clickable to uncomplete */}
-      <button
-        onClick={handleUncomplete}
-        onMouseEnter={() => setIsCheckboxHovered(true)}
-        onMouseLeave={() => setIsCheckboxHovered(false)}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 0,
-          background: isUncompleting ? 'transparent' : (isCheckboxHovered ? 'var(--muted)' : 'var(--muted-light)'),
-          border: isUncompleting ? '2.5px solid var(--muted-light)' : 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          marginTop: 4,
-          cursor: 'pointer',
-          padding: 0,
-          transition: 'all 0.2s',
-          minWidth: 28,
-          minHeight: 28
-        }}
-      >
-        {!isUncompleting && (
-          <svg width="16" height="16" fill="none" stroke="var(--foreground)" strokeWidth="3" viewBox="0 0 24 24">
-            <path d="M5 12l5 5L20 7" />
-          </svg>
-        )}
-      </button>
-
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ 
-          margin: 0, 
-          fontSize: 18, 
-          lineHeight: 1.4,
-          textDecoration: isUncompleting ? 'none' : 'line-through',
-          color: isUncompleting ? 'var(--foreground)' : 'var(--muted)',
-          transition: 'all 0.2s'
-        }}>
-          {task.title}
-        </p>
-        {task.completedAt && (
-          <p style={{ margin: '6px 0 0', fontSize: 14, color: 'var(--muted)' }}>
-            {format(new Date(task.completedAt), 'MMM d, h:mm a')}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ConfirmCompleteDialog({ 
-  task, 
-  onConfirm, 
-  onCancel 
-}: { 
-  task: Task; 
-  onConfirm: () => void; 
-  onCancel: () => void;
-}) {
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    document.addEventListener('keydown', handleEscape);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
-    };
-  }, [onCancel]);
-
-  const taskDate = new Date(task.dueDate);
-  const formattedDate = format(taskDate, 'EEEE, MMMM d, yyyy');
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
-      {/* Backdrop */}
-      <div 
-        onClick={onCancel}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)'
-        }}
-      />
-
-      {/* Dialog */}
-      <div style={{
-        position: 'absolute',
-        left: 20,
-        right: 20,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        maxWidth: 400,
-        margin: '0 auto',
-        background: 'var(--card)',
-        borderRadius: 0,
-        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
-        overflow: 'hidden',
-        border: '1px solid var(--border)'
-      }}>
-        <div style={{ padding: 24 }}>
-          <h3 style={{
-            fontSize: 20,
-            fontWeight: 600,
-            margin: '0 0 12px 0',
-            color: 'var(--foreground)',
-            fontFamily: 'var(--font-body)'
-          }}>
-            Complete this task?
-          </h3>
-          <p style={{
-            fontSize: 16,
-            color: 'var(--muted)',
-            margin: '0 0 16px 0',
-            lineHeight: 1.5
-          }}>
-            This task is scheduled for <strong>{formattedDate}</strong>. Are you sure you want to mark it as complete?
-          </p>
-          <div style={{
-            background: 'var(--background)',
-            padding: 12,
-            border: '1px solid var(--border)',
-            marginBottom: 20
-          }}>
-            <p style={{
-              fontSize: 16,
-              fontWeight: 500,
-              margin: 0,
-              color: 'var(--foreground)'
-            }}>
-              {task.title}
-            </p>
-            {task.notes && (
-              <p style={{
-                fontSize: 14,
-                color: 'var(--muted)',
-                margin: '4px 0 0 0'
-              }}>
-                {task.notes}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div style={{
-          display: 'flex',
-          gap: 12,
-          padding: '16px 24px',
-          background: 'var(--background)',
-          borderTop: '1px solid var(--border)'
-        }}>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              flex: 1,
-              padding: '12px 20px',
-              fontSize: 16,
-              fontWeight: 500,
-              color: 'var(--muted)',
-              background: 'var(--card)',
-              borderRadius: 0,
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              minHeight: 48
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            style={{
-              flex: 1,
-              padding: '12px 20px',
-              fontSize: 16,
-              fontWeight: 500,
-            color: '#ECECEB',
-              background: 'var(--accent)',
-              borderRadius: 0,
-              border: 'none',
-              cursor: 'pointer',
-              minHeight: 48
-            }}
-          >
-            Complete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
