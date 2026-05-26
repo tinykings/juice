@@ -353,7 +353,7 @@ export default function HomePage() {
   }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100vh' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
       {/* Gist Sync Notice */}
       {isGistConfigured && isSyncing && (
         <div style={{
@@ -811,7 +811,7 @@ Back
       <footer style={{
         zIndex: 10,
         background: 'var(--background)',
-        padding: '0 24px 24px',
+        padding: '0 24px max(24px, env(safe-area-inset-bottom, 0px))',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
