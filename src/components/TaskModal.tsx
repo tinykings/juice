@@ -45,6 +45,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
         boxShadow: 'var(--shadow-lg)',
         overflow: 'auto',
         border: '1px solid var(--border)',
+        animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
       }}>
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 

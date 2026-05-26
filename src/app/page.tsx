@@ -514,7 +514,8 @@ export default function HomePage() {
           borderBottom: '2px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
-          gap: 12
+          gap: 12,
+          animation: 'slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
         }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <input
@@ -841,6 +842,8 @@ Back
                 e.currentTarget.style.background = 'var(--surface-inset)';
                 e.currentTarget.style.color = 'var(--foreground)';
               }}
+              onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+              onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
             >
               {view === 'list' ? (
                 <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -882,6 +885,8 @@ Back
               e.currentTarget.style.background = 'none';
               e.currentTarget.style.color = 'var(--muted)';
             }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8"/>
@@ -916,6 +921,8 @@ Back
               e.currentTarget.style.background = 'none';
               e.currentTarget.style.color = 'var(--muted)';
             }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>
@@ -957,6 +964,8 @@ Back
               e.currentTarget.style.background = 'var(--surface-inset)';
               e.currentTarget.style.color = 'var(--foreground)';
             }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
           >
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />

@@ -52,7 +52,8 @@ export default function ConfirmCompleteDialog({
         borderRadius: 0,
         boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
         overflow: 'hidden',
-        border: '1px solid var(--border)'
+        border: '1px solid var(--border)',
+        animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
       }}>
         <div style={{ padding: 24 }}>
           <h3 style={{
