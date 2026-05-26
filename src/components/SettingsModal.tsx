@@ -114,7 +114,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               e.currentTarget.style.color = 'var(--muted)';
             }}
           >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -145,11 +145,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               }}
             >
               {theme === 'dark' ? (
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
                 </svg>
               ) : (
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="12" cy="12" r="5"/>
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
@@ -188,7 +188,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   transition: 'all 0.2s'
                 }}
               >
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>

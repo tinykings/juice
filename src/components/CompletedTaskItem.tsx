@@ -28,6 +28,19 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
         onMouseEnter={() => setIsCheckboxHovered(true)}
         onMouseLeave={() => setIsCheckboxHovered(false)}
         style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          marginTop: 4,
+          cursor: 'pointer',
+          background: 'none',
+          border: 'none',
+          padding: 8,
+          transition: 'all 0.2s',
+        }}
+      >
+        <div style={{
           width: 28,
           height: 28,
           borderRadius: 0,
@@ -36,20 +49,14 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          flexShrink: 0,
-          marginTop: 4,
-          cursor: 'pointer',
-          padding: 0,
           transition: 'all 0.2s',
-          minWidth: 28,
-          minHeight: 28
-        }}
-      >
-        {!isUncompleting && (
-          <svg width="16" height="16" fill="none" stroke="var(--foreground)" strokeWidth="3" viewBox="0 0 24 24">
-            <path d="M5 12l5 5L20 7" />
-          </svg>
-        )}
+        }}>
+          {!isUncompleting && (
+            <svg width="16" height="16" fill="none" stroke="var(--foreground)" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12l5 5L20 7" />
+            </svg>
+          )}
+        </div>
       </button>
 
       <div style={{ flex: 1, minWidth: 0 }}>

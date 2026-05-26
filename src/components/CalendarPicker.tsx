@@ -178,7 +178,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
               style={navBtnStyle}
               aria-label="Previous month"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
@@ -196,7 +196,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
               style={navBtnStyle}
               aria-label="Next month"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
@@ -334,7 +334,7 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
 
 function CalendarIcon() {
   return (
-    <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24">
+    <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3" y="4" width="18" height="18" rx="0" />
       <path d="M16 2v4M8 2v4M3 10h18" />
     </svg>

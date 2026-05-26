@@ -102,6 +102,17 @@ export default function TaskItem({
           onMouseLeave={() => setIsCheckboxHovered(false)}
           style={{ 
             flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            background: 'none',
+            border: 'none',
+            padding: 10,
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <div style={{
             width: 24,
             height: 24,
             display: 'flex',
@@ -109,16 +120,14 @@ export default function TaskItem({
             justifyContent: 'center',
             background: isCheckboxHovered ? (isOverdue ? 'var(--red)' : 'var(--accent-subtle)') : 'transparent',
             border: `2px solid ${isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent)' : 'var(--border)')}`,
-            cursor: 'pointer',
-            padding: 0,
             transition: 'all 0.2s ease',
-          }}
-        >
-          {isCompleting && (
-            <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M5 12l5 5L20 7" />
-            </svg>
-          )}
+          }}>
+            {isCompleting && (
+              <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12l5 5L20 7" />
+              </svg>
+            )}
+          </div>
         </button>
 
         {/* Content */}
@@ -161,7 +170,7 @@ export default function TaskItem({
                 }}>
                   {task.isRecurring && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
                       </svg>
                       {task.recurrenceType}
@@ -169,7 +178,7 @@ export default function TaskItem({
                   )}
                   {taskTime && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="M12 6v6l4 2"/>
                       </svg>
@@ -214,7 +223,7 @@ export default function TaskItem({
                   }}
                 >
                   {isToday(taskDate) ? 'Today' : format(taskDate, 'MMM d')}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </button>

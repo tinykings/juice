@@ -131,7 +131,7 @@ export default function ConfirmCompleteDialog({
               padding: '12px 20px',
               fontSize: 16,
               fontWeight: 500,
-              color: '#ECECEB',
+              color: 'var(--background)',
               background: 'var(--accent)',
               borderRadius: 0,
               border: 'none',

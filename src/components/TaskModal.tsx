@@ -214,6 +214,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             type="text"
             name="title"
             placeholder="New To-Do"
+            aria-label="Task title"
             value={titleValue}
             autoFocus={!editTask}
             onChange={(e) => {
@@ -238,7 +239,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
             onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
           />
-          <div style={{
+          <div aria-hidden="true" style={{
             position: 'absolute',
             inset: 0,
             padding: '4px 0',
@@ -335,7 +336,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             transition: 'all 0.2s'
           }}
         >
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
           </svg>
           Repeat

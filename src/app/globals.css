@@ -7,7 +7,7 @@
   /* Base colors - warm off-white palette */
   --background: #F8F6F3;
   --foreground: #1A1A18;
-  --card: #FFFFFF;
+  --card: #FDFCFA;
   --muted: #8A8A85;
   --muted-light: #E5E3DF;
   --border: #E5E3DF;
@@ -25,7 +25,7 @@
   --purple: #9B59B6;
   
   /* UI elements */
-  --surface-raised: #FFFFFF;
+  --surface-raised: #FDFCFA;
   --surface-inset: #F2F0ED;
   --calendar-month-start: #ECE7DF;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -158,7 +158,7 @@ input, textarea, button {
 
 /* Focus visible */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
