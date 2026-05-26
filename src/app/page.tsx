@@ -351,7 +351,7 @@ export default function HomePage() {
   }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter]);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: (isWideScreen || showSplitView) ? 'flex' : 'block', height: '100vh' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100vh' }}>
       {/* Gist Sync Notice */}
       {isGistConfigured && isSyncing && (
         <div style={{
@@ -595,7 +595,7 @@ export default function HomePage() {
 
       {/* Calendar View - shown in calendar view OR split view */}
       {(view === 'calendar' || showSplitView) && isLoaded && (
-        <div style={{ flex: 1, overflow: 'auto', height: (isWideScreen || showSplitView) ? '100vh' : 'auto' }}>
+        <div style={{ flex: 1, overflow: 'auto', minHeight: 0, height: (isWideScreen || showSplitView) ? '100vh' : 'auto' }}>
           <CalendarView
             tasks={tasks}
             onDaySelect={handleDaySelect}
@@ -607,9 +607,9 @@ export default function HomePage() {
       {(view === 'list' || showSplitView) && (
       <main ref={listScrollRef} style={{ 
         flex: 1, 
-        padding: isSearchExpanded ? '88px 24px 96px' : '24px 24px 96px', 
+        padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
         overflow: 'auto',
-        minHeight: (isWideScreen || showSplitView) && !isSearchExpanded ? '100vh' : 'auto',
+        minHeight: 0,
         borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
@@ -745,10 +745,6 @@ Back
 {/* Bottom Action Buttons - Hidden in full width view */}
 {!showSplitView && (
       <footer style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
         zIndex: 10,
         background: 'var(--background)',
         padding: '0 24px 24px',
@@ -756,6 +752,7 @@ Back
         alignItems: 'flex-end',
         justifyContent: 'space-between',
         gap: 16,
+        borderTop: '1px solid var(--border)',
       }}>
           {/* Toggle Calendar/List Button */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
