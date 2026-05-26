@@ -657,7 +657,7 @@ Back
                 gap: 16
               }}>
                 {/* Journal illustration */}
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ opacity: 0.6, marginBottom: 8 }}>
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ opacity: 0.6, marginBottom: 8, animation: 'float 3s ease-in-out infinite' }}>
                   <rect x="10" y="8" width="60" height="64" rx="2" fill="var(--card)" stroke="var(--border)" strokeWidth="1.5"/>
                   <line x1="10" y1="28" x2="70" y2="28" stroke="var(--border)" strokeWidth="1.5"/>
                   <line x1="10" y1="44" x2="60" y2="44" stroke="var(--border)" strokeWidth="1.5"/>
@@ -722,7 +722,8 @@ Back
                     fontSize: 14,
                     lineHeight: 1.6,
                     maxWidth: 300,
-                    border: '1px solid var(--border)'
+                    border: '1px solid var(--border)',
+                    animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both'
                   }}>
                     <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
                       {tomorrowTasks.length}

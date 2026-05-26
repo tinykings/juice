@@ -8,6 +8,8 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSettings } from '@/context/SettingsContext';
 import { saveTasksToGist, loadTasksFromGist } from '@/services/gistSync';
 
+const DEV = process.env.NODE_ENV !== 'production';
+
 interface TaskContextType {
   tasks: Task[];
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completed' | 'completedAt'>) => void;
@@ -135,7 +137,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             return mergedTasks;
           });
           
-          console.log('Synced tasks from Gist');
+          DEV && console.log('Synced tasks from Gist');
         }
       } catch (error) {
         console.error('Failed to sync from Gist:', error);
@@ -230,14 +232,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               }
             }
             
-            console.log('Page refresh: using Gist as source of truth', cleanedTasks.length, 'tasks from Gist,', recentLocalTasks.length, 'recent local tasks preserved');
+            DEV && console.log('Page refresh: using Gist as source of truth', cleanedTasks.length, 'tasks from Gist,', recentLocalTasks.length, 'recent local tasks preserved');
             lastSyncedRef.current = JSON.stringify(finalTasks);
             return finalTasks;
           }
           
           // If settings changed (Gist ID change), merge to preserve local tasks
           if (isGistIdChange) {
-            console.log('Gist ID changed: merging to preserve local tasks', currentLocalTasks.length, 'local tasks');
+            DEV && console.log('Gist ID changed: merging to preserve local tasks', currentLocalTasks.length, 'local tasks');
             const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
             const mergedTasks = [...cleanedTasks];
             
@@ -258,17 +260,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               }
             }
             
-            console.log('Merged tasks:', mergedTasks.length, 'total (', cleanedTasks.length, 'from Gist,', mergedTasks.length - cleanedTasks.length, 'local)');
+            DEV && console.log('Merged tasks:', mergedTasks.length, 'total (', cleanedTasks.length, 'from Gist,', mergedTasks.length - cleanedTasks.length, 'local)');
             return mergedTasks;
           }
           
           // Fallback: shouldn't reach here, but use Gist as source of truth
-          console.log('Fallback: using Gist as source of truth', cleanedTasks.length, 'tasks');
+          DEV && console.log('Fallback: using Gist as source of truth', cleanedTasks.length, 'tasks');
           lastSyncedRef.current = gistTasksJson;
           return cleanedTasks;
         });
         
-        console.log('Loaded tasks from Gist on mount');
+        DEV && console.log('Loaded tasks from Gist on mount');
         hasLoadedFromGistRef.current = true;
       } catch (error) {
         console.error('Failed to load from Gist on mount:', error);
@@ -288,7 +290,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   // Auto-sync to gist when tasks change (but not on initial load from Gist)
   useEffect(() => {
     if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) {
-      console.log('Auto-sync skipped:', { isLoaded, isGistConfigured, hasLoadedFromGist: hasLoadedFromGistRef.current });
+      DEV && console.log('Auto-sync skipped:', { isLoaded, isGistConfigured, hasLoadedFromGist: hasLoadedFromGistRef.current });
       return;
     }
     
@@ -298,17 +300,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const tasksJson = JSON.stringify(cleanedTasks);
     // Skip if nothing changed
     if (tasksJson === lastSyncedRef.current) {
-      console.log('Auto-sync skipped: no changes');
+      DEV && console.log('Auto-sync skipped: no changes');
       return;
     }
     
     // Skip if we're currently loading from Gist (to avoid race conditions)
     if (isLoadingFromGistRef.current) {
-      console.log('Auto-sync skipped: loading from Gist');
+      DEV && console.log('Auto-sync skipped: loading from Gist');
       return;
     }
     
-    console.log('Auto-sync triggered:', cleanedTasks.length, 'tasks (after cleanup), syncing in 1 second...');
+    DEV && console.log('Auto-sync triggered:', cleanedTasks.length, 'tasks (after cleanup), syncing in 1 second...');
     
     // Debounce the sync
     if (syncTimeoutRef.current) {
@@ -322,22 +324,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     syncTimeoutRef.current = setTimeout(async () => {
       // Double-check we're not loading from Gist before syncing
       if (isLoadingFromGistRef.current) {
-        console.log('Auto-sync: waiting for Gist load to complete...');
+        DEV && console.log('Auto-sync: waiting for Gist load to complete...');
         // Wait a bit and try again
         await new Promise(resolve => setTimeout(resolve, 500));
         if (isLoadingFromGistRef.current) {
           // Still loading, skip this sync - it will retry on next change
-          console.log('Auto-sync: still loading, skipping');
+          DEV && console.log('Auto-sync: still loading, skipping');
           return;
         }
       }
       
       isSyncingToGistRef.current = true;
       try {
-        console.log('Syncing', tasksToSync.length, 'tasks to Gist...');
+        DEV && console.log('Syncing', tasksToSync.length, 'tasks to Gist...');
         await saveTasksToGist(tasksToSync, gistSettings);
         lastSyncedRef.current = tasksJsonToSync;
-        console.log('Tasks synced to Gist successfully');
+        DEV && console.log('Tasks synced to Gist successfully');
       } catch (error) {
         console.error('Failed to sync to Gist:', error);
       } finally {
@@ -366,18 +368,18 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       completed: false,
       completedAt: null,
     };
-    console.log('Adding new task:', newTask);
+    DEV && console.log('Adding new task:', newTask);
     
     setTasks((prev) => {
       // Clean up completed tasks from prior days when adding a new task
       const cleaned = cleanupCompletedTasksFromPreviousDays(prev);
       
       if (cleaned.length < prev.length) {
-        console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks from prior days`);
+        DEV && console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks from prior days`);
       }
       
       const updated = [...cleaned, newTask];
-      console.log('Tasks after adding:', updated.length, 'tasks');
+      DEV && console.log('Tasks after adding:', updated.length, 'tasks');
       return updated;
     });
   }, [setTasks]);
@@ -389,10 +391,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [setTasks]);
 
   const deleteTask = useCallback((id: string) => {
-    console.log('Deleting task:', id);
+    DEV && console.log('Deleting task:', id);
     setTasks((prev) => {
       const updated = prev.filter((task) => task.id !== id);
-      console.log('Tasks after delete:', updated.length, 'tasks (was', prev.length, ')');
+      DEV && console.log('Tasks after delete:', updated.length, 'tasks (was', prev.length, ')');
       return updated;
     });
   }, [setTasks]);
