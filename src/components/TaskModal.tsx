@@ -19,31 +19,29 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
-      {/* Backdrop */}
-      <div 
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0,0,0,0.5)',
-          backdropFilter: 'blur(8px)'
-        }}
-      />
-
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.5)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: 20,
+      }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       {/* Modal */}
       <div style={{
-        position: 'absolute',
-        left: 16,
-        right: 16,
-        top: '50%',
-        transform: 'translateY(-50%)',
-        maxWidth: 420,
-        margin: '0 auto',
         background: 'var(--card)',
         borderRadius: 16,
-        boxShadow: 'var(--shadow-lg)',
+        width: '100%',
+        maxWidth: 420,
+        maxHeight: '90vh',
         overflow: 'auto',
+        boxShadow: 'var(--shadow-lg)',
         border: '1px solid var(--border)',
         animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
       }}>
