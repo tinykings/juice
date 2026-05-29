@@ -59,7 +59,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
 
 function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null }) {
   const { addTask, updateTask, deleteTask, completeTask } = useTasks();
-  const titleRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
   const initialDueDate = editTask
@@ -203,22 +203,40 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     }
   };
 
+  useEffect(() => {
+    const textarea = titleRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+  }, []);
+
   return (
     <form onSubmit={handleSubmit}>
       {/* Inputs */}
       <div style={{ padding: 24 }}>
         <div style={{ position: 'relative', marginBottom: 12 }}>
-          <input
+          <textarea
             ref={titleRef}
-            type="text"
             name="title"
             placeholder="New To-Do"
             aria-label="Task title"
+            rows={1}
             value={titleValue}
             autoFocus={!editTask}
             onChange={(e) => {
               setTitleValue(e.target.value);
               checkForChanges();
+              e.target.style.height = 'auto';
+              e.target.style.height = e.target.scrollHeight + 'px';
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!editTask || hasChanges) {
+                  handleSubmit(e as unknown as React.FormEvent);
+                }
+              }
             }}
             style={{
               width: '100%',
@@ -228,12 +246,14 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               border: 'none',
               borderBottom: '2px solid transparent',
               outline: 'none',
-              color: 'transparent',
+              color: 'var(--foreground)',
               caretColor: 'var(--foreground)',
               padding: '4px 0',
               lineHeight: 1.4,
               fontFamily: 'var(--font-body)',
-              transition: 'border-color 0.2s'
+              transition: 'border-color 0.2s',
+              resize: 'none',
+              overflow: 'hidden',
             }}
             onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
             onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
@@ -247,23 +267,20 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             fontWeight: 600,
             lineHeight: 1.4,
             fontFamily: 'var(--font-body)',
-            color: 'var(--foreground)',
-            whiteSpace: 'pre',
-            overflow: 'hidden',
+            color: 'transparent',
+            whiteSpace: 'pre-wrap',
           }}>
             {titleValue ? (
               <>
                 {dateWordMatch ? (
                   <>
-                    <span>{titleValue.slice(0, dateWordMatch.index)}</span>
+                    <span style={{ color: 'transparent' }}>{titleValue.slice(0, dateWordMatch.index)}</span>
                     <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
                       {titleValue.slice(dateWordMatch.index, dateWordMatch.index + dateWordMatch.word.length)}
                     </span>
-                    <span>{titleValue.slice(dateWordMatch.index + dateWordMatch.word.length)}</span>
+                    <span style={{ color: 'transparent' }}>{titleValue.slice(dateWordMatch.index + dateWordMatch.word.length)}</span>
                   </>
-                ) : (
-                  <span>{titleValue}</span>
-                )}
+                ) : null}
               </>
             ) : (
               <span style={{ color: 'var(--muted)' }}>New To-Do</span>

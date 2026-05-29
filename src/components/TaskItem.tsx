@@ -141,6 +141,7 @@ export default function TaskItem({
                   lineHeight: 1.4,
                   color: isOverdue ? 'var(--red)' : 'var(--foreground)',
                   transition: 'color 0.2s',
+                  overflowWrap: 'anywhere',
                 }}>
                   {displayTitle || task.title}
                 </p>
