@@ -74,6 +74,30 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     [titleValue]
   );
 
+  const highlights = useMemo(() => {
+    const items: Array<{ start: number; end: number; color: string }> = [];
+
+    if (dateWordMatch) {
+      items.push({
+        start: dateWordMatch.index,
+        end: dateWordMatch.index + dateWordMatch.word.length,
+        color: 'var(--accent)',
+      });
+    }
+
+    const timeResult = titleValue.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
+    if (timeResult?.index !== undefined) {
+      items.push({
+        start: timeResult.index,
+        end: timeResult.index + timeResult[0].length,
+        color: 'var(--purple)',
+      });
+    }
+
+    items.sort((a, b) => a.start - b.start);
+    return items;
+  }, [titleValue, dateWordMatch]);
+
   const [hasChanges, setHasChanges] = useState(false);
   const originalData = useRef({
     title: editTask?.title || '',
@@ -270,19 +294,29 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             color: 'transparent',
             whiteSpace: 'pre-wrap',
           }}>
-            {titleValue ? (
-              <>
-                {dateWordMatch ? (
-                  <>
-                    <span style={{ color: 'transparent' }}>{titleValue.slice(0, dateWordMatch.index)}</span>
-                    <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                      {titleValue.slice(dateWordMatch.index, dateWordMatch.index + dateWordMatch.word.length)}
-                    </span>
-                    <span style={{ color: 'transparent' }}>{titleValue.slice(dateWordMatch.index + dateWordMatch.word.length)}</span>
-                  </>
-                ) : null}
-              </>
-            ) : (
+            {titleValue ? (() => {
+              if (highlights.length === 0) {
+                return <span style={{ color: 'transparent' }}>{titleValue}</span>;
+              }
+
+              const segs: React.ReactNode[] = [];
+              let pos = 0;
+              for (const h of highlights) {
+                if (h.start > pos) {
+                  segs.push(<span key={`t${pos}`} style={{ color: 'transparent' }}>{titleValue.slice(pos, h.start)}</span>);
+                }
+                segs.push(
+                  <span key={`h${h.start}`} style={{ color: h.color, fontWeight: 600 }}>
+                    {titleValue.slice(h.start, h.end)}
+                  </span>
+                );
+                pos = h.end;
+              }
+              if (pos < titleValue.length) {
+                segs.push(<span key={`t${pos}`} style={{ color: 'transparent' }}>{titleValue.slice(pos)}</span>);
+              }
+              return segs;
+            })() : (
               <span style={{ color: 'var(--muted)' }}>New To-Do</span>
             )}
           </div>
