@@ -357,7 +357,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday]);
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
