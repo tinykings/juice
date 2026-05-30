@@ -101,6 +101,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     return items;
   }, [titleValue, dateWordMatch]);
 
+  const [showHelp, setShowHelp] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const originalData = useRef({
     title: editTask?.title || '',
@@ -343,9 +344,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             )}
           </div>
         </div>
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
-          Add time with @ (e.g., @9am, @530, @2:30pm)
-        </p>
+        
         <textarea
           ref={notesRef}
           name="notes"
@@ -464,6 +463,30 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
         </div>
       )}
 
+      {/* Quick-add help */}
+      {showHelp && (
+        <div style={{
+          padding: '16px 24px',
+          background: 'var(--muted-light)',
+          borderTop: '1px solid var(--border)',
+          fontSize: 14,
+          lineHeight: 1.6,
+          color: 'var(--foreground)',
+        }}>
+          <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--muted)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quick-add syntax</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>today</span> — due today</div>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>tomorrow</span> — due tomorrow</div>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>next week</span> — next Monday</div>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>next month</span> — 1st of next month</div>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>mon</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>tue</span>, … — next occurrence</div>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>jan 15</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>15 jan</span> — specific date</div>
+            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>someday</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>future</span> — no due date</div>
+            <div style={{ marginTop: 4 }}><span style={{ color: 'var(--purple)', fontWeight: 600 }}>@9am</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@530</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@2:30pm</span> — set time</div>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div style={{
         display: 'flex',
@@ -474,6 +497,35 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
         borderTop: '1px solid var(--border)'
       }}>
         <div style={{ display: 'flex', gap: 12 }}>
+          <button
+            type="button"
+            onClick={() => setShowHelp(!showHelp)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = showHelp ? 'var(--accent)' : 'var(--muted)';
+            }}
+            style={{
+              width: 48,
+              height: 48,
+              fontSize: 18,
+              fontWeight: 700,
+              color: showHelp ? 'var(--accent)' : 'var(--muted)',
+              background: 'none',
+              border: showHelp ? '1px solid var(--accent)' : '1px solid var(--border)',
+              cursor: 'pointer',
+              borderRadius: 0,
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ?
+          </button>
           <button
             type="button"
             onClick={onClose}
