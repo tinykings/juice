@@ -62,9 +62,12 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
+
   const initialDueDate = editTask
-    ? `${new Date(editTask.dueDate).getUTCFullYear()}-${String(new Date(editTask.dueDate).getUTCMonth() + 1).padStart(2, '0')}-${String(new Date(editTask.dueDate).getUTCDate()).padStart(2, '0')}`
-    : (initialDate || format(new Date(), 'yyyy-MM-dd'));
+    ? (editTask.dueDate
+        ? `${new Date(editTask.dueDate).getUTCFullYear()}-${String(new Date(editTask.dueDate).getUTCMonth() + 1).padStart(2, '0')}-${String(new Date(editTask.dueDate).getUTCDate()).padStart(2, '0')}`
+        : '')
+    : (initialDate ?? format(new Date(), 'yyyy-MM-dd'));
   
   const [dueDate, setDueDate] = useState(initialDueDate);
   const [titleValue, setTitleValue] = useState(editTask?.title || '');
@@ -168,28 +171,47 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
 
     const match = findDateWord(title);
     if (match) {
-      effectiveDueDate = format(match.date, 'yyyy-MM-dd');
+      if (match.date) {
+        effectiveDueDate = format(match.date, 'yyyy-MM-dd');
+      } else {
+        effectiveDueDate = '';
+      }
       title = removeDateWord(title, match);
     }
 
-    // Parse the date string (YYYY-MM-DD) as a local date at midnight
-    // This ensures the selected date is preserved regardless of timezone
-    const parsedDate = parse(effectiveDueDate, 'yyyy-MM-dd', new Date());
-    const dateAtMidnight = startOfDay(parsedDate);
+    if (effectiveDueDate) {
+      const parsedDate = parse(effectiveDueDate, 'yyyy-MM-dd', new Date());
+      const dateAtMidnight = startOfDay(parsedDate);
 
-    const taskData = {
-      title,
-      notes,
-      dueDate: dateAtMidnight.toISOString(),
-      isRecurring,
-      recurrenceType: isRecurring ? recurrenceType : null,
-      tags: [],
-    };
+      const taskData = {
+        title,
+        notes,
+        dueDate: dateAtMidnight.toISOString(),
+        isRecurring,
+        recurrenceType: isRecurring ? recurrenceType : null,
+        tags: [],
+      };
 
-    if (editTask) {
-      updateTask(editTask.id, taskData);
+      if (editTask) {
+        updateTask(editTask.id, taskData);
+      } else {
+        addTask(taskData);
+      }
     } else {
-      addTask(taskData);
+      const taskData = {
+        title,
+        notes,
+        dueDate: '',
+        isRecurring,
+        recurrenceType: isRecurring ? recurrenceType : null,
+        tags: [],
+      };
+
+      if (editTask) {
+        updateTask(editTask.id, taskData);
+      } else {
+        addTask(taskData);
+      }
     }
 
     onClose();

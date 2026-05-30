@@ -29,8 +29,8 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
     const now = new Date();
     monthSet.add(format(now, 'yyyy-MM'));
     
-    // Add months with incomplete tasks
-    tasks.filter(t => !t.completed).forEach(task => {
+    // Add months with incomplete tasks (skip someday tasks)
+    tasks.filter(t => !t.completed && t.dueDate).forEach(task => {
       monthSet.add(format(new Date(task.dueDate), 'yyyy-MM'));
     });
     
@@ -45,7 +45,7 @@ export default function CalendarView({ tasks, onDaySelect }: CalendarViewProps) 
   // Group tasks by date
   const tasksByDate = useMemo(() => {
     const map: Record<string, Task[]> = {};
-    tasks.filter(t => !t.completed).forEach(task => {
+    tasks.filter(t => !t.completed && t.dueDate).forEach(task => {
       const key = format(new Date(task.dueDate), 'yyyy-MM-dd');
       if (!map[key]) map[key] = [];
       map[key].push(task);

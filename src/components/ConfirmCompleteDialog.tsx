@@ -25,8 +25,8 @@ export default function ConfirmCompleteDialog({
     };
   }, [onCancel]);
 
-  const taskDate = new Date(task.dueDate);
-  const formattedDate = format(taskDate, 'EEEE, MMMM d, yyyy');
+  const taskDate = task.dueDate ? new Date(task.dueDate) : null;
+  const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'Someday';
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>

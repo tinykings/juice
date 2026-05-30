@@ -17,13 +17,14 @@ import {
 } from 'date-fns';
 
 interface CalendarPickerProps {
-  value: string; // YYYY-MM-DD
+  value: string; // YYYY-MM-DD or empty string for "Someday"
   onChange: (value: string) => void;
 }
 
 export default function CalendarPicker({ value, onChange }: CalendarPickerProps) {
   const [open, setOpen] = useState(false);
-  const selected = parse(value, 'yyyy-MM-dd', new Date());
+  const hasDate = value !== '';
+  const selected = hasDate ? parse(value, 'yyyy-MM-dd', new Date()) : new Date();
   const [viewMonth, setViewMonth] = useState(startOfMonth(selected));
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -65,11 +66,18 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
 
   // Sync viewMonth when value changes externally
   useEffect(() => {
-    setViewMonth(startOfMonth(parse(value, 'yyyy-MM-dd', new Date())));
+    if (value) {
+      setViewMonth(startOfMonth(parse(value, 'yyyy-MM-dd', new Date())));
+    }
   }, [value]);
 
   const handleSelect = useCallback((day: Date) => {
     onChange(format(day, 'yyyy-MM-dd'));
+    setOpen(false);
+  }, [onChange]);
+
+  const handleSomeday = useCallback(() => {
+    onChange('');
     setOpen(false);
   }, [onChange]);
 
@@ -81,54 +89,13 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   const allDays = eachDayOfInterval({ start: calStart, end: calEnd });
   const today = new Date();
 
-  const displayText = format(selected, 'MMM d, yyyy');
+  const displayText = hasDate ? format(selected, 'MMM d, yyyy') : 'Someday';
 
   // Native picker for touch devices
   if (useNative) {
     return (
-      <label style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        padding: '12px 16px',
-        background: 'var(--background)',
-        border: '1px solid var(--border)',
-        borderRadius: 0,
-        fontSize: 16,
-        cursor: 'pointer',
-        minHeight: 48,
-        transition: 'all 0.2s'
-      }}
-      onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--foreground)'}
-      onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
-      >
-        <CalendarIcon />
-        <input
-          ref={nativeRef}
-          type="date"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: 'var(--foreground)',
-            fontSize: 16,
-            fontFamily: 'inherit'
-          }}
-        />
-      </label>
-    );
-  }
-
-  // Custom calendar for desktop
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen(!open)}
-        style={{
+      <div style={{ display: 'flex', gap: 8 }}>
+        <label style={{
           display: 'flex',
           alignItems: 'center',
           gap: 10,
@@ -140,15 +107,66 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           cursor: 'pointer',
           minHeight: 48,
           transition: 'all 0.2s',
-          color: 'var(--foreground)',
-          fontFamily: 'inherit',
+          color: hasDate ? 'var(--foreground)' : 'var(--muted)',
         }}
         onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--foreground)'}
+        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          {hasDate ? <CalendarIcon /> : <SomedayIcon />}
+          <input
+            ref={nativeRef}
+            type="date"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Someday"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--foreground)',
+              fontSize: 16,
+              fontFamily: 'inherit',
+              minWidth: hasDate ? 'auto' : 80,
+            }}
+          />
+        </label>
+      </div>
+    );
+  }
+
+  // Custom calendar for desktop — Someday button always opens the dropdown
+  return (
+    <div style={{ position: 'relative', display: 'flex', gap: 8 }}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '12px 16px',
+          background: hasDate ? 'var(--background)' : 'var(--accent)',
+          border: hasDate ? '1px solid var(--border)' : 'none',
+          borderRadius: 0,
+          fontSize: 16,
+          cursor: 'pointer',
+          minHeight: 48,
+          transition: 'all 0.2s',
+          color: hasDate ? 'var(--foreground)' : 'var(--background)',
+          fontFamily: 'inherit',
+          fontWeight: hasDate ? 400 : 500,
+        }}
+        onMouseEnter={(e) => {
+          if (hasDate) e.currentTarget.style.borderColor = 'var(--foreground)';
+          else e.currentTarget.style.opacity = '0.9';
+        }}
         onMouseLeave={(e) => {
-          if (!open) e.currentTarget.style.borderColor = 'var(--border)';
+          if (hasDate && !open) e.currentTarget.style.borderColor = 'var(--border)';
+          else e.currentTarget.style.opacity = '1';
         }}
       >
-        <CalendarIcon />
+        {hasDate ? <CalendarIcon /> : <SomedayIcon />}
         {displayText}
       </button>
 
@@ -231,7 +249,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           }}>
             {allDays.map((day) => {
               const inMonth = isSameMonth(day, viewMonth);
-              const isSelected = isSameDay(day, selected);
+              const isSelected = hasDate && isSameDay(day, selected);
               const isToday = isSameDay(day, today);
 
               return (
@@ -239,7 +257,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
                   key={day.toISOString()}
                   day={day}
                   inMonth={inMonth}
-                  isSelected={isSelected}
+                  isSelected={isSelected || false}
                   isToday={isToday}
                   onSelect={handleSelect}
                 />
@@ -247,29 +265,49 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
             })}
           </div>
 
-          {/* Today shortcut */}
-          <button
-            type="button"
-            onClick={() => {
-              const t = new Date();
-              setViewMonth(startOfMonth(t));
-              handleSelect(t);
-            }}
-            style={{
-              width: '100%',
-              marginTop: 8,
-              padding: '6px 0',
-              background: 'none',
-              border: '1px solid var(--border)',
-              color: 'var(--accent)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              letterSpacing: '0.03em',
-            }}
-          >
-            Today
-          </button>
+          {/* Shortcuts */}
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => {
+                const t = new Date();
+                setViewMonth(startOfMonth(t));
+                handleSelect(t);
+              }}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                background: 'none',
+                border: '1px solid var(--border)',
+                color: 'var(--accent)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={handleSomeday}
+              style={{
+                flex: 1,
+                padding: '6px 0',
+                background: 'none',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                letterSpacing: '0.03em',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
+            >
+              Someday
+            </button>
+          </div>
         </div>,
         document.body
       )}
@@ -337,6 +375,15 @@ function CalendarIcon() {
     <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3" y="4" width="18" height="18" rx="0" />
       <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+function SomedayIcon() {
+  return (
+    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M22 12h-6l-2 3H10l-2-3H2"/>
+      <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
     </svg>
   );
 }

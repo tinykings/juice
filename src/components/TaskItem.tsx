@@ -32,8 +32,9 @@ export default function TaskItem({
   const [isHovered, setIsHovered] = useState(false);
   const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   
-  const taskDate = new Date(task.dueDate);
-  const isOverdue = isOverdueProp || (isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate));
+  const isSomeday = !task.dueDate;
+  const taskDate = isSomeday ? null : new Date(task.dueDate);
+  const isOverdue = isOverdueProp || (taskDate ? isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate) : false);
 
   // Extract time from @pattern - handles @1, @1pm, @130, @530, @2:30, @5pm
   const timeMatch = task.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
@@ -191,7 +192,7 @@ export default function TaskItem({
             </div>
             
             {/* Date indicator */}
-            {showDate && (
+            {showDate && !isSomeday && (
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={(e) => {
@@ -223,7 +224,7 @@ export default function TaskItem({
                     borderRadius: 4,
                   }}
                 >
-                  {isToday(taskDate) ? 'Today' : format(taskDate, 'MMM d')}
+                  {taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>

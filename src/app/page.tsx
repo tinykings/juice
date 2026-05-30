@@ -35,6 +35,7 @@ export default function HomePage() {
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [showSomeday, setShowSomeday] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [mounted, setMounted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
@@ -101,6 +102,7 @@ export default function HomePage() {
   const incompleteTasks = useMemo(() => {
     const filtered = tasks.filter(t => {
       if (t.completed) return false;
+      if (!t.dueDate) return false; // Exclude someday tasks from normal groups
       if (selectedDateFilter && !isSameDay(new Date(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
@@ -134,6 +136,11 @@ export default function HomePage() {
   }, [incompleteTasks, selectedDateFilter, currentDate]);
 
   const hasNoTasks = tasks.length === 0;
+
+  // Someday tasks (no due date, not completed)
+  const somedayTasks = useMemo(() => {
+    return tasks.filter(t => !t.dueDate && !t.completed);
+  }, [tasks]);
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
@@ -317,7 +324,7 @@ export default function HomePage() {
           if (selectedDateFilter) {
             setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
           } else {
-            setInitialDate(null);
+            setInitialDate(showSomeday ? '' : null);
           }
           setIsModalOpen(true);
         }
@@ -387,18 +394,75 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Top Right Buttons - Full Width View */}
+      {/* Top Right Buttons - only in split view */}
       {showSplitView && (
-        <div style={{
-          position: 'fixed',
-          top: 16,
-          right: 24,
-          zIndex: 25,
-          display: 'flex',
-          gap: 8,
-        }}>
-          <button
-            onClick={() => setIsSearchExpanded(true)}
+      <div style={{
+        position: 'fixed',
+        top: 16,
+        right: 24,
+        zIndex: 25,
+        display: 'flex',
+        gap: 8,
+      }}>
+        <button
+          onClick={() => setShowSomeday(prev => !prev)}
+          style={{
+            position: 'relative',
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showSomeday ? 'var(--accent)' : 'var(--surface-inset)',
+            border: showSomeday ? 'none' : '1px solid var(--border)',
+            cursor: 'pointer',
+            color: showSomeday ? 'var(--background)' : 'var(--muted)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!showSomeday) {
+              e.currentTarget.style.background = 'var(--highlight)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showSomeday) {
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }
+          }}
+          aria-label="Someday tasks"
+          title="Someday"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 12h-6l-2 3H10l-2-3H2"/>
+            <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
+          </svg>
+          {mounted && somedayTasks.length > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              right: 2,
+              minWidth: 16,
+              height: 16,
+              borderRadius: 8,
+              background: 'var(--accent)',
+              color: 'var(--background)',
+              fontSize: 10,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 3px',
+            }}>
+              {somedayTasks.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setIsSearchExpanded(true)}
             style={{
               width: 36,
               height: 36,
@@ -456,7 +520,7 @@ export default function HomePage() {
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
           </button>
           <button
@@ -464,7 +528,7 @@ export default function HomePage() {
               if (selectedDateFilter) {
                 setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
               } else {
-                setInitialDate(null);
+                setInitialDate(showSomeday ? '' : null);
               }
               setIsModalOpen(true);
             }}
@@ -510,7 +574,7 @@ export default function HomePage() {
           zIndex: 20,
           background: 'var(--background)',
           padding: '16px 24px',
-          paddingRight: showSplitView ? 164 : 24,
+          paddingRight: showSplitView ? 216 : 80,
           borderBottom: '2px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
@@ -742,6 +806,52 @@ Back
                 </div>
               </section>
             )}
+
+            {/* Someday Section */}
+            {showSomeday && (
+              <section style={{ marginBottom: 32 }}>
+                <h2 style={{ 
+                  fontSize: 15, 
+                  fontWeight: 600, 
+                  color: 'var(--foreground)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: 12,
+                  fontFamily: 'var(--font-body)'
+                }}>
+                  Someday
+                </h2>
+                <div style={{ borderTop: '2px solid var(--border)' }}>
+                  {somedayTasks.length > 0 ? (
+                    somedayTasks.map((task) => (
+                      <TaskItem 
+                        key={task.id} 
+                        task={task} 
+                        onComplete={() => handleTaskComplete(task.id, true)}
+                        onEdit={() => {
+                          setEditingTask(task);
+                          setIsModalOpen(true);
+                        }}
+                        showDate={true}
+                        isOverdue={false}
+                        needsConfirmation={false}
+                        onDelete={() => deleteTask(task.id)}
+                      />
+                    ))
+                  ) : (
+                    <div style={{
+                      padding: '32px 0',
+                      textAlign: 'center',
+                      color: 'var(--muted)',
+                      fontSize: 14,
+                    }}>
+                      No someday tasks
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
 {visibleGroups.map((group, index) => (
               <section 
                 key={group.label} 
@@ -893,7 +1003,66 @@ Back
               <circle cx="11" cy="11" r="8"/>
               <path d="M21 21l-4.35-4.35"/>
             </svg>
-            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Find</span>
+          </button>
+
+          {/* Someday Button */}
+          <button
+            onClick={() => setShowSomeday(prev => !prev)}
+            style={{
+              width: 48,
+              height: 60,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              background: showSomeday ? 'var(--accent)' : 'none',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+              color: showSomeday ? 'var(--background)' : 'var(--muted)',
+              transition: 'all 0.2s ease',
+              position: 'relative',
+            }}
+            aria-label="Someday"
+            onMouseEnter={(e) => {
+              if (!showSomeday) {
+                e.currentTarget.style.background = 'var(--accent-subtle)';
+                e.currentTarget.style.color = 'var(--accent)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!showSomeday) {
+                e.currentTarget.style.background = 'none';
+                e.currentTarget.style.color = 'var(--muted)';
+              }
+            }}
+            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
+            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
+          >
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22 12h-6l-2 3H10l-2-3H2"/>
+              <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
+            </svg>
+            {mounted && somedayTasks.length > 0 && !showSomeday && (
+              <span style={{
+                position: 'absolute',
+                top: 6,
+                right: 6,
+                minWidth: 16,
+                height: 16,
+                borderRadius: 8,
+                background: 'var(--accent)',
+                color: 'var(--background)',
+                fontSize: 10,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 3px',
+              }}>
+                {somedayTasks.length}
+              </span>
+            )}
           </button>
 
           {/* Settings Button */}
@@ -929,7 +1098,6 @@ Back
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
-            <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Set</span>
           </button>
 
           {/* FAB - Add Task */}
@@ -938,7 +1106,7 @@ Back
               if (selectedDateFilter) {
                 setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
               } else {
-                setInitialDate(null);
+                setInitialDate(showSomeday ? '' : null);
               }
               setIsModalOpen(true);
             }}
@@ -984,7 +1152,7 @@ Back
           }
         }}
         editTask={editingTask}
-        initialDate={initialDate}
+        initialDate={!editingTask && showSomeday ? '' : initialDate}
       />
 
       <SettingsModal

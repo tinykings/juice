@@ -449,6 +449,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
     return tasks.filter((task) => {
+      if (!task.dueDate) return false;
       const taskDate = format(new Date(task.dueDate), 'yyyy-MM-dd');
       return taskDate <= todayStr && !task.completed;
     });
@@ -458,6 +459,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
     return tasks.filter((task) => {
+      if (!task.dueDate) return false;
       const taskDate = format(new Date(task.dueDate), 'yyyy-MM-dd');
       return taskDate > todayStr && !task.completed;
     }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
