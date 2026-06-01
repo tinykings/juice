@@ -526,32 +526,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
           >
             ?
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--foreground)';
-              e.currentTarget.style.color = 'var(--foreground)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-            style={{
-              padding: '12px 20px',
-              fontSize: 16,
-              color: 'var(--muted)',
-              background: 'none',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              minHeight: 48,
-              borderRadius: 0,
-              fontWeight: 500,
-              transition: 'all 0.2s'
-            }}
-          >
-            Cancel
-          </button>
+
           {editTask && (
             <button
               type="button"

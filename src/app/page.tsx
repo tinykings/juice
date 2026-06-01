@@ -394,176 +394,26 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Top Right Buttons - only in split view */}
+      {/* Bottom-right Buttons - only in split view */}
       {showSplitView && (
-      <div style={{
-        position: 'fixed',
-        top: 16,
-        right: 24,
-        zIndex: 25,
-        display: 'flex',
-        gap: 8,
-      }}>
-        <button
-          onClick={() => setShowSomeday(prev => !prev)}
-          style={{
-            position: 'relative',
-            width: 36,
-            height: 36,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: showSomeday ? 'var(--accent)' : 'var(--surface-inset)',
-            border: showSomeday ? 'none' : '1px solid var(--border)',
-            cursor: 'pointer',
-            color: showSomeday ? 'var(--background)' : 'var(--muted)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            if (!showSomeday) {
-              e.currentTarget.style.background = 'var(--highlight)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!showSomeday) {
-              e.currentTarget.style.background = 'var(--surface-inset)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }
-          }}
-          aria-label="Someday tasks"
-          title="Someday"
-        >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M22 12h-6l-2 3H10l-2-3H2"/>
-            <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
-          </svg>
-          {mounted && somedayTasks.length > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: 2,
-              right: 2,
-              minWidth: 16,
-              height: 16,
-              borderRadius: 8,
-              background: 'var(--accent)',
-              color: 'var(--background)',
-              fontSize: 10,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 3px',
-            }}>
-              {somedayTasks.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setIsSearchExpanded(true)}
-            style={{
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--surface-inset)',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--highlight)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-inset)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-            aria-label="Search"
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            style={{
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--surface-inset)',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--highlight)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-inset)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-            aria-label="Settings"
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </button>
-          <button
-            onClick={() => {
-              if (selectedDateFilter) {
-                setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
-              } else {
-                setInitialDate(showSomeday ? '' : null);
-              }
-              setIsModalOpen(true);
-            }}
-            style={{
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--surface-inset)',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: 'var(--foreground)',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--highlight)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-inset)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--foreground)';
-            }}
-            aria-label="Add task"
-            title="New (n)"
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-        </div>
+      <FloatingButtons
+        showSomeday={showSomeday}
+        mounted={mounted}
+        somedayTasksLength={somedayTasks.length}
+        onToggleSomeday={() => setShowSomeday(prev => !prev)}
+        onSearch={() => setIsSearchExpanded(true)}
+        onSettings={() => setIsSettingsOpen(true)}
+        onAddTask={() => {
+          if (selectedDateFilter) {
+            setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+          } else {
+            setInitialDate(showSomeday ? '' : null);
+          }
+          setIsModalOpen(true);
+        }}
+      />
       )}
-
+ 
       {/* Search Header */}
       {view === 'list' && isSearchExpanded && (
         <div style={{
@@ -675,7 +525,7 @@ export default function HomePage() {
       {(view === 'list' || showSplitView) && (
       <main ref={listScrollRef} style={{ 
         flex: 1, 
-        padding: isSearchExpanded ? '88px 24px 24px' : '24px 24px 24px', 
+        padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', 
         overflow: 'auto',
         minHeight: 0,
         borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
@@ -809,7 +659,7 @@ Back
 
             {/* Someday Section */}
             {showSomeday && (
-              <section style={{ marginBottom: 32 }}>
+              <section style={{ marginBottom: 32, padding: '16px 20px', background: 'var(--surface-inset)', borderRadius: 8 }}>
                 <h2 style={{ 
                   fontSize: 15, 
                   fontWeight: 600, 
@@ -1005,7 +855,8 @@ Back
             </svg>
           </button>
 
-          {/* Someday Button */}
+          {/* Someday Button - hidden in calendar view since someday items have no date */}
+          {view !== 'calendar' && (
           <button
             onClick={() => setShowSomeday(prev => !prev)}
             style={{
@@ -1064,6 +915,7 @@ Back
               </span>
             )}
           </button>
+          )}
 
           {/* Settings Button */}
           <button
@@ -1172,4 +1024,182 @@ Back
   );
 }
 
-
+function FloatingButtons({
+  showSomeday,
+  mounted,
+  somedayTasksLength,
+  onToggleSomeday,
+  onSearch,
+  onSettings,
+  onAddTask,
+}: {
+  showSomeday: boolean;
+  mounted: boolean;
+  somedayTasksLength: number;
+  onToggleSomeday: () => void;
+  onSearch: () => void;
+  onSettings: () => void;
+  onAddTask: () => void;
+}) {
+  return (
+    <div style={{
+      position: 'fixed',
+      bottom: 24,
+      right: 24,
+      zIndex: 25,
+      display: 'flex',
+      gap: 8,
+    }}>
+        <button
+          onClick={onToggleSomeday}
+          style={{
+            position: 'relative',
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showSomeday ? 'var(--accent)' : 'var(--surface-inset)',
+            border: showSomeday ? 'none' : '1px solid var(--border)',
+            cursor: 'pointer',
+            color: showSomeday ? 'var(--background)' : 'var(--muted)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!showSomeday) {
+              e.currentTarget.style.background = 'var(--highlight)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showSomeday) {
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }
+          }}
+          aria-label="Someday tasks"
+          title="Someday"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 12h-6l-2 3H10l-2-3H2"/>
+            <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
+          </svg>
+          {mounted && somedayTasksLength > 0 && (
+            <span style={{
+              position: 'absolute',
+              top: 2,
+              right: 2,
+              minWidth: 16,
+              height: 16,
+              borderRadius: 8,
+              background: 'var(--accent)',
+              color: 'var(--background)',
+              fontSize: 10,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 3px',
+            }}>
+              {somedayTasksLength}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={onSearch}
+          style={{
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--surface-inset)',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+            color: 'var(--muted)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--highlight)';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.color = 'var(--accent)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--surface-inset)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.color = 'var(--muted)';
+          }}
+          aria-label="Search"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </button>
+        <button
+          onClick={onSettings}
+          style={{
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--surface-inset)',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+            color: 'var(--muted)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--highlight)';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.color = 'var(--accent)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--surface-inset)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.color = 'var(--muted)';
+          }}
+          aria-label="Settings"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button
+          onClick={onAddTask}
+          style={{
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--surface-inset)',
+            border: '1px solid var(--border)',
+            cursor: 'pointer',
+            color: 'var(--foreground)',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--highlight)';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+            e.currentTarget.style.color = 'var(--accent)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--surface-inset)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+            e.currentTarget.style.color = 'var(--foreground)';
+          }}
+          aria-label="Add task"
+          title="New (n)"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      </div>
+  );
+}
