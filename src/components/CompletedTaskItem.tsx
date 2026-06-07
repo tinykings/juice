@@ -18,8 +18,8 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
       display: 'flex',
       alignItems: 'flex-start',
       gap: 16,
-      padding: '16px 0',
-      borderBottom: '1px solid var(--border)',
+      padding: '16px',
+      borderBottom: '2px solid var(--border)',
       opacity: isUncompleting ? 0.3 : 1,
       transition: 'opacity 0.15s',
     }}>
@@ -43,13 +43,12 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
         <div style={{
           width: 28,
           height: 28,
-          borderRadius: 0,
-          background: isUncompleting ? 'transparent' : (isCheckboxHovered ? 'var(--muted)' : 'var(--muted-light)'),
-          border: isUncompleting ? '2.5px solid var(--muted-light)' : 'none',
+          background: isCheckboxHovered ? 'var(--muted)' : 'var(--muted-light)',
+          border: '2px solid transparent',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'all 0.2s',
+          transition: 'background 0.15s',
         }}>
           {!isUncompleting && (
             <svg width="16" height="16" fill="none" stroke="var(--foreground)" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">

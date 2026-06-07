@@ -3,74 +3,81 @@
 @tailwind utilities;
 
 :root,
-[data-theme="light"] {
-  /* Base colors - warm off-white palette */
-  --background: #F8F6F3;
-  --foreground: #1A1A18;
-  --card: #FDFCFA;
+[data-theme="dark"] {
+  /* Base - warm charcoal, never blue-black */
+  --background: #1C1C1C;
+  --foreground: #E8E7E4;
+  --card: #252524;
   --muted: #8A8A85;
-  --muted-light: #E5E3DF;
-  --border: #E5E3DF;
-  
-  /* Accent - refined coral/red */
-  --accent: #E84545;
-  --accent-light: #FDEaea;
-  --accent-subtle: #FCE8E8;
-  --highlight: #FCE8E8;
-  
+  --muted-light: #3A3A38;
+  --border: #3A3A38;
+
+  /* Accent - yellow (F4E26A) */
+  --accent: oklch(85% 0.14 85);
+  --accent-hover: oklch(78% 0.16 85);
+  --accent-subtle: oklch(35% 0.05 85);
+  --accent-surface: oklch(42% 0.1 85);
+  --accent-border: oklch(65% 0.12 85);
+
   /* Semantic colors */
   --yellow: #F5B041;
-  --red: #C2410C;
+  --red: #EF4444;
   --green: #2ECC71;
   --purple: #9B59B6;
-  
-  /* UI elements */
-  --surface-raised: #FDFCFA;
-  --surface-inset: #F2F0ED;
-  --calendar-month-start: #ECE7DF;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  
-  /* Calendar */
-  --calendar-bg: #F8F6F3;
-  --calendar-text: #1A1A18;
-  --calendar-event-border: #E84545;
-}
 
-[data-theme="dark"] {
-  /* Base colors - warm dark grey */
-  --background: #1C1C1C;
-  --foreground: #ECECEB;
-  --card: #252525;
-  --muted: #8A8A85;
-  --muted-light: #333333;
-  --border: #333333;
-  
-  /* Accent - lime green */
-  --accent: #A3E635;
-  --accent-light: #3F6212;
-  --accent-subtle: #1A2E05;
-  --highlight: #1F3A05;
-  
-  /* Semantic colors */
-  --yellow: #FBBF24;
-  --red: #EF4444;
-  --green: #10B981;
-  --purple: #A855F7;
-  
-  /* UI elements */
-  --surface-raised: #252525;
+  /* UI surfaces */
+  --surface-raised: #252524;
   --surface-inset: #2A2A2A;
-  --calendar-month-start: #353535;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.35);
-  
+  --calendar-month-start: #2E2E2C;
+
+  /* Brutalist shadows - hard offset, no blur */
+  --shadow-sm: 3px 3px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 5px 5px 0 rgba(0, 0, 0, 0.4);
+  --shadow-lg: 8px 8px 0 rgba(0, 0, 0, 0.35);
+
+  /* Border thickness */
+  --border-thin: 1px;
+  --border-thick: 2px;
+
   /* Calendar */
   --calendar-bg: #1C1C1C;
-  --calendar-text: #ECECEB;
-  --calendar-event-border: #A3E635;
+  --calendar-text: #E8E7E4;
+  --calendar-event-border: oklch(65% 0.12 85);
+}
+
+[data-theme="light"] {
+  --background: #F2F0EB;
+  --foreground: #1A1A18;
+  --card: #FFFFFF;
+  --muted: #8A8A85;
+  --muted-light: #D4D2CC;
+  --border: #B8B6B0;
+
+  --accent: oklch(60% 0.14 85);
+  --accent-hover: oklch(52% 0.14 85);
+  --accent-subtle: oklch(92% 0.04 85);
+  --accent-surface: oklch(88% 0.08 85);
+  --accent-border: oklch(55% 0.12 85);
+
+  --yellow: #D4A017;
+  --red: #DC2626;
+  --green: #16A34A;
+  --purple: #7C3AED;
+
+  --surface-raised: #FFFFFF;
+  --surface-inset: #E8E6E0;
+  --calendar-month-start: #E0DDD6;
+
+  --shadow-sm: 3px 3px 0 rgba(0, 0, 0, 0.12);
+  --shadow-md: 5px 5px 0 rgba(0, 0, 0, 0.1);
+  --shadow-lg: 8px 8px 0 rgba(0, 0, 0, 0.08);
+
+  --border-thin: 1px;
+  --border-thick: 2px;
+
+  --calendar-bg: #F2F0EB;
+  --calendar-text: #1A1A18;
+  --calendar-event-border: oklch(55% 0.12 85);
 }
 
 * {
@@ -91,38 +98,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   min-height: 100dvh;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background 0.2s ease, color 0.2s ease;
   overflow-x: hidden;
   line-height: 1.5;
-}
-
-/* Mobile-first constrained width */
-.app-container {
-  max-width: 600px;
-  margin: 0 auto;
-  min-height: 100vh;
-}
-
-/* Noise texture - subtle */
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.015;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  mix-blend-mode: overlay;
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-body), sans-serif;
-  font-weight: 600;
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
@@ -140,8 +125,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Hide scrollbars */
-html,
-body {
+html, body {
   scrollbar-width: none;
 }
 
@@ -154,71 +138,44 @@ input, textarea, button {
   border: none;
   outline: none;
   background: none;
+  color: inherit;
 }
 
-/* Focus visible */
+/* Focus visible - 4px offset solid accent */
 :focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 4px 4px 0 var(--accent);
 }
 
-/* Utility animations */
+/* Animations */
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(8px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideUp {
-  from { 
-    opacity: 0; 
-    transform: translateY(20px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes checkmark {
-  0% { 
-    stroke-dashoffset: 20; 
-  }
-  100% { 
-    stroke-dashoffset: 0; 
-  }
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
 }
 
 @keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+@keyframes borderPulse {
+  0%, 100% { border-color: var(--border); }
+  50% { border-color: var(--accent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -229,65 +186,39 @@ input, textarea, button {
   }
 }
 
-
-.animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Stagger delays */
-.delay-50 { animation-delay: 50ms; }
-.delay-100 { animation-delay: 100ms; }
-.delay-150 { animation-delay: 150ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-
-/* Card base */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-}
-
 /* Button base */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 20px;
+  padding: 12px 24px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  border: var(--border-thick) solid var(--border);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: white;
+  background: var(--accent-surface);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--accent) 85%, black);
+  background: var(--accent);
+  color: var(--background);
 }
 
 .btn-secondary {
   background: transparent;
   color: var(--foreground);
-  border: 1px solid var(--border);
+  border-color: var(--border);
 }
 
 .btn-secondary:hover {
   background: var(--surface-inset);
+  border-color: var(--accent);
+  color: var(--accent);
 }

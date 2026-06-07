@@ -36,7 +36,6 @@ export default function ConfirmCompleteDialog({
           position: 'absolute',
           inset: 0,
           background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)'
         }}
       />
 
@@ -49,11 +48,9 @@ export default function ConfirmCompleteDialog({
         maxWidth: 400,
         margin: '0 auto',
         background: 'var(--card)',
-        borderRadius: 0,
         boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
         overflow: 'hidden',
-        border: '1px solid var(--border)',
-        animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+        border: '2px solid var(--border)',
       }}>
         <div style={{ padding: 24 }}>
           <h3 style={{
@@ -116,11 +113,13 @@ export default function ConfirmCompleteDialog({
               fontWeight: 500,
               color: 'var(--muted)',
               background: 'var(--card)',
-              borderRadius: 0,
-              border: '1px solid var(--border)',
+              border: '2px solid var(--border)',
               cursor: 'pointer',
-              minHeight: 48
+              minHeight: 48,
+              transition: 'border-color 0.15s, color 0.15s',
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
           >
             Cancel
           </button>
@@ -134,11 +133,13 @@ export default function ConfirmCompleteDialog({
               fontWeight: 500,
               color: 'var(--background)',
               background: 'var(--accent)',
-              borderRadius: 0,
-              border: 'none',
+              border: '2px solid var(--accent)',
               cursor: 'pointer',
-              minHeight: 48
+              minHeight: 48,
+              transition: 'background 0.15s',
             }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-surface)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
           >
             Complete
           </button>

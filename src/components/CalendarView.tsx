@@ -109,8 +109,7 @@ function ContinuousCalendar({
     <div style={{
       display: 'grid',
       gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-      columnGap: 2,
-      rowGap: 3,
+      gap: 2,
       width: '100%',
     }}>
       {WEEKDAYS.map((day, index) => (
@@ -197,57 +196,52 @@ function DayCell({
         flexDirection: 'column',
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
-        padding: '6px 0',
+        padding: '6px 4px',
         minHeight: 150,
         fontSize: 13,
-        fontWeight: isTodayCell ? 600 : 400,
+        fontWeight: isTodayCell ? 700 : 400,
         background: isHovered
-          ? 'var(--accent-subtle)'
+          ? 'var(--accent-surface)'
           : (isTodayCell
-            ? 'var(--accent-subtle)'
-            : (isMonthStart && inVisibleMonth
-              ? 'var(--calendar-month-start)'
-              : (inVisibleMonth ? 'var(--surface-inset)' : 'transparent'))),
+            ? 'var(--accent-surface)'
+            : (inVisibleMonth ? 'var(--surface-inset)' : 'transparent')),
         color: inVisibleMonth
-          ? (isTodayCell ? 'var(--accent)' : 'var(--foreground)')
-          : 'var(--muted-light)',
-        border: isTodayCell ? '1px solid var(--accent)' : '1px solid transparent',
-        borderRadius: 8,
+          ? 'var(--foreground)'
+          : 'var(--muted)',
+        border: isTodayCell ? '2px solid var(--accent)' : '2px solid transparent',
         cursor: 'pointer',
-        transition: 'all 0.15s ease',
         textAlign: 'left',
         overflow: 'hidden',
         gridColumn: `${gridColumn} / ${gridColumn + 1}`,
         gridRow: `${gridRow} / ${gridRow + 1}`,
-      }}
-    >
-      <span style={{
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        gap: 6,
-        fontSize: 12,
-        fontWeight: isTodayCell ? 600 : 400,
-        marginBottom: showTasks ? 4 : 0,
-        minWidth: 0,
       }}>
-        {day.getDate()}
-        {monthLabel && (
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: 'var(--muted)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}>
-            {monthLabel}
-          </span>
-        )}
-      </span>
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'baseline',
+          gap: 6,
+          fontSize: 12,
+          fontWeight: isTodayCell ? 700 : 500,
+          marginBottom: showTasks ? 4 : 0,
+          minWidth: 0,
+        }}>
+          {day.getDate()}
+          {monthLabel && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {monthLabel}
+            </span>
+          )}
+        </span>
 
-      {showTasks && (
+        {showTasks && (
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -265,9 +259,8 @@ function DayCell({
                 fontWeight: 600,
                 color: 'var(--accent)',
                 background: 'transparent',
-                border: '1px solid var(--calendar-event-border)',
-                borderRadius: 6,
-                padding: '2px 6px 2px',
+                border: '2px solid var(--border)',
+                padding: '2px 6px',
                 marginBottom: 2,
                 whiteSpace: 'normal',
                 overflow: 'visible',

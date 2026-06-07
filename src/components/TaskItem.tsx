@@ -85,11 +85,10 @@ export default function TaskItem({
           justifyContent: 'flex-start',
           gap: 16,
           padding: '16px 0',
-          borderBottom: '1px solid var(--border)',
-          opacity: isCompleting ? 0 : 1,
-          transform: isCompleting ? 'translateX(-8px)' : 'translateX(0)',
-          transition: 'opacity 0.25s ease, transform 0.25s ease, background 0.2s',
-          background: isHovered ? 'var(--surface-inset)' : 'transparent',
+          borderBottom: '2px solid var(--border)',
+          opacity: isCompleting ? 0.3 : 1,
+          transition: 'opacity 0.15s, background 0.15s',
+          background: isHovered ? 'var(--accent-subtle)' : 'transparent',
           cursor: 'pointer',
         }}
       >
@@ -119,9 +118,9 @@ export default function TaskItem({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: isCheckboxHovered ? (isOverdue ? 'var(--red)' : 'var(--accent-subtle)') : 'transparent',
+            background: isCheckboxHovered ? (isOverdue ? 'var(--red)' : 'var(--accent)') : 'transparent',
             border: `2px solid ${isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent)' : 'var(--border)')}`,
-            transition: 'all 0.2s ease',
+            transition: 'background 0.15s, border-color 0.15s',
           }}>
             {isCompleting && (
               <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
@@ -210,8 +209,8 @@ export default function TaskItem({
                   }}
                   style={{
                     background: 'none',
-                    border: 'none',
-                    padding: '6px 10px',
+                    border: '2px solid transparent',
+                    padding: '4px 8px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -219,9 +218,8 @@ export default function TaskItem({
                     color: isOverdue ? 'var(--red)' : 'var(--muted)',
                     fontSize: 13,
                     fontWeight: 500,
-                    transition: 'all 0.2s',
+                    transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                     whiteSpace: 'nowrap',
-                    borderRadius: 4,
                   }}
                 >
                   {taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}
@@ -274,12 +272,10 @@ function RescheduleMenu({
         left: Math.min(window.innerWidth - 180, Math.max(16, triggerRect.left - 80)),
         width: 160,
         background: 'var(--card)',
-        borderRadius: 8,
-        boxShadow: 'var(--shadow-lg)',
+        boxShadow: '8px 8px 0 rgba(0,0,0,0.2)',
         padding: 6,
         zIndex: 9999,
-        border: '1px solid var(--border)',
-        animation: 'scaleIn 0.15s ease',
+        border: '2px solid var(--border)',
       }}>
         <RescheduleOption label="Today" date={startOfDay(new Date())} onClick={onSelect} />
         <RescheduleOption label="Tomorrow" date={addDays(startOfDay(new Date()), 1)} onClick={onSelect} />
@@ -322,9 +318,8 @@ function RescheduleOption({ label, date, onClick }: { label: string; date: Date;
         cursor: 'pointer',
         fontSize: 14,
         color: 'var(--foreground)',
-        borderRadius: 6,
         textAlign: 'left',
-        transition: 'background 0.15s ease',
+        transition: 'background 0.15s',
       }}
     >
       <span style={{ fontWeight: 500 }}>{label}</span>

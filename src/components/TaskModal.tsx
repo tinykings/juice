@@ -23,8 +23,8 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0,0,0,0.6)',
+        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -36,14 +36,12 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
       {/* Modal */}
       <div style={{
         background: 'var(--card)',
-        borderRadius: 16,
         width: '100%',
         maxWidth: 420,
         maxHeight: '90vh',
         overflow: 'auto',
-        boxShadow: 'var(--shadow-lg)',
-        border: '1px solid var(--border)',
-        animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
+        border: '2px solid var(--border)',
       }}>
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 
@@ -398,8 +396,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
             padding: '12px 16px',
             background: isRecurring ? 'var(--accent)' : 'var(--background)',
             color: isRecurring ? 'var(--background)' : 'var(--muted)',
-            border: isRecurring ? 'none' : '1px solid var(--border)',
-            borderRadius: 0,
+            border: isRecurring ? '2px solid var(--accent)' : '2px solid var(--border)',
             fontSize: 16,
             cursor: 'pointer',
             minHeight: 48,
@@ -444,14 +441,13 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               }}
               style={{
                 padding: '10px 18px',
-                borderRadius: 0,
                 fontSize: 15,
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 background: recurrenceType === type ? 'var(--foreground)' : 'var(--background)',
                 color: recurrenceType === type ? 'var(--background)' : 'var(--muted)',
-                border: '1px solid var(--border)',
+                border: '2px solid var(--border)',
                 cursor: 'pointer',
                 minHeight: 44,
                 transition: 'all 0.2s'
@@ -494,7 +490,7 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
         alignItems: 'center',
         padding: '16px 24px',
         background: 'var(--background)',
-        borderTop: '1px solid var(--border)'
+        borderTop: '2px solid var(--border)'
       }}>
         <div style={{ display: 'flex', gap: 12 }}>
           <button
@@ -515,10 +511,9 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               fontWeight: 700,
               color: showHelp ? 'var(--accent)' : 'var(--muted)',
               background: 'none',
-              border: showHelp ? '1px solid var(--accent)' : '1px solid var(--border)',
+              border: showHelp ? '2px solid var(--accent)' : '2px solid var(--border)',
               cursor: 'pointer',
-              borderRadius: 0,
-              transition: 'all 0.2s',
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -542,12 +537,11 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
                 fontSize: 16,
                 color: 'var(--red)',
                 background: 'none',
-                border: '1px solid var(--border)',
+                border: '2px solid var(--border)',
                 cursor: 'pointer',
                 minHeight: 48,
-                borderRadius: 0,
                 fontWeight: 500,
-                transition: 'all 0.2s'
+                transition: 'background 0.15s, border-color 0.15s',
               }}
             >
               Delete
@@ -570,11 +564,10 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               fontWeight: 600,
               color: 'var(--accent)',
               background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: 0,
+              border: '2px solid var(--border)',
               cursor: 'pointer',
               minHeight: 48,
-              transition: 'all 0.2s'
+              transition: 'background 0.15s, border-color 0.15s',
             }}
           >
             {hasChanges ? 'Save' : 'Complete'}
@@ -588,14 +581,13 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               fontWeight: 600,
               color: 'var(--background)',
               background: 'var(--accent)',
-              borderRadius: 0,
-              border: 'none',
+              border: '2px solid var(--accent)',
               cursor: 'pointer',
               minHeight: 48,
-              transition: 'transform 0.1s'
+              transition: 'background 0.15s',
             }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-surface)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
           >
             Add
           </button>

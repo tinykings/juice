@@ -59,7 +59,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         position: 'fixed',
         inset: 0,
         background: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -71,14 +70,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       <div 
         style={{
           background: 'var(--background)',
-          borderRadius: 0,
           width: '100%',
           maxWidth: 400,
           maxHeight: '90vh',
           overflow: 'auto',
           boxShadow: '12px 12px 0 rgba(0, 0, 0, 0.2)',
-          border: '1px solid var(--border)',
-          animation: 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+          border: '2px solid var(--border)',
         }}
       >
         {/* Header */}
@@ -87,14 +84,14 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '20px 24px',
-          borderBottom: '1px solid var(--border)',
+          borderBottom: '2px solid var(--border)',
         }}>
           <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, fontFamily: 'var(--font-body)' }}>Settings</h2>
           <button
             onClick={onClose}
             style={{
               background: 'none',
-              border: '1px solid var(--border)',
+              border: '2px solid var(--border)',
               cursor: 'pointer',
               color: 'var(--muted)',
               padding: 8,
@@ -103,8 +100,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s',
-              borderRadius: 0
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--foreground)';
@@ -132,8 +128,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 padding: '14px 20px',
                 fontSize: 16,
                 fontWeight: 500,
-                border: '1px solid var(--border)',
-                borderRadius: 0,
+                border: '2px solid var(--border)',
                 background: 'var(--card)',
                 color: 'var(--foreground)',
                 cursor: 'pointer',
@@ -142,7 +137,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 10,
-                transition: 'all 0.2s'
+                transition: 'background 0.15s, border-color 0.15s',
               }}
             >
               {theme === 'dark' ? (
@@ -171,23 +166,23 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     }
                   }
                 }}
-                style={{
-                  flex: 1,
-                  padding: '14px 20px',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  border: badgeEnabled ? 'none' : '1px solid var(--border)',
-                  borderRadius: 0,
-                  background: badgeEnabled ? 'var(--accent)' : 'var(--card)',
-                  color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
-                  cursor: 'pointer',
-                  minHeight: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 10,
-                  transition: 'all 0.2s'
-                }}
+                  style={{
+                    flex: 1,
+                    padding: '14px 20px',
+                    fontSize: 16,
+                    fontWeight: 500,
+                    border: '2px solid',
+                    borderColor: badgeEnabled ? 'var(--accent)' : 'var(--border)',
+                    background: badgeEnabled ? 'var(--accent)' : 'var(--card)',
+                    color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
+                    cursor: 'pointer',
+                    minHeight: 48,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    transition: 'background 0.15s, border-color 0.15s',
+                  }}
               >
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -204,7 +199,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             </h3>
             <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>
               Sync your tasks across devices using a GitHub Gist as storage. 
-              You need a GitHub personal access token with <code style={{ background: 'var(--card)', border: '1px solid var(--border)', padding: '4px 6px', fontSize: 14 }}>gist</code> scope.
+              You need a GitHub personal access token with <code style={{ background: 'var(--card)', border: '2px solid var(--border)', padding: '4px 6px', fontSize: 14 }}>gist</code> scope.
             </p>
           </div>
 
@@ -295,20 +290,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 padding: '14px 20px',
                 fontSize: 16,
                 fontWeight: 600,
-                border: 'none',
-                borderRadius: 0,
+                border: '2px solid var(--accent)',
                 background: isLoading || !gistId || !token ? 'var(--muted-light)' : 'var(--accent)',
                 color: isLoading || !gistId || !token ? 'var(--muted)' : 'var(--background)',
                 cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
                 minHeight: 48,
-                transition: 'transform 0.1s'
+                transition: 'background 0.15s',
               }}
-              onMouseDown={(e) => {
-                if (!isLoading && gistId && token) {
-                  e.currentTarget.style.transform = 'translate(2px, 2px)';
-                }
-              }}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
             >
               {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
             </button>
@@ -319,8 +307,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             marginTop: 24, 
             padding: '16px', 
             background: 'var(--card)', 
-            border: '1px solid var(--border)',
-            borderRadius: 0,
+            border: '2px solid var(--border)',
             fontSize: 15,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

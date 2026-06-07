@@ -360,7 +360,7 @@ export default function HomePage() {
   }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday]);
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--background)', transition: 'background 0.2s', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
       {/* Gist Sync Notice */}
       {isGistConfigured && isSyncing && (
         <div style={{
@@ -376,18 +376,13 @@ export default function HomePage() {
           <div style={{
             minWidth: 240,
             maxWidth: '90vw',
-            padding: '16px 20px',
-            borderRadius: 16,
-            background: 'rgba(28, 28, 28, 0.88)',
-            color: '#ECECEB',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0 16px 48px rgba(0, 0, 0, 0.28)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            textAlign: 'center',
+            padding: '16px 24px',
+            background: 'var(--card)',
+            color: 'var(--foreground)',
+            border: '3px solid var(--accent)',
             fontSize: 14,
-            fontWeight: 600,
-            letterSpacing: 0.2,
+            fontWeight: 700,
+            letterSpacing: '0.02em',
           }}>
             Syncing tasks from Gist...
           </div>
@@ -423,13 +418,12 @@ export default function HomePage() {
           right: 0,
           zIndex: 20,
           background: 'var(--background)',
-          padding: '16px 24px',
-          paddingRight: showSplitView ? 216 : 80,
-          borderBottom: '2px solid var(--border)',
+          padding: '12px 16px',
+          paddingRight: showSplitView ? 196 : 72,
+          borderBottom: '4px solid var(--accent)',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          animation: 'slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
         }}>
           <div style={{ flex: 1, position: 'relative' }}>
             <input
@@ -452,11 +446,8 @@ export default function HomePage() {
                 padding: '10px 12px 10px 40px',
                 fontSize: 16,
                 background: 'var(--card)',
-                border: '1px solid var(--accent)',
-                borderRadius: 0,
+                border: '2px solid var(--accent-border)',
                 color: 'var(--foreground)',
-                outline: 'none',
-                boxShadow: '4px 4px 0 var(--accent-light)',
                 height: 44
               }}
             />
@@ -485,25 +476,24 @@ export default function HomePage() {
               setSearchQuery('');
               setIsSearchExpanded(false);
             }}
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--foreground)',
+              background: 'var(--accent-surface)',
+              border: '2px solid var(--accent)',
+              cursor: 'pointer',
+              padding: '0 16px',
+              height: 44,
+              transition: 'background 0.15s, color 0.15s',
+            }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--accent)';
               e.currentTarget.style.color = 'var(--background)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            style={{
-              fontSize: 15,
-              color: 'var(--accent)',
-              background: 'none',
-              border: '1px solid var(--accent)',
-              cursor: 'pointer',
-              padding: '0 16px',
-              fontWeight: 500,
-              height: 44,
-              borderRadius: 0,
-              transition: 'all 0.2s'
+              e.currentTarget.style.background = 'var(--accent-surface)';
+              e.currentTarget.style.color = 'var(--foreground)';
             }}
           >
             Cancel
@@ -528,7 +518,7 @@ export default function HomePage() {
         padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', 
         overflow: 'auto',
         minHeight: 0,
-        borderRight: (isWideScreen || showSplitView) ? '1px solid rgba(255,255,255,0.1)' : 'none',
+        borderRight: (isWideScreen || showSplitView) ? '2px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
@@ -544,12 +534,11 @@ export default function HomePage() {
               padding: '12px 16px',
               marginBottom: 16,
               fontSize: 15,
-              fontWeight: 500,
+              fontWeight: 600,
               color: 'var(--accent)',
-              background: 'none',
-              border: '1px solid var(--accent)',
+              background: 'var(--accent-surface)',
+              border: '2px solid var(--accent)',
               cursor: 'pointer',
-              borderRadius: 0,
             }}
           >
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -563,83 +552,53 @@ Back
           <div>
             {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
               <div style={{
-                textAlign: 'center',
-                padding: showSplitView ? '60px 24px' : '40px 24px',
+                padding: showSplitView ? '80px 24px' : '60px 24px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 16
               }}>
-                {/* Journal illustration */}
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ opacity: 0.6, marginBottom: 8, animation: 'float 3s ease-in-out infinite' }}>
-                  <rect x="10" y="8" width="60" height="64" rx="2" fill="var(--card)" stroke="var(--border)" strokeWidth="1.5"/>
-                  <line x1="10" y1="28" x2="70" y2="28" stroke="var(--border)" strokeWidth="1.5"/>
-                  <line x1="10" y1="44" x2="60" y2="44" stroke="var(--border)" strokeWidth="1.5"/>
-                  <line x1="10" y1="56" x2="50" y2="56" stroke="var(--border)" strokeWidth="1.5"/>
-                  <line x1="10" y1="20" x2="40" y2="20" stroke="var(--accent-subtle)" strokeWidth="2"/>
-                </svg>
-
                 {hasNoTasks ? (
-                  <>
-                    <h2 style={{
-                      fontSize: 20,
-                      fontWeight: 600,
-                      color: 'var(--foreground)',
-                      margin: 0,
-                      fontFamily: 'var(--font-body)',
-                      letterSpacing: '-0.02em'
-                    }}>
-                      You have nothing to do
-                    </h2>
-                    <p style={{
-                      fontSize: 15,
-                      color: 'var(--muted)',
-                      margin: 0,
-                      lineHeight: 1.6,
-                      maxWidth: 280
-                    }}>
-                      Tap the + button below to add your first task.
-                    </p>
-                  </>
+                  <div style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    letterSpacing: '-0.03em',
+                    maxWidth: 360,
+                    textAlign: 'center',
+                    color: 'var(--muted)',
+                  }}>
+                    You have nothing to do.
+                    <br />
+                    <span style={{ color: 'var(--accent)' }}>Start something.</span>
+                  </div>
                 ) : (
-                  <>
-                    <h2 style={{
-                      fontSize: 20,
-                      fontWeight: 600,
-                      color: 'var(--foreground)',
-                      margin: 0,
-                      fontFamily: 'var(--font-body)',
-                      letterSpacing: '-0.02em'
-                    }}>
-                      All done for now
-                    </h2>
-                    <p style={{
-                      fontSize: 15,
-                      color: 'var(--muted)',
-                      margin: 0,
-                      lineHeight: 1.6,
-                      maxWidth: 280
-                    }}>
-                      Nothing left to do. Add another task or check tomorrow's.
-                    </p>
-                  </>
+                  <div style={{
+                    fontSize: 28,
+                    fontWeight: 700,
+                    lineHeight: 1.3,
+                    letterSpacing: '-0.03em',
+                    maxWidth: 360,
+                    textAlign: 'center',
+                    color: 'var(--muted)',
+                  }}>
+                    All done for now.
+                    <br />
+                    <span style={{ color: 'var(--accent)' }}>Tomorrow awaits.</span>
+                  </div>
                 )}
 
                 {tomorrowTasks.length > 0 && (
                   <div style={{
                     marginTop: 8,
-                    padding: '12px 20px',
+                    padding: '12px 24px',
                     background: 'var(--surface-inset)',
-                    borderRadius: 8,
-                    textAlign: 'center' as const,
                     color: 'var(--foreground)',
-                    fontSize: 14,
-                    lineHeight: 1.6,
-                    maxWidth: 300,
-                    border: '1px solid var(--border)',
-                    animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both'
+                    fontSize: 15,
+                    fontWeight: 600,
+                    border: '2px solid var(--border)',
                   }}>
-                    <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                    <span style={{ color: 'var(--accent)' }}>
                       {tomorrowTasks.length}
                     </span>
                     {' '}task{tomorrowTasks.length !== 1 ? 's' : ''} tomorrow
@@ -648,8 +607,11 @@ Back
               </div>
             )}
             {allTodayTasksCompleted && completedTasks.length > 0 && !selectedDateFilter && (
-              <section style={{ marginBottom: 32 }}>
-                <div style={{ borderTop: '2px solid var(--border)' }}>
+              <section style={{ marginBottom: 32, border: '2px solid var(--border)', borderTop: 'none' }}>
+                <div style={{ padding: '8px 16px', background: 'var(--accent-surface)', borderBottom: '2px solid var(--accent)', fontSize: 13, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--accent)' }}>
+                  COMPLETED TODAY
+                </div>
+                <div>
                   {completedTasks.map((task) => (
                     <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
                   ))}
@@ -659,19 +621,11 @@ Back
 
             {/* Someday Section */}
             {showSomeday && (
-              <section style={{ marginBottom: 32, padding: '16px 20px', background: 'var(--surface-inset)', borderRadius: 8 }}>
-                <h2 style={{ 
-                  fontSize: 15, 
-                  fontWeight: 600, 
-                  color: 'var(--foreground)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: 12,
-                  fontFamily: 'var(--font-body)'
-                }}>
-                  Someday
-                </h2>
-                <div style={{ borderTop: '2px solid var(--border)' }}>
+              <section style={{ marginBottom: 32, border: '2px solid var(--border)' }}>
+                <div style={{ padding: '8px 16px', background: 'var(--accent-surface)', borderBottom: '2px solid var(--accent)', fontSize: 13, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--accent)' }}>
+                  SOMEDAY
+                </div>
+                <div style={{ padding: '0 16px' }}>
                   {somedayTasks.length > 0 ? (
                     somedayTasks.map((task) => (
                       <TaskItem 
@@ -694,6 +648,7 @@ Back
                       textAlign: 'center',
                       color: 'var(--muted)',
                       fontSize: 14,
+                      fontWeight: 600,
                     }}>
                       No someday tasks
                     </div>
@@ -707,26 +662,20 @@ Back
                 key={group.label} 
                 style={{ 
                   marginBottom: 32,
-                  animation: 'fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                  opacity: 0,
-                  transform: 'translateY(10px)',
-                  animationDelay: `${index * 100}ms`
                 }}
               >
-                <h2 style={{ 
-                  fontSize: 15, 
-                  fontWeight: 600, 
-                  color: group.isOverdue ? 'var(--red)' : group.isToday ? 'var(--foreground)' : 'var(--muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: 12,
-                  fontFamily: 'var(--font-body)'
+                <div style={{ 
+                  padding: '8px 16px',
+                  background: group.isOverdue ? 'var(--red)' : 'var(--accent-surface)',
+                  borderBottom: `2px solid ${group.isOverdue ? 'var(--red)' : 'var(--accent)'}`,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  letterSpacing: '0.02em',
+                  color: group.isOverdue ? 'white' : 'var(--accent)',
                 }}>
                   {group.label}
-                </h2>
+                </div>
                 <div style={{ 
-                  borderTop: '2px solid var(--border)',
-                  background: 'transparent',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: group.tasks.length === 0 ? 'center' : 'flex-start',
@@ -751,8 +700,11 @@ Back
 
                 {/* Completed Section - shown after Today group */}
                 {group.isToday && completedTasks.length > 0 && (
-                  <div style={{ marginTop: 24 }}>
-                    <div style={{ borderTop: '2px solid var(--border)' }}>
+                  <div style={{ marginTop: 24, border: '2px solid var(--border)' }}>
+                    <div style={{ padding: '6px 12px', background: 'var(--accent-surface)', borderBottom: '2px solid var(--accent)', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--accent)' }}>
+                      COMPLETED TODAY
+                    </div>
+                    <div>
                       {completedTasks.map((task) => (
                         <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
                       ))}
@@ -766,232 +718,225 @@ Back
       </main>
 )}
 
-{/* Bottom Action Buttons - Hidden in full width view */}
+      {/* Bottom Action Buttons - Hidden in full width view */}
 {!showSplitView && (
       <footer style={{
         zIndex: 10,
         background: 'var(--background)',
-        padding: '0 24px max(24px, env(safe-area-inset-bottom, 0px))',
+        padding: '0 16px max(16px, env(safe-area-inset-bottom, 0px))',
         display: 'flex',
         alignItems: 'flex-end',
         justifyContent: 'space-between',
-        gap: 16,
-        borderTop: '1px solid var(--border)',
+        gap: 8,
+        borderTop: '3px solid var(--border)',
       }}>
-          {/* Toggle Calendar/List Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button
-              onClick={() => setView(view === 'list' ? 'calendar' : 'list')}
-              style={{
-                width: 60,
-                height: 60,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--foreground)',
-                background: 'var(--surface-inset)',
-                border: '1px solid var(--border)',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-md)',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--accent-subtle)';
-                e.currentTarget.style.color = 'var(--accent)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--surface-inset)';
-                e.currentTarget.style.color = 'var(--foreground)';
-              }}
-              onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-              onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-            >
-              {view === 'list' ? (
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-              ) : (
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 6v6l4 2"/>
-                </svg>
-              )}
-            </button>
-          </div>
-
-          {/* Search Button */}
-          <button
-            onClick={handleSearchClick}
-            style={{
-              width: 48,
-              height: 60,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              background: 'none',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'all 0.2s ease',
-            }}
-            aria-label="Search"
-            onMouseEnter={(e) => {
+        {/* Toggle Calendar/List Button */}
+        <button
+          onClick={() => setView(view === 'list' ? 'calendar' : 'list')}
+          style={{
+            width: 56,
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: view === 'calendar' ? 'var(--accent)' : 'var(--foreground)',
+            background: view === 'calendar' ? 'var(--accent-surface)' : 'transparent',
+            border: '2px solid',
+            borderColor: view === 'calendar' ? 'var(--accent)' : 'var(--border)',
+            cursor: 'pointer',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            if (view !== 'calendar') {
               e.currentTarget.style.background = 'var(--accent-subtle)';
               e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-          >
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-          </button>
-
-          {/* Someday Button - hidden in calendar view since someday items have no date */}
-          {view !== 'calendar' && (
-          <button
-            onClick={() => setShowSomeday(prev => !prev)}
-            style={{
-              width: 48,
-              height: 60,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              background: showSomeday ? 'var(--accent)' : 'none',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: showSomeday ? 'var(--background)' : 'var(--muted)',
-              transition: 'all 0.2s ease',
-              position: 'relative',
-            }}
-            aria-label="Someday"
-            onMouseEnter={(e) => {
-              if (!showSomeday) {
-                e.currentTarget.style.background = 'var(--accent-subtle)';
-                e.currentTarget.style.color = 'var(--accent)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!showSomeday) {
-                e.currentTarget.style.background = 'none';
-                e.currentTarget.style.color = 'var(--muted)';
-              }
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-          >
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M22 12h-6l-2 3H10l-2-3H2"/>
-              <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
-            </svg>
-            {mounted && somedayTasks.length > 0 && !showSomeday && (
-              <span style={{
-                position: 'absolute',
-                top: 6,
-                right: 6,
-                minWidth: 16,
-                height: 16,
-                borderRadius: 8,
-                background: 'var(--accent)',
-                color: 'var(--background)',
-                fontSize: 10,
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0 3px',
-              }}>
-                {somedayTasks.length}
-              </span>
-            )}
-          </button>
-          )}
-
-          {/* Settings Button */}
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            style={{
-              width: 48,
-              height: 60,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 2,
-              background: 'none',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'all 0.2s ease',
-            }}
-            aria-label="Settings"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-          >
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </button>
-
-          {/* FAB - Add Task */}
-          <button
-            onClick={() => {
-              if (selectedDateFilter) {
-                setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
-              } else {
-                setInitialDate(showSomeday ? '' : null);
-              }
-              setIsModalOpen(true);
-            }}
-            aria-label="Add task"
-            title="New (n)"
-            style={{
-              width: 60,
-              height: 60,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--foreground)',
-              background: 'var(--surface-inset)',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-md)',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (view !== 'calendar') {
+              e.currentTarget.style.background = 'transparent';
               e.currentTarget.style.color = 'var(--foreground)';
-            }}
-            onMouseDown={(e) => e.currentTarget.style.transform = 'translate(2px, 2px)'}
-            onMouseUp={(e) => e.currentTarget.style.transform = 'none'}
-          >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
+              e.currentTarget.style.borderColor = 'var(--border)';
+            }
+          }}
+        >
+          {view === 'list' ? (
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="0"/>
+              <path d="M16 2v4M8 2v4M3 10h18"/>
             </svg>
-          </button>
+          ) : (
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          )}
+        </button>
+
+        {/* Search Button */}
+        <button
+          onClick={handleSearchClick}
+          style={{
+            width: 48,
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: '2px solid var(--border)',
+            cursor: 'pointer',
+            color: 'var(--muted)',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+          }}
+          aria-label="Search"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--accent-subtle)';
+            e.currentTarget.style.color = 'var(--accent)';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--muted)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </button>
+
+        {/* Someday Button */}
+        {view !== 'calendar' && (
+        <button
+          onClick={() => setShowSomeday(prev => !prev)}
+          style={{
+            position: 'relative',
+            width: 48,
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: showSomeday ? 'var(--accent-surface)' : 'transparent',
+            border: '2px solid',
+            borderColor: showSomeday ? 'var(--accent)' : 'var(--border)',
+            cursor: 'pointer',
+            color: showSomeday ? 'var(--accent)' : 'var(--muted)',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+          }}
+          aria-label="Someday"
+          onMouseEnter={(e) => {
+            if (!showSomeday) {
+              e.currentTarget.style.background = 'var(--accent-subtle)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!showSomeday) {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--muted)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+            }
+          }}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22 12h-6l-2 3H10l-2-3H2"/>
+            <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
+          </svg>
+          {mounted && somedayTasks.length > 0 && !showSomeday && (
+            <span style={{
+              position: 'absolute',
+              top: 6,
+              right: 6,
+              minWidth: 16,
+              height: 16,
+              background: 'var(--accent)',
+              color: 'var(--background)',
+              fontSize: 10,
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 3px',
+            }}>
+              {somedayTasks.length}
+            </span>
+          )}
+        </button>
+        )}
+
+        {/* Settings Button */}
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          style={{
+            width: 48,
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'transparent',
+            border: '2px solid var(--border)',
+            cursor: 'pointer',
+            color: 'var(--muted)',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+          }}
+          aria-label="Settings"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--accent-subtle)';
+            e.currentTarget.style.color = 'var(--accent)';
+            e.currentTarget.style.borderColor = 'var(--accent)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--muted)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+
+        {/* FAB - Add Task */}
+        <button
+          onClick={() => {
+            if (selectedDateFilter) {
+              setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+            } else {
+              setInitialDate(showSomeday ? '' : null);
+            }
+            setIsModalOpen(true);
+          }}
+          aria-label="Add task"
+          title="New (n)"
+          style={{
+            width: 56,
+            height: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--background)',
+            background: 'var(--accent-surface)',
+            border: '2px solid var(--accent)',
+            cursor: 'pointer',
+            transition: 'background 0.15s, color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--accent)';
+            e.currentTarget.style.color = 'white';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--accent-surface)';
+            e.currentTarget.style.color = 'var(--background)';
+          }}
+        >
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
       </footer>
 )}
 
@@ -1048,33 +993,64 @@ function FloatingButtons({
       right: 24,
       zIndex: 25,
       display: 'flex',
+      flexDirection: 'column-reverse',
       gap: 8,
     }}>
+        <button
+          onClick={onAddTask}
+          style={{
+            width: 48,
+            height: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--background)',
+            background: 'var(--accent-surface)',
+            border: '2px solid var(--accent)',
+            cursor: 'pointer',
+            transition: 'background 0.15s, color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--accent)';
+            e.currentTarget.style.color = 'white';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--accent-surface)';
+            e.currentTarget.style.color = 'var(--background)';
+          }}
+          aria-label="Add task"
+          title="New (n)"
+        >
+          <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
         <button
           onClick={onToggleSomeday}
           style={{
             position: 'relative',
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: showSomeday ? 'var(--accent)' : 'var(--surface-inset)',
-            border: showSomeday ? 'none' : '1px solid var(--border)',
+            background: showSomeday ? 'var(--accent-surface)' : 'transparent',
+            border: '2px solid',
+            borderColor: showSomeday ? 'var(--accent)' : 'var(--border)',
             cursor: 'pointer',
-            color: showSomeday ? 'var(--background)' : 'var(--muted)',
-            transition: 'all 0.2s ease',
+            color: showSomeday ? 'var(--accent)' : 'var(--muted)',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
           }}
           onMouseEnter={(e) => {
             if (!showSomeday) {
-              e.currentTarget.style.background = 'var(--highlight)';
+              e.currentTarget.style.background = 'var(--accent-subtle)';
               e.currentTarget.style.borderColor = 'var(--accent)';
               e.currentTarget.style.color = 'var(--accent)';
             }
           }}
           onMouseLeave={(e) => {
             if (!showSomeday) {
-              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.background = 'transparent';
               e.currentTarget.style.borderColor = 'var(--border)';
               e.currentTarget.style.color = 'var(--muted)';
             }
@@ -1082,26 +1058,25 @@ function FloatingButtons({
           aria-label="Someday tasks"
           title="Someday"
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M22 12h-6l-2 3H10l-2-3H2"/>
             <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
           </svg>
           {mounted && somedayTasksLength > 0 && (
             <span style={{
               position: 'absolute',
-              top: 2,
-              right: 2,
-              minWidth: 16,
-              height: 16,
-              borderRadius: 8,
+              top: 4,
+              right: 4,
+              minWidth: 14,
+              height: 14,
               background: 'var(--accent)',
               color: 'var(--background)',
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '0 3px',
+              padding: '0 2px',
             }}>
               {somedayTasksLength}
             </span>
@@ -1110,30 +1085,30 @@ function FloatingButtons({
         <button
           onClick={onSearch}
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--surface-inset)',
-            border: '1px solid var(--border)',
+            background: 'transparent',
+            border: '2px solid var(--border)',
             cursor: 'pointer',
             color: 'var(--muted)',
-            transition: 'all 0.2s ease',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--highlight)';
+            e.currentTarget.style.background = 'var(--accent-subtle)';
             e.currentTarget.style.borderColor = 'var(--accent)';
             e.currentTarget.style.color = 'var(--accent)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--surface-inset)';
+            e.currentTarget.style.background = 'transparent';
             e.currentTarget.style.borderColor = 'var(--border)';
             e.currentTarget.style.color = 'var(--muted)';
           }}
           aria-label="Search"
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="8"/>
             <path d="M21 21l-4.35-4.35"/>
           </svg>
@@ -1141,65 +1116,34 @@ function FloatingButtons({
         <button
           onClick={onSettings}
           style={{
-            width: 36,
-            height: 36,
+            width: 44,
+            height: 44,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--surface-inset)',
-            border: '1px solid var(--border)',
+            background: 'transparent',
+            border: '2px solid var(--border)',
             cursor: 'pointer',
             color: 'var(--muted)',
-            transition: 'all 0.2s ease',
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--highlight)';
+            e.currentTarget.style.background = 'var(--accent-subtle)';
             e.currentTarget.style.borderColor = 'var(--accent)';
             e.currentTarget.style.color = 'var(--accent)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--surface-inset)';
+            e.currentTarget.style.background = 'transparent';
             e.currentTarget.style.borderColor = 'var(--border)';
             e.currentTarget.style.color = 'var(--muted)';
           }}
           aria-label="Settings"
         >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
           </svg>
         </button>
-        <button
-          onClick={onAddTask}
-          style={{
-            width: 36,
-            height: 36,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--surface-inset)',
-            border: '1px solid var(--border)',
-            cursor: 'pointer',
-            color: 'var(--foreground)',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--highlight)';
-            e.currentTarget.style.borderColor = 'var(--accent)';
-            e.currentTarget.style.color = 'var(--accent)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--surface-inset)';
-            e.currentTarget.style.borderColor = 'var(--border)';
-            e.currentTarget.style.color = 'var(--foreground)';
-          }}
-          aria-label="Add task"
-          title="New (n)"
-        >
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
-      </div>
+    </div>
   );
 }

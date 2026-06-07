@@ -101,15 +101,14 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           gap: 10,
           padding: '12px 16px',
           background: 'var(--background)',
-          border: '1px solid var(--border)',
-          borderRadius: 0,
+          border: '2px solid var(--border)',
           fontSize: 16,
           cursor: 'pointer',
           minHeight: 48,
-          transition: 'all 0.2s',
+          transition: 'border-color 0.15s',
           color: hasDate ? 'var(--foreground)' : 'var(--muted)',
         }}
-        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--foreground)'}
+        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
         onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
         >
           {hasDate ? <CalendarIcon /> : <SomedayIcon />}
@@ -146,24 +145,22 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           alignItems: 'center',
           gap: 10,
           padding: '12px 16px',
-          background: hasDate ? 'var(--background)' : 'var(--accent)',
-          border: hasDate ? '1px solid var(--border)' : 'none',
-          borderRadius: 0,
+          background: hasDate ? 'var(--background)' : 'var(--accent-surface)',
+          border: '2px solid',
+          borderColor: hasDate ? 'var(--border)' : 'var(--accent)',
           fontSize: 16,
           cursor: 'pointer',
           minHeight: 48,
-          transition: 'all 0.2s',
-          color: hasDate ? 'var(--foreground)' : 'var(--background)',
+          transition: 'border-color 0.15s, background 0.15s',
+          color: hasDate ? 'var(--foreground)' : 'var(--accent)',
           fontFamily: 'inherit',
-          fontWeight: hasDate ? 400 : 500,
+          fontWeight: hasDate ? 400 : 600,
         }}
         onMouseEnter={(e) => {
-          if (hasDate) e.currentTarget.style.borderColor = 'var(--foreground)';
-          else e.currentTarget.style.opacity = '0.9';
+          e.currentTarget.style.borderColor = 'var(--accent)';
         }}
         onMouseLeave={(e) => {
-          if (hasDate && !open) e.currentTarget.style.borderColor = 'var(--border)';
-          else e.currentTarget.style.opacity = '1';
+          e.currentTarget.style.borderColor = hasDate ? 'var(--border)' : 'var(--accent)';
         }}
       >
         {hasDate ? <CalendarIcon /> : <SomedayIcon />}
@@ -176,8 +173,8 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           top: dropdownPos.top,
           left: dropdownPos.left,
           background: 'var(--card)',
-          border: '1px solid var(--border)',
-          boxShadow: '6px 6px 0 rgba(0,0,0,0.15)',
+          border: '2px solid var(--border)',
+          boxShadow: '8px 8px 0 rgba(0,0,0,0.15)',
           zIndex: 300,
           padding: 12,
           width: 280,
@@ -278,12 +275,13 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
                 flex: 1,
                 padding: '6px 0',
                 background: 'none',
-                border: '1px solid var(--border)',
+                border: '2px solid var(--border)',
                 color: 'var(--accent)',
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
                 letterSpacing: '0.03em',
+                transition: 'border-color 0.15s, color 0.15s',
               }}
             >
               Today
@@ -295,12 +293,13 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
                 flex: 1,
                 padding: '6px 0',
                 background: 'none',
-                border: '1px solid var(--border)',
+                border: '2px solid var(--border)',
                 color: 'var(--muted)',
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
                 letterSpacing: '0.03em',
+                transition: 'border-color 0.15s, color 0.15s',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
@@ -390,11 +389,12 @@ function SomedayIcon() {
 
 const navBtnStyle: React.CSSProperties = {
   background: 'none',
-  border: '1px solid var(--border)',
+  border: '2px solid var(--border)',
   cursor: 'pointer',
   padding: 6,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   color: 'var(--foreground)',
+  transition: 'border-color 0.15s',
 };
