@@ -65,6 +65,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const syncFromGistTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousGistIdRef = useRef<string>('');
   const hasRunMountEffectRef = useRef(false);
+  const syncFromGistGenerationRef = useRef(0);
 
   // Function to load from Gist (debounced to prevent overwriting new tasks)
   const syncFromGist = useCallback(async () => {
@@ -79,6 +80,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // Without this, auto-sync (1s debounce) can fire before syncFromGist (2s debounce)
     // and write stale local data to the gist.
     isLoadingFromGistRef.current = true;
+    
+    // Clear any pending auto-save to prevent stale writes after syncFromGist
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
+    syncFromGistGenerationRef.current += 1;
     
     syncFromGistTimeoutRef.current = setTimeout(async () => {
       // Double-check we're not syncing to Gist before proceeding
@@ -109,6 +117,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             // If local tasks match what we last synced, use Gist as source of truth
             if (currentTasksJson === lastSyncedRef.current) {
               lastSyncedRef.current = JSON.stringify(cleanedTasks);
+              localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
               return cleanedTasks;
             }
             
@@ -211,30 +220,52 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           }
           
           // On page refresh/load, always use Gist as source of truth to respect deletions from other devices
-          // Only preserve local tasks that were created very recently (within last 5 seconds)
-          // to handle the edge case where a task was just added before refresh
+          // Use persisted last-synced state to distinguish tasks deleted from another device
+          // from tasks that were created locally and never synced to Gist.
           // Exception: If this is a Gist ID change, we merge instead (handled below)
           if (!isGistIdChange) {
-            const fiveSecondsAgo = new Date(Date.now() - 5000);
-            const recentLocalTasks = currentLocalTasks.filter(task => {
-              const createdAt = new Date(task.createdAt);
-              return createdAt > fiveSecondsAgo;
-            });
+            // Load last synced state from localStorage to determine which local tasks
+            // were already synced (and thus safe to discard if absent from Gist) vs.
+            // newly created locally (and need to be preserved).
+            const lastSyncedState = localStorage.getItem('juice-last-synced-state');
+
+            // If no persisted state exists (first run of new code, or cleared storage),
+            // trust Gist as source of truth to prevent stale local data from being written back
+            if (lastSyncedState === null) {
+              DEV && console.log('Page refresh: no persisted state, trusting Gist as source of truth');
+              lastSyncedRef.current = gistTasksJson;
+              localStorage.setItem('juice-last-synced-state', gistTasksJson);
+              return cleanedTasks;
+            }
+
+            const lastSyncedTasks: Task[] = JSON.parse(lastSyncedState);
+            const lastSyncedIds = new Set(lastSyncedTasks.map(t => t.id));
             
-            // Use Gist as source of truth, but add any very recent local tasks
+            // Use Gist as source of truth, but preserve local tasks that were never synced
             const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
             const finalTasks = [...cleanedTasks];
             
-            for (const recentTask of recentLocalTasks) {
-              if (!gistTaskIds.has(recentTask.id)) {
-                // Very recent local task not in Gist - preserve it
-                finalTasks.push(recentTask);
+            for (const localTask of currentLocalTasks) {
+              if (gistTaskIds.has(localTask.id)) continue; // Already in Gist, use Gist version
+              
+              if (lastSyncedIds.has(localTask.id)) {
+                // Was in last synced state but not in current Gist → deleted from another device
+                // Respect the deletion
+                continue;
               }
+              
+              // Not in Gist, not in last synced state → new local task, never synced
+              // Preserve it so we don't lose unsynced work
+              finalTasks.push(localTask);
             }
             
-            DEV && console.log('Page refresh: using Gist as source of truth', cleanedTasks.length, 'tasks from Gist,', recentLocalTasks.length, 'recent local tasks preserved');
-            lastSyncedRef.current = JSON.stringify(finalTasks);
-            return finalTasks;
+            // Clean finalTasks before storing lastSyncedRef so the auto-save effect's
+            // cleanupCompletedTasksFromPreviousDays pass won't detect a spurious mismatch
+            const cleanedFinalTasks = cleanupCompletedTasksFromPreviousDays(finalTasks);
+            DEV && console.log('Page refresh: using Gist as source of truth', cleanedTasks.length, 'tasks from Gist,', cleanedFinalTasks.length - cleanedTasks.length, 'local tasks preserved');
+            lastSyncedRef.current = JSON.stringify(cleanedFinalTasks);
+            localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
+            return cleanedFinalTasks;
           }
           
           // If settings changed (Gist ID change), merge to preserve local tasks
@@ -267,6 +298,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           // Fallback: shouldn't reach here, but use Gist as source of truth
           DEV && console.log('Fallback: using Gist as source of truth', cleanedTasks.length, 'tasks');
           lastSyncedRef.current = gistTasksJson;
+          localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
           return cleanedTasks;
         });
         
@@ -274,7 +306,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         hasLoadedFromGistRef.current = true;
       } catch (error) {
         console.error('Failed to load from Gist on mount:', error);
-        // Continue with local storage if Gist load fails, but still mark as loaded
+        // Protect against auto-save pushing stale localStorage data to Gist by marking
+        // the current state as synced. This prevents the auto-save effect from detecting
+        // a mismatch and overwriting Gist with possibly stale local data.
+        const currentTasksJson = JSON.stringify(cleanupCompletedTasksFromPreviousDays(tasks));
+        lastSyncedRef.current = currentTasksJson;
+        localStorage.setItem('juice-last-synced-state', currentTasksJson);
         hasLoadedFromGistRef.current = true;
       } finally {
         isLoadingFromGistRef.current = false;
@@ -320,8 +357,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // Capture the cleaned tasks for the sync
     const tasksToSync = cleanedTasks;
     const tasksJsonToSync = tasksJson;
+    const generationAtSchedule = syncFromGistGenerationRef.current;
     
     syncTimeoutRef.current = setTimeout(async () => {
+      // If syncFromGist has run since this was scheduled, skip stale write
+      if (generationAtSchedule !== syncFromGistGenerationRef.current) {
+        DEV && console.log('Auto-sync skipped: syncFromGist invalidated pending write');
+        return;
+      }
+      
       // Double-check we're not loading from Gist before syncing
       if (isLoadingFromGistRef.current) {
         DEV && console.log('Auto-sync: waiting for Gist load to complete...');
@@ -339,6 +383,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         DEV && console.log('Syncing', tasksToSync.length, 'tasks to Gist...');
         await saveTasksToGist(tasksToSync, gistSettings);
         lastSyncedRef.current = tasksJsonToSync;
+        localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
         DEV && console.log('Tasks synced to Gist successfully');
       } catch (error) {
         console.error('Failed to sync to Gist:', error);
@@ -357,6 +402,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const loadFromGist = useCallback((loadedTasks: Task[]) => {
     const cleanedTasks = cleanupCompletedTasksFromPreviousDays(loadedTasks);
     lastSyncedRef.current = JSON.stringify(cleanedTasks);
+    localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
     setTasks(cleanedTasks);
   }, [setTasks]);
 
