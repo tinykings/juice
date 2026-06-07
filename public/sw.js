@@ -1,4 +1,4 @@
-const CACHE_NAME = 'juice-v10.5';
+const CACHE_NAME = 'juice-v10.6';
 const STATIC_ASSETS = [
   './',
   './index.html',
