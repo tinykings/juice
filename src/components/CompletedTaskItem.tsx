@@ -18,7 +18,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
       display: 'flex',
       alignItems: 'flex-start',
       gap: 16,
-      padding: '16px',
+      padding: '16px 0',
       borderBottom: '2px solid var(--border)',
       opacity: isUncompleting ? 0.3 : 1,
       transition: 'opacity 0.15s',

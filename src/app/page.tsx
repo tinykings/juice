@@ -257,16 +257,8 @@ export default function HomePage() {
   }, [incompleteTasks, currentDate]);
 
   const visibleGroups = useMemo(() => {
-    return groupedTasks.filter(g => g.tasks.length > 0);
-  }, [groupedTasks]);
-
-  const allTodayTasksCompleted = useMemo(() => {
-    const today = startOfDay(currentDate);
-    const todayTasks = tasks.filter(t => isSameDay(new Date(t.dueDate), today));
-    const hasTodayTasks = todayTasks.length > 0;
-    const allCompleted = todayTasks.every(t => t.completed);
-    return hasTodayTasks && allCompleted;
-  }, [tasks, currentDate]);
+    return groupedTasks.filter(g => g.tasks.length > 0 || (g.isToday && completedTasks.length > 0));
+  }, [groupedTasks, completedTasks.length]);
 
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
@@ -550,7 +542,7 @@ Back
         {/* Empty / All-done State */}
         {isLoaded && (
           <div>
-            {(incompleteTasks.length === 0 || (allTodayTasksCompleted && !selectedDateFilter)) && (
+            {incompleteTasks.length === 0 && completedTasks.length === 0 && (
               <div style={{
                 padding: showSplitView ? '80px 24px' : '60px 24px',
                 display: 'flex',
@@ -606,19 +598,6 @@ Back
                 )}
               </div>
             )}
-            {allTodayTasksCompleted && completedTasks.length > 0 && !selectedDateFilter && (
-              <section style={{ marginBottom: 32, border: '2px solid var(--border)', borderTop: 'none' }}>
-                <div style={{ padding: '8px 16px', background: 'var(--accent-surface)', borderBottom: '2px solid var(--accent)', fontSize: 13, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--accent)' }}>
-                  COMPLETED TODAY
-                </div>
-                <div>
-                  {completedTasks.map((task) => (
-                    <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
-                  ))}
-                </div>
-              </section>
-            )}
-
             {/* Someday Section */}
             {showSomeday && (
               <section style={{ marginBottom: 32, border: '2px solid var(--border)' }}>
@@ -657,7 +636,7 @@ Back
               </section>
             )}
 
-{visibleGroups.map((group, index) => (
+{visibleGroups.map((group) => (
               <section 
                 key={group.label} 
                 style={{ 
@@ -696,21 +675,10 @@ Back
                       onDelete={() => deleteTask(task.id)}
                     />
                   ))}
+                  {group.isToday && completedTasks.map((task) => (
+                    <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
+                  ))}
                 </div>
-
-                {/* Completed Section - shown after Today group */}
-                {group.isToday && completedTasks.length > 0 && (
-                  <div style={{ marginTop: 24, border: '2px solid var(--border)' }}>
-                    <div style={{ padding: '6px 12px', background: 'var(--accent-surface)', borderBottom: '2px solid var(--accent)', fontSize: 12, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--accent)' }}>
-                      COMPLETED TODAY
-                    </div>
-                    <div>
-                      {completedTasks.map((task) => (
-                        <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
-                      ))}
-                    </div>
-                  </div>
-                )}
               </section>
             ))}
           </div>
