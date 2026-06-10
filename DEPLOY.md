@@ -4,14 +4,13 @@
 - A GitHub account
 - A GitHub repository (create one if you don't have it yet)
 
-## Step 1: Update Repository Name in Config
+## Step 1: Confirm Custom Domain
 
-1. Open `next.config.ts`
-2. Change the `basePath` from `/juice` to match your repository name:
-   ```typescript
-   basePath: process.env.NODE_ENV === 'production' ? '/your-repo-name' : '',
+1. Confirm `public/CNAME` contains the custom domain:
+   ```text
+   juice.tinyk.ing
    ```
-   Replace `your-repo-name` with your actual repository name.
+2. Keep `next.config.ts` without a production `basePath`; the site is served from the domain root.
 
 ## Step 2: Push Code to GitHub
 
@@ -75,19 +74,17 @@
 
 After deployment, your site will be available at:
 ```
-https://your-username.github.io/your-repo-name/
+https://juice.tinyk.ing/
 ```
 
 ## Important Notes
 
 - The `.nojekyll` file is automatically created to prevent Jekyll processing
 - The site will automatically rebuild and deploy on every push to `main` (if using GitHub Actions)
-- Make sure your repository name matches the `basePath` in `next.config.ts`
-- If you change the repository name, update the `basePath` and redeploy
+- The custom domain is preserved by the `CNAME` file in the static export
 
 ## Troubleshooting
 
-- **404 errors**: Make sure `basePath` matches your repository name exactly
-- **Assets not loading**: Check that paths use relative URLs (they should with `basePath`)
+- **404 errors**: Confirm GitHub Pages is using GitHub Actions and the custom domain is configured
+- **Assets not loading**: Check that generated asset URLs do not include the old repository path
 - **Build fails**: Check GitHub Actions logs in the **Actions** tab
-

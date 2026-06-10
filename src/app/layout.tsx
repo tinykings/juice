@@ -12,15 +12,13 @@ const plusJakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const basePath = process.env.NODE_ENV === 'production' ? '/juice' : '';
-
 export const metadata: Metadata = {
   title: "Juice",
   description: "A beautiful task management app",
-  manifest: `${basePath}/manifest.json`,
+  manifest: "/manifest.json",
   icons: {
-    icon: `${basePath}/icon-dark-180.png`,
-    apple: `${basePath}/icon-dark-180.png`,
+    icon: "/icon-180.png",
+    apple: "/icon-180.png",
   },
   appleWebApp: {
     capable: true,
