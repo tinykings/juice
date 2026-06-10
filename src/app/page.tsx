@@ -636,51 +636,75 @@ Back
               </section>
             )}
 
-{visibleGroups.map((group) => (
-              <section 
-                key={group.label} 
-                style={{ 
-                  marginBottom: 32,
-                }}
-              >
-                <div style={{ 
-                  padding: '8px 16px',
-                  background: group.isOverdue ? 'var(--red)' : 'var(--accent-surface)',
-                  borderBottom: `2px solid ${group.isOverdue ? 'var(--red)' : 'var(--accent)'}`,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  letterSpacing: '0.02em',
-                  color: group.isOverdue ? 'white' : 'var(--accent)',
-                }}>
-                  {group.label}
-                </div>
-                <div style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: group.tasks.length === 0 ? 'center' : 'flex-start',
-                  alignItems: group.tasks.length === 0 ? 'center' : 'stretch'
-                }}>
-                  {group.tasks.map((task) => (
-                    <TaskItem 
-                      key={task.id} 
-                      task={task} 
-                      onComplete={() => handleTaskComplete(task.id, !!(group.isToday || group.isOverdue))}
-                      onEdit={() => {
-                        setEditingTask(task);
-                        setIsModalOpen(true);
-                      }}
-                      showDate={true}
-                      isOverdue={group.isOverdue || false}
-                      needsConfirmation={!(group.isToday || group.isOverdue)}
-                      onDelete={() => deleteTask(task.id)}
-                    />
-                  ))}
-                  {group.isToday && completedTasks.map((task) => (
-                    <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
-                  ))}
-                </div>
-              </section>
-            ))}
+            {visibleGroups.map((group) => {
+              const groupHasCompletedTasks = group.isToday && completedTasks.length > 0;
+              const groupHasTasks = group.tasks.length > 0 || groupHasCompletedTasks;
+              const showTodayCompletedSummary = group.isToday && group.tasks.length === 0 && completedTasks.length > 0 && !searchQuery.trim();
+
+              return (
+                <section
+                  key={group.label}
+                  style={{
+                    marginBottom: 32,
+                  }}
+                >
+                  <div style={{
+                    padding: '8px 16px',
+                    background: group.isOverdue ? 'var(--red)' : 'var(--accent-surface)',
+                    borderBottom: `2px solid ${group.isOverdue ? 'var(--red)' : 'var(--accent)'}`,
+                    fontSize: 14,
+                    fontWeight: 700,
+                    letterSpacing: '0.02em',
+                    color: group.isOverdue ? 'white' : 'var(--accent)',
+                  }}>
+                    {group.label}
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: groupHasTasks ? 'flex-start' : 'center',
+                    alignItems: groupHasTasks ? 'stretch' : 'center'
+                  }}>
+                    {showTodayCompletedSummary && (
+                      <div style={{
+                        padding: '18px 0',
+                        borderBottom: '2px solid var(--border)',
+                        color: 'var(--muted)',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        lineHeight: 1.45,
+                      }}>
+                        <div style={{ color: 'var(--foreground)' }}>
+                          All tasks are completed.
+                        </div>
+                        <div>
+                          <span style={{ color: 'var(--accent)' }}>{tomorrowTasks.length}</span>
+                          {' '}task{tomorrowTasks.length !== 1 ? 's' : ''} coming tomorrow
+                        </div>
+                      </div>
+                    )}
+                    {group.tasks.map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        onComplete={() => handleTaskComplete(task.id, !!(group.isToday || group.isOverdue))}
+                        onEdit={() => {
+                          setEditingTask(task);
+                          setIsModalOpen(true);
+                        }}
+                        showDate={true}
+                        isOverdue={group.isOverdue || false}
+                        needsConfirmation={!(group.isToday || group.isOverdue)}
+                        onDelete={() => deleteTask(task.id)}
+                      />
+                    ))}
+                    {group.isToday && completedTasks.map((task) => (
+                      <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
           </div>
 )}
       </main>
