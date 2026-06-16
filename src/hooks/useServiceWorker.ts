@@ -2,11 +2,13 @@
 
 import { useEffect } from 'react';
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+
 export function useServiceWorker() {
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register('/sw.js')
+        .register(`${basePath}/sw.js`, { scope: `${basePath}/` })
         .then((registration) => {
           console.log('Service Worker registered:', registration.scope);
         })

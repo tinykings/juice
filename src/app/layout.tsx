@@ -5,6 +5,8 @@ import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -15,10 +17,10 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Juice",
   description: "A beautiful task management app",
-  manifest: "/manifest.json",
+  manifest: `${basePath}/manifest.json`,
   icons: {
-    icon: "/icon-180.png",
-    apple: "/icon-180.png",
+    icon: `${basePath}/icon-180.png`,
+    apple: `${basePath}/icon-180.png`,
   },
   appleWebApp: {
     capable: true,

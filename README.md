@@ -3,7 +3,7 @@
 </p>
 
 <h3 align="center">A minimal task manager — installable as a PWA, hosted on GitHub Pages.</h3>
-<h4 align="center">https://juice.tinyk.ing/</h4>
+<h4 align="center">https://tinykings.github.io/juice/</h4>
 
 ---
 
@@ -50,7 +50,7 @@ npm run build     # static export → /out
 
 ## Deployment
 
-The app deploys automatically to GitHub Pages on push to `main` via GitHub Actions. The custom domain is configured by `public/CNAME`.
+The app deploys automatically to GitHub Pages on push to `main` via GitHub Actions. It is configured for the repository URL at `https://tinykings.github.io/juice/`.
 
 ## Keyboard Shortcuts
 

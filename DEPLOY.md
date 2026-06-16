@@ -4,13 +4,13 @@
 - A GitHub account
 - A GitHub repository (create one if you don't have it yet)
 
-## Step 1: Confirm Custom Domain
+## Step 1: Confirm GitHub Pages Path
 
-1. Confirm `public/CNAME` contains the custom domain:
+1. This app is configured for the repository Pages URL:
    ```text
-   juice.tinyk.ing
+   https://tinykings.github.io/juice/
    ```
-2. Keep `next.config.ts` without a production `basePath`; the site is served from the domain root.
+2. Keep `next.config.ts` configured with `basePath: "/juice"` and no `public/CNAME` file.
 
 ## Step 2: Push Code to GitHub
 
@@ -74,17 +74,17 @@
 
 After deployment, your site will be available at:
 ```
-https://juice.tinyk.ing/
+https://tinykings.github.io/juice/
 ```
 
 ## Important Notes
 
 - The `.nojekyll` file is automatically created to prevent Jekyll processing
 - The site will automatically rebuild and deploy on every push to `main` (if using GitHub Actions)
-- The custom domain is preserved by the `CNAME` file in the static export
+- The app uses `/juice` as its Next.js `basePath`, matching the GitHub Pages repository path
 
 ## Troubleshooting
 
-- **404 errors**: Confirm GitHub Pages is using GitHub Actions and the custom domain is configured
-- **Assets not loading**: Check that generated asset URLs do not include the old repository path
+- **404 errors**: Confirm GitHub Pages is using GitHub Actions and the repository name is `juice`
+- **Assets not loading**: Check that generated asset URLs include `/juice/_next/`
 - **Build fails**: Check GitHub Actions logs in the **Actions** tab

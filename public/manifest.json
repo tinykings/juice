@@ -3,6 +3,7 @@
   "short_name": "Juice",
   "description": "A beautiful task management app",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#147EFB",
