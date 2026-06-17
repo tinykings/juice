@@ -58,24 +58,27 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
+        background: 'rgba(15, 14, 12, 0.72)',
+        backdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 100,
-        padding: 20,
+        padding: 16,
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
         style={{
-          background: 'var(--background)',
+          background: 'var(--card)',
           width: '100%',
-          maxWidth: 400,
-          maxHeight: '90vh',
+          maxWidth: 460,
+          maxHeight: 'calc(100dvh - 32px)',
           overflow: 'auto',
-          boxShadow: '12px 12px 0 rgba(0, 0, 0, 0.2)',
-          border: '2px solid var(--border)',
+          boxShadow: 'var(--shadow-lg)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          animation: 'scaleIn 140ms ease-out both',
         }}
       >
         {/* Header */}
@@ -83,61 +86,81 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '20px 24px',
-          borderBottom: '2px solid var(--border)',
+          padding: '16px 18px',
+          borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{ fontSize: 22, fontWeight: 600, margin: 0, fontFamily: 'var(--font-body)' }}>Settings</h2>
+          <h2 style={{
+            fontSize: 20,
+            fontWeight: 700,
+            margin: 0,
+            fontFamily: 'var(--font-body)',
+            color: 'var(--foreground)',
+            lineHeight: 1.25,
+          }}>Settings</h2>
           <button
             onClick={onClose}
+            aria-label="Close settings"
             style={{
-              background: 'none',
-              border: '2px solid var(--border)',
+              background: 'rgba(255, 255, 255, 0.035)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               color: 'var(--muted)',
-              padding: 8,
-              minWidth: 44,
-              minHeight: 44,
+              padding: 0,
+              width: 42,
+              height: 42,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--foreground)';
-              e.currentTarget.style.color = 'var(--background)';
+              e.currentTarget.style.background = 'var(--surface-hover)';
+              e.currentTarget.style.color = 'var(--foreground)';
+              e.currentTarget.style.borderColor = 'var(--border)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
               e.currentTarget.style.color = 'var(--muted)';
+              e.currentTarget.style.borderColor = 'var(--border)';
             }}
           >
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Content */}
-        <div style={{ padding: 24 }}>
+        <div style={{ padding: 18 }}>
           {/* Theme & Badge buttons row */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isBadgeSupported() ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 16 }}>
             <button
               onClick={toggleTheme}
               style={{
                 flex: 1,
-                padding: '14px 20px',
-                fontSize: 16,
-                fontWeight: 500,
-                border: '2px solid var(--border)',
-                background: 'var(--card)',
+                padding: '0 14px',
+                fontSize: 14,
+                fontWeight: 600,
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255, 255, 255, 0.035)',
                 color: 'var(--foreground)',
                 cursor: 'pointer',
-                minHeight: 48,
+                height: 42,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 10,
-                transition: 'background 0.15s, border-color 0.15s',
+                gap: 8,
+                transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--surface-hover)';
+                e.currentTarget.style.color = 'var(--accent)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+                e.currentTarget.style.color = 'var(--foreground)';
               }}
             >
               {theme === 'dark' ? (
@@ -168,20 +191,33 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }}
                   style={{
                     flex: 1,
-                    padding: '14px 20px',
-                    fontSize: 16,
-                    fontWeight: 500,
-                    border: '2px solid',
-                    borderColor: badgeEnabled ? 'var(--accent)' : 'var(--border)',
-                    background: badgeEnabled ? 'var(--accent)' : 'var(--card)',
+                    padding: '0 14px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    border: '1px solid',
+                    borderRadius: 'var(--radius-sm)',
+                    borderColor: badgeEnabled ? 'var(--accent-border)' : 'var(--border)',
+                    background: badgeEnabled ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
                     color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
                     cursor: 'pointer',
-                    minHeight: 48,
+                    height: 42,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 10,
-                    transition: 'background 0.15s, border-color 0.15s',
+                    gap: 8,
+                    transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!badgeEnabled) {
+                      e.currentTarget.style.background = 'var(--surface-hover)';
+                      e.currentTarget.style.color = 'var(--accent)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!badgeEnabled) {
+                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+                      e.currentTarget.style.color = 'var(--foreground)';
+                    }
                   }}
               >
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -193,20 +229,48 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             )}
           </div>
 
-          <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12, color: 'var(--muted)', fontFamily: 'var(--font-body)' }}>
+          <div style={{
+            background: 'var(--task-surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: 16,
+            marginBottom: 14,
+          }}>
+            <h3 style={{
+              fontSize: 17,
+              fontWeight: 700,
+              margin: '0 0 8px',
+              color: 'var(--foreground)',
+              fontFamily: 'var(--font-body)',
+              lineHeight: 1.3,
+            }}>
               GitHub Gist Sync
             </h3>
-            <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 14, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
               Sync your tasks across devices using a GitHub Gist as storage. 
-              You need a GitHub personal access token with <code style={{ background: 'var(--card)', border: '2px solid var(--border)', padding: '4px 6px', fontSize: 14 }}>gist</code> scope.
+              You need a GitHub personal access token with <code style={{
+                background: 'var(--surface-inset)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-xs)',
+                padding: '2px 6px',
+                fontSize: 13,
+                color: 'var(--foreground)'
+              }}>gist</code> scope.
             </p>
           </div>
 
           <form onSubmit={(e) => { e.preventDefault(); handleLoadFromGist(); }}>
             {/* Gist ID */}
-            <div style={{ marginBottom: 20 }}>
-              <label htmlFor="username" style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
+            <div style={{ marginBottom: 14 }}>
+              <label htmlFor="username" style={{
+                display: 'block',
+                fontSize: 'var(--text-meta)',
+                fontWeight: 700,
+                color: 'var(--muted)',
+                marginBottom: 8,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>
                 Gist ID
               </label>
               <input
@@ -219,25 +283,41 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 placeholder="abc123def456..."
                 style={{
                   width: '100%',
-                  padding: '14px 16px',
-                  fontSize: 16,
+                  padding: '0 12px',
+                  fontSize: 15,
                   border: '1px solid var(--border)',
-                  borderRadius: 0,
-                  background: 'var(--card)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'rgba(255, 255, 255, 0.035)',
                   color: 'var(--foreground)',
                   outline: 'none',
                   boxSizing: 'border-box',
-                  minHeight: 48,
-                  transition: 'box-shadow 0.2s'
+                  height: 42,
+                  transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s'
                 }}
-                onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
-                onBlur={(e) => e.target.style.boxShadow = 'none'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--accent-border)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.045)';
+                  e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--border)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.035)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
 
             {/* GitHub Token */}
-            <div style={{ marginBottom: 20 }}>
-              <label htmlFor="password" style={{ display: 'block', fontSize: 16, fontWeight: 500, marginBottom: 10 }}>
+            <div style={{ marginBottom: 14 }}>
+              <label htmlFor="password" style={{
+                display: 'block',
+                fontSize: 'var(--text-meta)',
+                fontWeight: 700,
+                color: 'var(--muted)',
+                marginBottom: 8,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>
                 GitHub Token
               </label>
               <input
@@ -250,32 +330,42 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 placeholder="ghp_xxxxxxxxxxxx"
                 style={{
                   width: '100%',
-                  padding: '14px 16px',
-                  fontSize: 16,
+                  padding: '0 12px',
+                  fontSize: 15,
                   border: '1px solid var(--border)',
-                  borderRadius: 0,
-                  background: 'var(--card)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'rgba(255, 255, 255, 0.035)',
                   color: 'var(--foreground)',
                   outline: 'none',
                   boxSizing: 'border-box',
-                  minHeight: 48,
-                  transition: 'box-shadow 0.2s'
+                  height: 42,
+                  transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s'
                 }}
-                onFocus={(e) => e.target.style.boxShadow = '4px 4px 0 var(--accent)'}
-                onBlur={(e) => e.target.style.boxShadow = 'none'}
+                onFocus={(e) => {
+                  e.target.style.borderColor = 'var(--accent-border)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.045)';
+                  e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--border)';
+                  e.target.style.background = 'rgba(255, 255, 255, 0.035)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
 
             {/* Message */}
             {message && (
               <div style={{
-                padding: '14px 16px',
-                borderRadius: 0,
-                marginBottom: 20,
-                fontSize: 15,
-                background: message.type === 'success' ? 'var(--green)' : 'var(--red)',
-                color: 'var(--background)',
-                fontWeight: 500
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: 14,
+                fontSize: 14,
+                background: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 107, 107, 0.08)',
+                border: `1px solid ${message.type === 'success' ? 'rgba(46, 204, 113, 0.28)' : 'rgba(255, 107, 107, 0.22)'}`,
+                color: message.type === 'success' ? 'var(--green)' : 'var(--red)',
+                fontWeight: 600,
+                lineHeight: 1.4,
               }}>
                 {message.text}
               </div>
@@ -287,15 +377,29 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               disabled={isLoading || !gistId || !token}
               style={{
                 width: '100%',
-                padding: '14px 20px',
-                fontSize: 16,
-                fontWeight: 600,
-                border: '2px solid var(--accent)',
+                padding: '0 16px',
+                fontSize: 14,
+                fontWeight: 700,
+                border: '1px solid',
+                borderColor: isLoading || !gistId || !token ? 'var(--border)' : 'var(--accent)',
+                borderRadius: 'var(--radius-sm)',
                 background: isLoading || !gistId || !token ? 'var(--muted-light)' : 'var(--accent)',
                 color: isLoading || !gistId || !token ? 'var(--muted)' : 'var(--background)',
                 cursor: isLoading || !gistId || !token ? 'not-allowed' : 'pointer',
-                minHeight: 48,
-                transition: 'background 0.15s',
+                height: 42,
+                transition: 'background 0.15s, border-color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                if (!isLoading && gistId && token) {
+                  e.currentTarget.style.background = 'var(--accent-hover)';
+                  e.currentTarget.style.borderColor = 'var(--accent-hover)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isLoading && gistId && token) {
+                  e.currentTarget.style.background = 'var(--accent)';
+                  e.currentTarget.style.borderColor = 'var(--accent)';
+                }
               }}
             >
               {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
@@ -304,11 +408,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
           {/* Sync Status */}
           <div style={{ 
-            marginTop: 24, 
-            padding: '16px', 
-            background: 'var(--card)', 
-            border: '2px solid var(--border)',
-            fontSize: 15,
+            marginTop: 14, 
+            padding: '14px', 
+            background: 'var(--task-surface)', 
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: 14,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
@@ -317,12 +422,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 borderRadius: '50%',
                 background: isGistConfigured ? 'var(--green)' : 'var(--muted)',
               }} />
-              <span style={{ color: 'var(--foreground)', fontSize: 16 }}>
+              <span style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 650 }}>
                 {isGistConfigured ? 'Auto-sync enabled' : 'Auto-sync disabled'}
               </span>
             </div>
             {isGistConfigured && (
-              <p style={{ margin: '10px 0 0', color: 'var(--muted)', fontSize: 14 }}>
+              <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.45 }}>
                 Tasks will automatically sync to your Gist when changed.
               </p>
             )}

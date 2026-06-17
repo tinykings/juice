@@ -262,6 +262,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       onSubmit={handleSubmit}
       data-task-inline-form={inline ? 'true' : undefined}
       style={inline ? {
+        width: '100%',
+        alignSelf: 'stretch',
         background: 'var(--task-surface)',
         border: '1px solid var(--accent-border)',
         borderRadius: 'var(--radius-md)',
