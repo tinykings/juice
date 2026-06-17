@@ -23,7 +23,7 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, deleteTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
+  const { tasks, completeTask, uncompleteTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
   const { isGistConfigured, badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
@@ -57,7 +57,6 @@ export default function HomePage() {
   }, []);
 
   const showSplitView = windowWidth >= 1000;
-  const showToggle = windowWidth < 1000; // Show toggle arrow when NOT split view
   const isWideScreen = windowWidth > 600;
   const handleSearchClick = useCallback(() => {
     if (view === 'calendar') {
@@ -469,7 +468,6 @@ export default function HomePage() {
       {/* Bottom-right Buttons - only in split view */}
       {showSplitView && (
       <FloatingButtons
-        showSomeday={showSomeday}
         mounted={mounted}
         somedayTasksLength={somedayTasks.length}
         onToggleSomeday={() => setShowSomeday(prev => !prev)}
@@ -652,7 +650,36 @@ Back
                   }}>
                     You have nothing to do.
                     <br />
-                    <span style={{ color: 'var(--accent)' }}>Start something.</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedDateFilter) {
+                          openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
+                        } else {
+                          openInlineTaskForm(showSomeday ? '' : null);
+                        }
+                      }}
+                      style={{
+                        color: 'var(--accent)',
+                        background: 'transparent',
+                        border: 'none',
+                        padding: 0,
+                        font: 'inherit',
+                        fontWeight: 'inherit',
+                        cursor: 'pointer',
+                        textDecoration: 'none',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--accent-hover)';
+                        e.currentTarget.style.textDecoration = 'underline';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--accent)';
+                        e.currentTarget.style.textDecoration = 'none';
+                      }}
+                    >
+                      Start something.
+                    </button>
                   </div>
                 ) : (
                   <div style={{
@@ -743,7 +770,6 @@ Back
                           showDate={true}
                           isOverdue={false}
                           needsConfirmation={false}
-                          onDelete={() => deleteTask(task.id)}
                         />
                       )
                     ))
@@ -845,7 +871,6 @@ Back
                           showDate={true}
                           isOverdue={group.isOverdue || false}
                           needsConfirmation={!(group.isToday || group.isOverdue)}
-                          onDelete={() => deleteTask(task.id)}
                         />
                       )
                     ))}
@@ -1162,7 +1187,6 @@ Back
 }
 
 function FloatingButtons({
-  showSomeday,
   mounted,
   somedayTasksLength,
   onToggleSomeday,
@@ -1170,7 +1194,6 @@ function FloatingButtons({
   onSettings,
   onAddTask,
 }: {
-  showSomeday: boolean;
   mounted: boolean;
   somedayTasksLength: number;
   onToggleSomeday: () => void;

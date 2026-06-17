@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
 import { splitTaskTitle } from '@/utils/taskTitle';
@@ -8,20 +9,31 @@ import { splitTaskTitle } from '@/utils/taskTitle';
 export default function ConfirmCompleteDialog({
   task,
   onConfirm,
-  onCancel
+  onCancel,
+  title = 'Complete this task?',
+  message,
+  confirmLabel = 'Complete',
+  confirmTone = 'primary',
 }: {
   task: Task;
   onConfirm: () => void;
   onCancel: () => void;
+  title?: string;
+  message?: React.ReactNode;
+  confirmLabel?: string;
+  confirmTone?: 'primary' | 'danger';
 }) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onCancel();
+      }
     };
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleEscape, { capture: true });
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleEscape, { capture: true });
       document.body.style.overflow = '';
     };
   }, [onCancel]);
@@ -30,7 +42,7 @@ export default function ConfirmCompleteDialog({
   const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'Someday';
   const titleParts = splitTaskTitle(task.title);
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -73,7 +85,7 @@ export default function ConfirmCompleteDialog({
             fontFamily: 'var(--font-body)',
             lineHeight: 1.25,
           }}>
-            Complete this task?
+            {title}
           </h3>
           <p style={{
             fontSize: 14,
@@ -81,7 +93,11 @@ export default function ConfirmCompleteDialog({
             margin: '0 0 14px 0',
             lineHeight: 1.45
           }}>
-            This task is scheduled for <strong style={{ color: 'var(--foreground)', fontWeight: 600 }}>{formattedDate}</strong>.
+            {message ?? (
+              <>
+                This task is scheduled for <strong style={{ color: 'var(--foreground)', fontWeight: 600 }}>{formattedDate}</strong>.
+              </>
+            )}
           </p>
           <div style={{
             background: 'var(--task-surface)',
@@ -158,26 +174,27 @@ export default function ConfirmCompleteDialog({
               fontSize: 14,
               fontWeight: 700,
               color: 'var(--background)',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
+              background: confirmTone === 'danger' ? 'var(--red)' : 'var(--accent)',
+              border: `1px solid ${confirmTone === 'danger' ? 'var(--red)' : 'var(--accent)'}`,
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               height: 42,
               transition: 'background 0.15s, border-color 0.15s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-hover)';
-              e.currentTarget.style.borderColor = 'var(--accent-hover)';
+              e.currentTarget.style.background = confirmTone === 'danger' ? '#ff8585' : 'var(--accent-hover)';
+              e.currentTarget.style.borderColor = confirmTone === 'danger' ? '#ff8585' : 'var(--accent-hover)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.background = confirmTone === 'danger' ? 'var(--red)' : 'var(--accent)';
+              e.currentTarget.style.borderColor = confirmTone === 'danger' ? 'var(--red)' : 'var(--accent)';
             }}
           >
-            Complete
+            {confirmLabel}
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,61 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { format, startOfDay, parse } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import CalendarPicker from './CalendarPicker';
+import ConfirmCompleteDialog from './ConfirmCompleteDialog';
 import { findDateWord, removeDateWord, DateWordMatch } from '@/utils/dateWords';
-
-interface TaskModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave?: () => void;
-  editTask?: Task | null;
-  initialDate?: string | null;
-}
-
-const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, initialDate }: TaskModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 100,
-        padding: 20,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      {/* Modal */}
-      <div style={{
-        position: 'relative',
-        background: 'var(--card)',
-        width: '100%',
-        maxWidth: 420,
-        maxHeight: '90vh',
-        overflow: 'auto',
-        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-      }}>
-        <TaskForm 
-          key={editTask ? editTask.id : 'new'} 
-          editTask={editTask} 
-          onClose={onClose}
-          onSave={onSave}
-          initialDate={initialDate}
-        />
-      </div>
-    </div>
-  );
-});
 
 export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean }) {
   const { addTask, updateTask, deleteTask } = useTasks();
@@ -490,79 +441,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       )}
 
       {/* Actions */}
-      {editTask && isConfirmingDelete && (
-        <div style={{
-          margin: '0 16px 12px',
-          padding: 12,
-          background: 'rgba(255, 107, 107, 0.06)',
-          border: '1px solid rgba(255, 107, 107, 0.18)',
-          borderRadius: 'var(--radius-sm)',
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) auto auto',
-          alignItems: 'center',
-          gap: 10,
-        }}>
-          <div style={{
-            minWidth: 0,
-            color: 'var(--muted)',
-            fontSize: 'var(--text-meta)',
-            lineHeight: 1.35,
-          }}>
-            Are you sure?
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsConfirmingDelete(false)}
-            style={{
-              padding: '0 12px',
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--muted)',
-              background: 'rgba(255, 255, 255, 0.035)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              height: 36,
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirmDelete}
-            style={{
-              padding: '0 12px',
-              fontSize: 13,
-              fontWeight: 700,
-              color: 'var(--background)',
-              background: 'var(--red)',
-              border: '1px solid var(--red)',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              height: 36,
-              transition: 'filter 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.filter = 'brightness(1.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.filter = 'none';
-            }}
-          >
-            Delete
-          </button>
-        </div>
-      )}
-
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -635,10 +513,12 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             type="button"
             onClick={handleSubmit}
             onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-surface)';
               e.currentTarget.style.borderColor = 'var(--accent)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.background = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
             }}
             style={{
               padding: '0 20px',
@@ -677,8 +557,17 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           </button>
         )}
       </div>
+      {editTask && isConfirmingDelete && (
+        <ConfirmCompleteDialog
+          task={editTask}
+          title="Are you sure?"
+          message="This task will be deleted."
+          confirmLabel="Delete"
+          confirmTone="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setIsConfirmingDelete(false)}
+        />
+      )}
     </form>
   );
 }
-
-export default TaskModal;

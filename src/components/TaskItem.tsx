@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { format, isBefore, isToday, startOfDay, addDays } from 'date-fns';
 import { Task } from '@/types/task';
@@ -14,7 +14,6 @@ interface TaskItemProps {
   showDate?: boolean;
   isOverdue?: boolean;
   needsConfirmation?: boolean;
-  onDelete: () => void;
 }
 
 export default function TaskItem({ 
@@ -23,8 +22,7 @@ export default function TaskItem({
   onEdit,
   showDate,
   isOverdue: isOverdueProp,
-  needsConfirmation = false,
-  onDelete
+  needsConfirmation = false
 }: TaskItemProps) {
   const { updateTask } = useTasks();
   const [isCompleting, setIsCompleting] = useState(false);
