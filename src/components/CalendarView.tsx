@@ -18,16 +18,16 @@ interface CalendarViewProps {
   tasks: Task[];
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate?: Date | null;
+  mobileExpanded?: boolean;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MOBILE_BREAKPOINT = 1000;
 
-export default function CalendarView({ tasks, onDaySelect, selectedDate = null }: CalendarViewProps) {
+export default function CalendarView({ tasks, onDaySelect, selectedDate = null, mobileExpanded = false }: CalendarViewProps) {
   const [windowWidth, setWindowWidth] = useState(() =>
     typeof window === 'undefined' ? MOBILE_BREAKPOINT : window.innerWidth
   );
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
   useEffect(() => {
     const updateWidth = () => setWindowWidth(window.innerWidth);
@@ -75,65 +75,13 @@ export default function CalendarView({ tasks, onDaySelect, selectedDate = null }
       maxWidth: 1120,
       margin: '0 auto',
     }}>
-      {isMobileCalendar && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginBottom: 10,
-        }}>
-          <button
-            type="button"
-            aria-pressed={isMobileExpanded}
-            aria-label={isMobileExpanded ? 'Collapse calendar' : 'Expand calendar'}
-            title={isMobileExpanded ? 'Collapse calendar' : 'Expand calendar'}
-            onClick={() => setIsMobileExpanded(prev => !prev)}
-            style={{
-              width: 42,
-              height: 42,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: isMobileExpanded ? 'var(--accent)' : 'var(--muted)',
-              background: isMobileExpanded ? 'var(--accent-subtle)' : 'transparent',
-              border: '1px solid',
-              borderColor: isMobileExpanded ? 'var(--accent-border)' : 'var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = isMobileExpanded ? 'var(--accent-subtle)' : 'transparent';
-              e.currentTarget.style.color = isMobileExpanded ? 'var(--accent)' : 'var(--muted)';
-              e.currentTarget.style.borderColor = isMobileExpanded ? 'var(--accent-border)' : 'var(--border)';
-            }}
-          >
-            {isMobileExpanded ? (
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" />
-                <path d="M3 8l5-5M21 8l-5-5M3 16l5 5M21 16l-5 5" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />
-                <path d="M8 3L3 8M16 3l5 5M8 21l-5-5M16 21l5-5" />
-              </svg>
-            )}
-          </button>
-        </div>
-      )}
-
       {isMobileCalendar ? (
         <MobileCalendar
           months={monthsWithTasks}
           tasksByDate={tasksByDate}
           onDaySelect={onDaySelect}
           selectedDate={selectedDate}
-          expanded={isMobileExpanded}
+          expanded={mobileExpanded}
         />
       ) : (
         <ContinuousCalendar

@@ -29,6 +29,7 @@ export default function HomePage() {
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isInlineFormClosing, setIsInlineFormClosing] = useState(false);
+  const [isCalendarExpanded, setIsCalendarExpanded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [initialDate, setInitialDate] = useState<string | null>(null);
@@ -258,12 +259,29 @@ export default function HomePage() {
       ? (initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate))
       : null;
 
-    return groupedTasks.filter(g => {
+    const visible = groupedTasks.filter(g => {
       if (g.tasks.length > 0 || (g.isToday && completedTasks.length > 0)) return true;
       if (!creatingDate) return false;
       if (g.date && isSameDay(g.date, creatingDate)) return true;
       return !g.date && g.label === format(creatingDate, 'MMMM yyyy');
     });
+
+    if (!creatingDate) return visible;
+
+    const hasCreateGroup = visible.some(g => {
+      if (g.date && isSameDay(g.date, creatingDate)) return true;
+      return !g.date && g.label === format(creatingDate, 'MMMM yyyy');
+    });
+
+    if (hasCreateGroup) return visible;
+
+    return [
+      ...visible,
+      {
+        label: format(creatingDate, 'MMMM yyyy'),
+        tasks: [],
+      },
+    ];
   }, [groupedTasks, completedTasks.length, currentDate, editingTask, initialDate, isModalOpen]);
 
   const isCreatingTask = isModalOpen && !editingTask;
@@ -569,6 +587,7 @@ export default function HomePage() {
             tasks={tasks}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
+            mobileExpanded={isCalendarExpanded}
           />
         </div>
       )}
@@ -904,6 +923,51 @@ Back
               </svg>
             )}
           </button>
+
+          {view === 'calendar' && (
+            <button
+              title={isCalendarExpanded ? 'Collapse calendar' : 'Expand calendar'}
+              onClick={() => setIsCalendarExpanded(prev => !prev)}
+              aria-label={isCalendarExpanded ? 'Collapse calendar' : 'Expand calendar'}
+              aria-pressed={isCalendarExpanded}
+              style={{
+                width: 44,
+                height: 44,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: isCalendarExpanded ? 'var(--accent)' : 'var(--muted)',
+                background: isCalendarExpanded ? 'var(--accent-subtle)' : 'transparent',
+                border: '1px solid',
+                borderColor: isCalendarExpanded ? 'var(--accent-border)' : 'var(--border)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--accent-subtle)';
+                e.currentTarget.style.color = 'var(--accent)';
+                e.currentTarget.style.borderColor = 'var(--accent)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isCalendarExpanded ? 'var(--accent-subtle)' : 'transparent';
+                e.currentTarget.style.color = isCalendarExpanded ? 'var(--accent)' : 'var(--muted)';
+                e.currentTarget.style.borderColor = isCalendarExpanded ? 'var(--accent-border)' : 'var(--border)';
+              }}
+            >
+              {isCalendarExpanded ? (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" />
+                  <path d="M3 8l5-5M21 8l-5-5M3 16l5 5M21 16l-5 5" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />
+                  <path d="M8 3L3 8M16 3l5 5M8 21l-5-5M16 21l5-5" />
+                </svg>
+              )}
+            </button>
+          )}
 
           {/* Search Button */}
           <button
