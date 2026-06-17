@@ -56,7 +56,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
   );
 });
 
-export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean }) {
+export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean }) {
   const { addTask, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
@@ -261,6 +261,10 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         borderRadius: 'var(--radius-md)',
         boxShadow: 'var(--shadow-sm)',
         overflow: 'hidden',
+        transformOrigin: 'top',
+        animation: isClosing
+          ? 'inlineTaskClose 180ms cubic-bezier(0.4, 0, 0.2, 1) forwards'
+          : 'inlineTaskOpen 180ms cubic-bezier(0.16, 1, 0.3, 1) both',
       } : undefined}
     >
       {/* Inputs */}

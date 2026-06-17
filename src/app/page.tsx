@@ -28,6 +28,7 @@ export default function HomePage() {
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInlineFormClosing, setIsInlineFormClosing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [initialDate, setInitialDate] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
   const listScrollRef = useRef<HTMLElement | null>(null);
+  const inlineCloseTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -274,9 +276,14 @@ export default function HomePage() {
   }, [currentDate, initialDate, isCreatingSomedayTask, isCreatingTask]);
 
   const openInlineTaskForm = useCallback((date: string | null, task: Task | null = null) => {
+    if (inlineCloseTimerRef.current !== null) {
+      window.clearTimeout(inlineCloseTimerRef.current);
+      inlineCloseTimerRef.current = null;
+    }
     if (view === 'calendar' && !showSplitView) {
       setView('list');
     }
+    setIsInlineFormClosing(false);
     setEditingTask(task);
     setInitialDate(date);
     setIsModalOpen(true);
@@ -305,15 +312,31 @@ export default function HomePage() {
   }, [confirmCompleteTask, completeTask, setConfirmCompleteTask]);
 
   const handleCloseModal = useCallback(() => {
+    if (!isModalOpen || isInlineFormClosing) return;
+
     const hadDateFilter = selectedDateFilter !== null;
-    setIsModalOpen(false);
-    setEditingTask(null);
-    setInitialDate(null);
-    setSelectedDateFilter(null);
-    if (hadDateFilter) {
-      setView('calendar');
-    }
-  }, [selectedDateFilter]);
+    setIsInlineFormClosing(true);
+
+    inlineCloseTimerRef.current = window.setTimeout(() => {
+      setIsModalOpen(false);
+      setIsInlineFormClosing(false);
+      setEditingTask(null);
+      setInitialDate(null);
+      setSelectedDateFilter(null);
+      inlineCloseTimerRef.current = null;
+      if (hadDateFilter) {
+        setView('calendar');
+      }
+    }, 180);
+  }, [isInlineFormClosing, isModalOpen, selectedDateFilter]);
+
+  useEffect(() => {
+    return () => {
+      if (inlineCloseTimerRef.current !== null) {
+        window.clearTimeout(inlineCloseTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleInlineSave = useCallback(() => {
     if (selectedDateFilter !== null) {
@@ -679,6 +702,7 @@ Back
                     <TaskForm
                       key="new-someday"
                       inline
+                      isClosing={isInlineFormClosing}
                       onClose={handleCloseModal}
                       onSave={handleInlineSave}
                       initialDate=""
@@ -690,6 +714,7 @@ Back
                         <TaskForm
                           key={task.id}
                           inline
+                          isClosing={isInlineFormClosing}
                           editTask={task}
                           onClose={handleCloseModal}
                           onSave={handleInlineSave}
@@ -763,6 +788,7 @@ Back
                       <TaskForm
                         key={`new-${initialDate ?? 'today'}`}
                         inline
+                        isClosing={isInlineFormClosing}
                         onClose={handleCloseModal}
                         onSave={handleInlineSave}
                         initialDate={initialDate}
@@ -793,6 +819,7 @@ Back
                         <TaskForm
                           key={task.id}
                           inline
+                          isClosing={isInlineFormClosing}
                           editTask={task}
                           onClose={handleCloseModal}
                           onSave={handleInlineSave}
