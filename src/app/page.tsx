@@ -274,19 +274,22 @@ export default function HomePage() {
     const creatingDate = isCreatingTask && initialDate !== ''
       ? (initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate))
       : null;
+    const hasDatedCreateGroup = creatingDate
+      ? groupedTasks.some(g => g.date && isSameDay(g.date, creatingDate))
+      : false;
 
     const visible = groupedTasks.filter(g => {
       if (g.tasks.length > 0 || (g.isToday && completedTasks.length > 0)) return true;
       if (!creatingDate) return false;
       if (g.date && isSameDay(g.date, creatingDate)) return true;
-      return !g.date && g.label === format(creatingDate, 'MMMM yyyy');
+      return !hasDatedCreateGroup && !g.date && g.label === format(creatingDate, 'MMMM yyyy');
     });
 
     if (!creatingDate) return visible;
 
     const hasCreateGroup = visible.some(g => {
       if (g.date && isSameDay(g.date, creatingDate)) return true;
-      return !g.date && g.label === format(creatingDate, 'MMMM yyyy');
+      return !hasDatedCreateGroup && !g.date && g.label === format(creatingDate, 'MMMM yyyy');
     });
 
     if (hasCreateGroup) return visible;
@@ -305,9 +308,10 @@ export default function HomePage() {
   const shouldShowCreateFormInGroup = useCallback((group: TaskGroup) => {
     if (!isCreatingTask || isCreatingSomedayTask) return false;
     const creatingDate = initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate);
+    const hasDatedCreateGroup = groupedTasks.some(g => g.date && isSameDay(g.date, creatingDate));
     if (group.date && isSameDay(group.date, creatingDate)) return true;
-    return !group.date && group.label === format(creatingDate, 'MMMM yyyy');
-  }, [currentDate, initialDate, isCreatingSomedayTask, isCreatingTask]);
+    return !hasDatedCreateGroup && !group.date && group.label === format(creatingDate, 'MMMM yyyy');
+  }, [currentDate, groupedTasks, initialDate, isCreatingSomedayTask, isCreatingTask]);
 
   const openInlineTaskForm = useCallback((date: string | null, task: Task | null = null) => {
     if (inlineCloseTimerRef.current !== null) {
