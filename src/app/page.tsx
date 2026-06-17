@@ -568,6 +568,7 @@ export default function HomePage() {
           <CalendarView
             tasks={tasks}
             onDaySelect={handleDaySelect}
+            selectedDate={selectedDateFilter}
           />
         </div>
       )}
