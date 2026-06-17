@@ -223,10 +223,13 @@ export default function TaskItem({
                     background: 'rgba(255, 255, 255, 0.035)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '7px 9px',
+                    width: 32,
+                    height: 32,
+                    padding: 0,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: 5,
                     color: isOverdue ? 'var(--red)' : 'var(--muted)',
                     fontSize: 'var(--text-meta)',
@@ -234,13 +237,10 @@ export default function TaskItem({
                     transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                     whiteSpace: 'nowrap',
                   }}
+                  aria-label={`Reschedule ${taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}`}
+                  title="Reschedule"
                 >
-                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18"/>
-                  </svg>
-                  {taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" aria-hidden="true">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </button>

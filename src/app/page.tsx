@@ -674,10 +674,6 @@ Back
             {showSomeday && (
               <section style={{
                 marginBottom: 24,
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 8,
               }}>
                 <div style={{
                   padding: '8px 12px',
@@ -756,29 +752,27 @@ Back
                   key={group.label}
                   style={{
                     marginBottom: 24,
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: 8,
                   }}
                 >
-                  <div style={{
-                    padding: '8px 12px',
-                    background: group.isOverdue ? 'rgba(255, 107, 107, 0.1)' : (group.isToday ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)'),
-                    border: `1px solid ${group.isOverdue ? 'rgba(255, 107, 107, 0.24)' : 'var(--border)'}`,
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: '0.01em',
-                    color: group.isOverdue ? 'var(--red)' : (group.isToday ? 'var(--accent)' : 'var(--muted)'),
-                  }}>
-                    {group.label}
-                  </div>
+                  {!group.isToday && (
+                    <div style={{
+                      padding: '8px 12px',
+                      background: group.isOverdue ? 'rgba(255, 107, 107, 0.1)' : 'rgba(255, 255, 255, 0.035)',
+                      border: `1px solid ${group.isOverdue ? 'rgba(255, 107, 107, 0.24)' : 'var(--border)'}`,
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      letterSpacing: '0.01em',
+                      color: group.isOverdue ? 'var(--red)' : 'var(--muted)',
+                    }}>
+                      {group.label}
+                    </div>
+                  )}
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
-                    padding: '12px 0 0',
+                    padding: group.isToday ? 0 : '12px 0 0',
                     justifyContent: groupHasTasks ? 'flex-start' : 'center',
                     alignItems: groupHasTasks ? 'stretch' : 'center'
                   }}>
