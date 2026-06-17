@@ -27,6 +27,7 @@ export default function CalendarView({ tasks, onDaySelect, selectedDate = null }
   const [windowWidth, setWindowWidth] = useState(() =>
     typeof window === 'undefined' ? MOBILE_BREAKPOINT : window.innerWidth
   );
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
   useEffect(() => {
     const updateWidth = () => setWindowWidth(window.innerWidth);
@@ -74,12 +75,65 @@ export default function CalendarView({ tasks, onDaySelect, selectedDate = null }
       maxWidth: 1120,
       margin: '0 auto',
     }}>
+      {isMobileCalendar && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginBottom: 10,
+        }}>
+          <button
+            type="button"
+            aria-pressed={isMobileExpanded}
+            aria-label={isMobileExpanded ? 'Collapse calendar' : 'Expand calendar'}
+            title={isMobileExpanded ? 'Collapse calendar' : 'Expand calendar'}
+            onClick={() => setIsMobileExpanded(prev => !prev)}
+            style={{
+              width: 42,
+              height: 42,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: isMobileExpanded ? 'var(--accent)' : 'var(--muted)',
+              background: isMobileExpanded ? 'var(--accent-subtle)' : 'transparent',
+              border: '1px solid',
+              borderColor: isMobileExpanded ? 'var(--accent-border)' : 'var(--border)',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-subtle)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = isMobileExpanded ? 'var(--accent-subtle)' : 'transparent';
+              e.currentTarget.style.color = isMobileExpanded ? 'var(--accent)' : 'var(--muted)';
+              e.currentTarget.style.borderColor = isMobileExpanded ? 'var(--accent-border)' : 'var(--border)';
+            }}
+          >
+            {isMobileExpanded ? (
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 3v5H3M16 3v5h5M8 21v-5H3M16 21v-5h5" />
+                <path d="M3 8l5-5M21 8l-5-5M3 16l5 5M21 16l-5 5" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5" />
+                <path d="M8 3L3 8M16 3l5 5M8 21l-5-5M16 21l5-5" />
+              </svg>
+            )}
+          </button>
+        </div>
+      )}
+
       {isMobileCalendar ? (
         <MobileCalendar
           months={monthsWithTasks}
           tasksByDate={tasksByDate}
           onDaySelect={onDaySelect}
           selectedDate={selectedDate}
+          expanded={isMobileExpanded}
         />
       ) : (
         <ContinuousCalendar
@@ -290,11 +344,13 @@ function MobileCalendar({
   tasksByDate,
   onDaySelect,
   selectedDate,
+  expanded,
 }: {
   months: Date[];
   tasksByDate: Record<string, Task[]>;
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate: Date | null;
+  expanded: boolean;
 }) {
   const today = new Date();
 
@@ -308,6 +364,7 @@ function MobileCalendar({
           tasksByDate={tasksByDate}
           onDaySelect={onDaySelect}
           selectedDate={selectedDate}
+          expanded={expanded}
         />
       ))}
     </div>
@@ -320,12 +377,14 @@ function MobileMonth({
   tasksByDate,
   onDaySelect,
   selectedDate,
+  expanded,
 }: {
   month: Date;
   today: Date;
   tasksByDate: Record<string, Task[]>;
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate: Date | null;
+  expanded: boolean;
 }) {
   const days = useMemo(() => {
     const calendarStart = startOfWeek(startOfMonth(month));
@@ -364,7 +423,7 @@ function MobileMonth({
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
         padding: 10,
-        marginBottom: agendaDays.length > 0 ? 12 : 0,
+        marginBottom: !expanded && agendaDays.length > 0 ? 12 : 0,
       }}>
         <div style={{
           display: 'grid',
@@ -411,13 +470,14 @@ function MobileMonth({
                 inMonth={inMonth}
                 isActive={isActive}
                 onDaySelect={onDaySelect}
+                expanded={expanded}
               />
             );
           })}
         </div>
       </div>
 
-      {agendaDays.length > 0 && (
+      {!expanded && agendaDays.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {agendaDays.map(day => {
             const key = format(day, 'yyyy-MM-dd');
@@ -495,6 +555,7 @@ function MobileDayButton({
   inMonth,
   isActive,
   onDaySelect,
+  expanded,
 }: {
   day: Date;
   dayKey: string;
@@ -502,9 +563,11 @@ function MobileDayButton({
   inMonth: boolean;
   isActive: boolean;
   onDaySelect: (date: Date, tasks: Task[]) => void;
+  expanded: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const hasTasks = dayTasks.length > 0;
+  const visibleTasks = dayTasks.slice(0, 2);
 
   return (
     <button
@@ -515,20 +578,30 @@ function MobileDayButton({
       onMouseLeave={() => setIsHovered(false)}
       style={{
         position: 'relative',
-        minHeight: 42,
+        minHeight: expanded ? 88 : 42,
+        padding: expanded ? '6px 4px' : 0,
         border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border)'}`,
         borderRadius: 'var(--radius-sm)',
         background: isActive ? 'var(--accent-subtle)' : (isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)'),
         color: isActive ? 'var(--accent)' : (inMonth ? 'var(--foreground)' : 'var(--muted)'),
         opacity: inMonth ? 1 : 0.45,
         cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: expanded ? 'stretch' : 'center',
+        justifyContent: expanded ? 'flex-start' : 'center',
         fontSize: 13,
         fontWeight: isActive ? 750 : 600,
         transition: 'background 0.15s, border-color 0.15s, color 0.15s',
       }}
     >
-      {day.getDate()}
-      {hasTasks && (
+      <span style={{
+        alignSelf: expanded ? 'flex-start' : 'center',
+        lineHeight: 1,
+      }}>
+        {day.getDate()}
+      </span>
+      {!expanded && hasTasks && (
         <span style={{
           position: 'absolute',
           left: '50%',
@@ -541,8 +614,58 @@ function MobileDayButton({
           opacity: isActive ? 1 : 0.7,
         }} />
       )}
+      {expanded && hasTasks && (
+        <span style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 3,
+          width: '100%',
+          minWidth: 0,
+          marginTop: 6,
+        }}>
+          {visibleTasks.map(task => (
+            <span
+              key={task.id}
+              style={{
+                display: 'block',
+                width: '100%',
+                minWidth: 0,
+                padding: '2px 3px',
+                borderRadius: 5,
+                background: 'rgba(255, 255, 255, 0.035)',
+                color: isActive ? 'var(--foreground)' : 'var(--muted)',
+                fontSize: 9,
+                fontWeight: 650,
+                lineHeight: 1.15,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {getCalendarTaskTitle(task)}
+            </span>
+          ))}
+          {dayTasks.length > visibleTasks.length && (
+            <span style={{
+              color: isActive ? 'var(--accent)' : 'var(--muted)',
+              fontSize: 9,
+              fontWeight: 700,
+              lineHeight: 1,
+              paddingLeft: 2,
+            }}>
+              +{dayTasks.length - visibleTasks.length}
+            </span>
+          )}
+        </span>
+      )}
     </button>
   );
+}
+
+function getCalendarTaskTitle(task: Task) {
+  const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
+  const titleParts = splitTaskTitle(displayTitle || task.title);
+  return titleParts.title;
 }
 
 function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boolean }) {
@@ -592,18 +715,6 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
         }}>
           {titleParts.title}
         </span>
-        {!compact && titleParts.note && (
-          <span style={{
-            display: 'block',
-            marginTop: 3,
-            color: 'var(--muted)',
-            fontSize: 'var(--text-meta)',
-            lineHeight: 1.35,
-            overflowWrap: 'anywhere',
-          }}>
-            {titleParts.note}
-          </span>
-        )}
         {!compact && (taskTime || task.isRecurring) && (
           <span style={{
             display: 'flex',
