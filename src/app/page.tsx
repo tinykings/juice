@@ -872,27 +872,23 @@ Back
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: view === 'calendar' ? 'var(--accent)' : 'var(--foreground)',
-              background: view === 'calendar' ? 'var(--accent-surface)' : 'transparent',
+              color: 'var(--muted)',
+              background: 'transparent',
               border: '1px solid',
-              borderColor: view === 'calendar' ? 'var(--accent-border)' : 'var(--border)',
+              borderColor: 'var(--border)',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
             }}
             onMouseEnter={(e) => {
-              if (view !== 'calendar') {
-                e.currentTarget.style.background = 'var(--accent-subtle)';
-                e.currentTarget.style.color = 'var(--accent)';
-                e.currentTarget.style.borderColor = 'var(--accent)';
-              }
+              e.currentTarget.style.background = 'var(--accent-subtle)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
             }}
             onMouseLeave={(e) => {
-              if (view !== 'calendar') {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--foreground)';
-                e.currentTarget.style.borderColor = 'var(--border)';
-              }
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--muted)';
+              e.currentTarget.style.borderColor = 'var(--border)';
             }}
           >
             {view === 'list' ? (
