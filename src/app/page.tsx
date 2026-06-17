@@ -43,6 +43,7 @@ export default function HomePage() {
   const [windowWidth, setWindowWidth] = useState(0);
   const listScrollRef = useRef<HTMLElement | null>(null);
   const inlineCloseTimerRef = useRef<number | null>(null);
+  const hasOpenedNewTaskFromUrlRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -305,6 +306,21 @@ export default function HomePage() {
     setInitialDate(date);
     setIsModalOpen(true);
   }, [showSplitView, view]);
+
+  useEffect(() => {
+    if (hasOpenedNewTaskFromUrlRef.current) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('newTask')) return;
+
+    hasOpenedNewTaskFromUrlRef.current = true;
+    const value = params.get('newTask')?.toLowerCase();
+    const timer = window.setTimeout(() => {
+      openInlineTaskForm(value === 'someday' ? '' : null);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [openInlineTaskForm]);
 
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
