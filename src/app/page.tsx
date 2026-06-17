@@ -7,7 +7,7 @@ import { useSettings } from '@/context/SettingsContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { Task } from '@/types/task';
-import TaskModal from '@/components/TaskModal';
+import { TaskForm } from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
 import TaskItem from '@/components/TaskItem';
 import CompletedTaskItem from '@/components/CompletedTaskItem';
@@ -257,8 +257,36 @@ export default function HomePage() {
   }, [incompleteTasks, currentDate]);
 
   const visibleGroups = useMemo(() => {
-    return groupedTasks.filter(g => g.tasks.length > 0 || (g.isToday && completedTasks.length > 0));
-  }, [groupedTasks, completedTasks.length]);
+    const isCreatingTask = isModalOpen && !editingTask;
+    const creatingDate = isCreatingTask && initialDate !== ''
+      ? (initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate))
+      : null;
+
+    return groupedTasks.filter(g => {
+      if (g.tasks.length > 0 || (g.isToday && completedTasks.length > 0)) return true;
+      if (!creatingDate) return false;
+      if (g.date && isSameDay(g.date, creatingDate)) return true;
+      return !g.date && g.label === format(creatingDate, 'MMMM yyyy');
+    });
+  }, [groupedTasks, completedTasks.length, currentDate, editingTask, initialDate, isModalOpen]);
+
+  const isCreatingTask = isModalOpen && !editingTask;
+  const isCreatingSomedayTask = isCreatingTask && initialDate === '';
+  const shouldShowCreateFormInGroup = useCallback((group: TaskGroup) => {
+    if (!isCreatingTask || isCreatingSomedayTask) return false;
+    const creatingDate = initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate);
+    if (group.date && isSameDay(group.date, creatingDate)) return true;
+    return !group.date && group.label === format(creatingDate, 'MMMM yyyy');
+  }, [currentDate, initialDate, isCreatingSomedayTask, isCreatingTask]);
+
+  const openInlineTaskForm = useCallback((date: string | null, task: Task | null = null) => {
+    if (view === 'calendar' && !showSplitView) {
+      setView('list');
+    }
+    setEditingTask(task);
+    setInitialDate(date);
+    setIsModalOpen(true);
+  }, [showSplitView, view]);
 
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
@@ -293,6 +321,27 @@ export default function HomePage() {
     }
   }, [selectedDateFilter]);
 
+  const handleInlineSave = useCallback(() => {
+    if (selectedDateFilter !== null) {
+      setView('calendar');
+    }
+  }, [selectedDateFilter]);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-task-inline-form="true"]')) return;
+      if (target.closest('[data-task-inline-portal="true"]')) return;
+      handleCloseModal();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [handleCloseModal, isModalOpen]);
+
   const handleDaySelect = useCallback((date: Date, dayTasks: Task[]) => {
     if (dayTasks.length > 0) {
       setView('list');
@@ -301,10 +350,9 @@ export default function HomePage() {
       setSelectedDateFilter(date);
     } else {
       setSelectedDateFilter(null);
-      setInitialDate(format(date, 'yyyy-MM-dd'));
-      setIsModalOpen(true);
+      openInlineTaskForm(format(date, 'yyyy-MM-dd'));
     }
-  }, []);
+  }, [openInlineTaskForm]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -314,11 +362,10 @@ export default function HomePage() {
         if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
           e.preventDefault();
           if (selectedDateFilter) {
-            setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+            openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
           } else {
-            setInitialDate(showSomeday ? '' : null);
+            openInlineTaskForm(showSomeday ? '' : null);
           }
-          setIsModalOpen(true);
         }
       }
       if (e.key === 's' && !e.metaKey && !e.ctrlKey && !isModalOpen) {
@@ -349,7 +396,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openInlineTaskForm]);
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
@@ -394,11 +441,10 @@ export default function HomePage() {
         onSettings={() => setIsSettingsOpen(true)}
         onAddTask={() => {
           if (selectedDateFilter) {
-            setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+            openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
           } else {
-            setInitialDate(showSomeday ? '' : null);
+            openInlineTaskForm(showSomeday ? '' : null);
           }
-          setIsModalOpen(true);
         }}
       />
       )}
@@ -548,7 +594,7 @@ Back
         {/* Empty / All-done State */}
         {isLoaded && (
           <div>
-            {incompleteTasks.length === 0 && completedTasks.length === 0 && (
+            {incompleteTasks.length === 0 && completedTasks.length === 0 && !isCreatingTask && (
               <div style={{
                 padding: showSplitView ? '80px 24px' : '60px 24px',
                 display: 'flex',
@@ -634,23 +680,39 @@ Back
                   gap: 10,
                   padding: '12px 0 0',
                 }}>
+                  {isCreatingSomedayTask && (
+                    <TaskForm
+                      key="new-someday"
+                      inline
+                      onClose={handleCloseModal}
+                      onSave={handleInlineSave}
+                      initialDate=""
+                    />
+                  )}
                   {somedayTasks.length > 0 ? (
                     somedayTasks.map((task) => (
-                      <TaskItem 
-                        key={task.id} 
-                        task={task} 
-                        onComplete={() => handleTaskComplete(task.id, true)}
-                        onEdit={() => {
-                          setEditingTask(task);
-                          setIsModalOpen(true);
-                        }}
-                        showDate={true}
-                        isOverdue={false}
-                        needsConfirmation={false}
-                        onDelete={() => deleteTask(task.id)}
-                      />
+                      editingTask?.id === task.id ? (
+                        <TaskForm
+                          key={task.id}
+                          inline
+                          editTask={task}
+                          onClose={handleCloseModal}
+                          onSave={handleInlineSave}
+                        />
+                      ) : (
+                        <TaskItem 
+                          key={task.id} 
+                          task={task} 
+                          onComplete={() => handleTaskComplete(task.id, true)}
+                          onEdit={() => openInlineTaskForm(null, task)}
+                          showDate={true}
+                          isOverdue={false}
+                          needsConfirmation={false}
+                          onDelete={() => deleteTask(task.id)}
+                        />
+                      )
                     ))
-                  ) : (
+                  ) : !isCreatingSomedayTask ? (
                     <div style={{
                       padding: '28px 16px',
                       textAlign: 'center',
@@ -660,7 +722,7 @@ Back
                     }}>
                       No someday tasks
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </section>
             )}
@@ -702,6 +764,15 @@ Back
                     justifyContent: groupHasTasks ? 'flex-start' : 'center',
                     alignItems: groupHasTasks ? 'stretch' : 'center'
                   }}>
+                    {shouldShowCreateFormInGroup(group) && (
+                      <TaskForm
+                        key={`new-${initialDate ?? 'today'}`}
+                        inline
+                        onClose={handleCloseModal}
+                        onSave={handleInlineSave}
+                        initialDate={initialDate}
+                      />
+                    )}
                     {showTodayCompletedSummary && (
                       <div style={{
                         padding: '14px 16px',
@@ -723,19 +794,26 @@ Back
                       </div>
                     )}
                     {group.tasks.map((task) => (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        onComplete={() => handleTaskComplete(task.id, !!(group.isToday || group.isOverdue))}
-                        onEdit={() => {
-                          setEditingTask(task);
-                          setIsModalOpen(true);
-                        }}
-                        showDate={true}
-                        isOverdue={group.isOverdue || false}
-                        needsConfirmation={!(group.isToday || group.isOverdue)}
-                        onDelete={() => deleteTask(task.id)}
-                      />
+                      editingTask?.id === task.id ? (
+                        <TaskForm
+                          key={task.id}
+                          inline
+                          editTask={task}
+                          onClose={handleCloseModal}
+                          onSave={handleInlineSave}
+                        />
+                      ) : (
+                        <TaskItem
+                          key={task.id}
+                          task={task}
+                          onComplete={() => handleTaskComplete(task.id, !!(group.isToday || group.isOverdue))}
+                          onEdit={() => openInlineTaskForm(null, task)}
+                          showDate={true}
+                          isOverdue={group.isOverdue || false}
+                          needsConfirmation={!(group.isToday || group.isOverdue)}
+                          onDelete={() => deleteTask(task.id)}
+                        />
+                      )
                     ))}
                     {group.isToday && completedTasks.map((task) => (
                       <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
@@ -956,11 +1034,10 @@ Back
             title="New (n)"
             onClick={() => {
               if (selectedDateFilter) {
-                setInitialDate(format(selectedDateFilter, 'yyyy-MM-dd'));
+                openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
               } else {
-                setInitialDate(showSomeday ? '' : null);
+                openInlineTaskForm(showSomeday ? '' : null);
               }
-              setIsModalOpen(true);
             }}
             aria-label="Add task"
             style={{
@@ -991,18 +1068,6 @@ Back
         </div>
       </footer>
 )}
-
-      <TaskModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSave={() => {
-          if (selectedDateFilter !== null) {
-            setView('calendar');
-          }
-        }}
-        editTask={editingTask}
-        initialDate={!editingTask && showSomeday ? '' : initialDate}
-      />
 
       <SettingsModal
         isOpen={isSettingsOpen}

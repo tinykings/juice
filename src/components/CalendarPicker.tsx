@@ -168,7 +168,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
       </button>
 
       {open && dropdownPos && createPortal(
-        <div ref={dropdownRef} style={{
+        <div ref={dropdownRef} data-task-inline-portal="true" style={{
           position: 'fixed',
           top: dropdownPos.top,
           left: dropdownPos.left,

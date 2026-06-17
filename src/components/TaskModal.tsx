@@ -56,7 +56,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
   );
 });
 
-function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null }) {
+export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean }) {
   const { addTask, updateTask, deleteTask, completeTask } = useTasks();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
@@ -227,12 +227,16 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
       }
     };
     document.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden';
+    if (!inline) {
+      document.body.style.overflow = 'hidden';
+    }
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      if (!inline) {
+        document.body.style.overflow = '';
+      }
     };
-  }, [editTask, handleSubmit, hasChanges, onClose]);
+  }, [editTask, handleSubmit, hasChanges, inline, onClose]);
 
   const handleDelete = () => {
     if (editTask) {
@@ -258,7 +262,17 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
   }, []);
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      onSubmit={handleSubmit}
+      data-task-inline-form={inline ? 'true' : undefined}
+      style={inline ? {
+        background: 'var(--task-surface)',
+        border: '1px solid var(--accent-border)',
+        borderRadius: 'var(--radius-md)',
+        boxShadow: 'var(--shadow-sm)',
+        overflow: 'hidden',
+      } : undefined}
+    >
       {/* Inputs */}
       <div style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
@@ -344,40 +358,6 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
               )}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            title="Close"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent-border)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-inset)';
-              e.currentTarget.style.color = 'var(--muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
-            style={{
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'var(--surface-inset)',
-              color: 'var(--muted)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
         </div>
         
         <textarea
