@@ -31,66 +31,81 @@ export default function ConfirmCompleteDialog({
   const titleParts = splitTaskTitle(task.title);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-complete-title"
+      style={{ position: 'fixed', inset: 0, zIndex: 100 }}
+    >
       <div
         onClick={onCancel}
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0,0,0,0.6)',
+          background: 'rgba(15, 14, 12, 0.72)',
+          backdropFilter: 'blur(10px)',
         }}
       />
 
       <div style={{
         position: 'absolute',
-        left: 20,
-        right: 20,
+        left: 16,
+        right: 16,
         top: '50%',
         transform: 'translateY(-50%)',
-        maxWidth: 400,
+        maxWidth: 440,
         margin: '0 auto',
         background: 'var(--card)',
-        boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
+        boxShadow: 'var(--shadow-lg)',
         overflow: 'hidden',
-        border: '2px solid var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
+        animation: 'scaleIn 140ms ease-out both',
       }}>
-        <div style={{ padding: 24 }}>
-          <h3 style={{
-            fontSize: 20,
-            fontWeight: 600,
-            margin: '0 0 12px 0',
+        <div style={{ padding: '18px 18px 16px' }}>
+          <h3
+            id="confirm-complete-title"
+            style={{
+            fontSize: 19,
+            fontWeight: 700,
+            margin: '0 0 8px 0',
             color: 'var(--foreground)',
-            fontFamily: 'var(--font-body)'
+            fontFamily: 'var(--font-body)',
+            lineHeight: 1.25,
           }}>
             Complete this task?
           </h3>
           <p style={{
-            fontSize: 16,
+            fontSize: 14,
             color: 'var(--muted)',
-            margin: '0 0 16px 0',
-            lineHeight: 1.5
+            margin: '0 0 14px 0',
+            lineHeight: 1.45
           }}>
-            This task is scheduled for <strong>{formattedDate}</strong>. Are you sure you want to mark it as complete?
+            This task is scheduled for <strong style={{ color: 'var(--foreground)', fontWeight: 600 }}>{formattedDate}</strong>.
           </p>
           <div style={{
-            background: 'var(--background)',
-            padding: 12,
+            background: 'var(--task-surface)',
+            padding: '12px 14px',
             border: '1px solid var(--border)',
-            marginBottom: 20
+            borderRadius: 'var(--radius-sm)',
           }}>
             <p style={{
-              fontSize: 16,
-              fontWeight: 500,
+              fontSize: 'var(--text-task-title)',
+              fontWeight: 650,
               margin: 0,
-              color: 'var(--foreground)'
+              color: 'var(--foreground)',
+              lineHeight: 1.35,
+              overflowWrap: 'anywhere',
             }}>
               {titleParts.title}
             </p>
             {titleParts.note && (
               <p style={{
-                fontSize: 14,
+                fontSize: 'var(--text-body)',
                 color: 'var(--muted)',
-                margin: '4px 0 0 0'
+                margin: '5px 0 0 0',
+                lineHeight: 1.45,
+                overflowWrap: 'anywhere',
               }}>
                 {titleParts.note}
               </p>
@@ -100,9 +115,9 @@ export default function ConfirmCompleteDialog({
 
         <div style={{
           display: 'flex',
-          gap: 12,
-          padding: '16px 24px',
-          background: 'var(--background)',
+          gap: 10,
+          padding: '12px 18px 18px',
+          background: 'var(--card)',
           borderTop: '1px solid var(--border)'
         }}>
           <button
@@ -110,18 +125,27 @@ export default function ConfirmCompleteDialog({
             onClick={onCancel}
             style={{
               flex: 1,
-              padding: '12px 20px',
-              fontSize: 16,
-              fontWeight: 500,
+              padding: '0 14px',
+              fontSize: 14,
+              fontWeight: 600,
               color: 'var(--muted)',
-              background: 'var(--card)',
-              border: '2px solid var(--border)',
+              background: 'rgba(255, 255, 255, 0.035)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              minHeight: 48,
-              transition: 'border-color 0.15s, color 0.15s',
+              height: 42,
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--surface-hover)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--foreground)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
           >
             Cancel
           </button>
@@ -130,18 +154,25 @@ export default function ConfirmCompleteDialog({
             onClick={onConfirm}
             style={{
               flex: 1,
-              padding: '12px 20px',
-              fontSize: 16,
-              fontWeight: 500,
+              padding: '0 14px',
+              fontSize: 14,
+              fontWeight: 700,
               color: 'var(--background)',
               background: 'var(--accent)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              minHeight: 48,
-              transition: 'background 0.15s',
+              height: 42,
+              transition: 'background 0.15s, border-color 0.15s',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-surface)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-hover)';
+              e.currentTarget.style.borderColor = 'var(--accent-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--accent)';
+            }}
           >
             Complete
           </button>

@@ -104,6 +104,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   }, [titleValue, dateWordMatch]);
 
   const [showHelp, setShowHelp] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const originalData = useRef({
     title: initialTitle,
@@ -238,6 +239,10 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   }, [editTask, handleSubmit, hasChanges, inline, onClose]);
 
   const handleDelete = () => {
+    setIsConfirmingDelete(true);
+  };
+
+  const handleConfirmDelete = () => {
     if (editTask) {
       deleteTask(editTask.id);
       onClose();
@@ -483,6 +488,79 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       )}
 
       {/* Actions */}
+      {editTask && isConfirmingDelete && (
+        <div style={{
+          margin: '0 16px 12px',
+          padding: 12,
+          background: 'rgba(255, 107, 107, 0.06)',
+          border: '1px solid rgba(255, 107, 107, 0.18)',
+          borderRadius: 'var(--radius-sm)',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) auto auto',
+          alignItems: 'center',
+          gap: 10,
+        }}>
+          <div style={{
+            minWidth: 0,
+            color: 'var(--muted)',
+            fontSize: 'var(--text-meta)',
+            lineHeight: 1.35,
+          }}>
+            Are you sure?
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsConfirmingDelete(false)}
+            style={{
+              padding: '0 12px',
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--muted)',
+              background: 'rgba(255, 255, 255, 0.035)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              height: 36,
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--muted)';
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmDelete}
+            style={{
+              padding: '0 12px',
+              fontSize: 13,
+              fontWeight: 700,
+              color: 'var(--background)',
+              background: 'var(--red)',
+              border: '1px solid var(--red)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              height: 36,
+              transition: 'filter 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.filter = 'brightness(1.08)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.filter = 'none';
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -526,6 +604,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             <button
               type="button"
               onClick={handleDelete}
+              aria-expanded={isConfirmingDelete}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--red)';
               }}
