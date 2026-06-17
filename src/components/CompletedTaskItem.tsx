@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
+import { splitTaskTitle } from '@/utils/taskTitle';
 
 export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: () => void }) {
   const [isUncompleting, setIsUncompleting] = useState(false);
@@ -13,6 +14,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
     setIsUncompleting(true);
     setTimeout(onUncomplete, 300);
   };
+  const titleParts = splitTaskTitle(task.title);
 
   return (
     <div
@@ -80,8 +82,13 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           color: isUncompleting ? 'var(--foreground)' : 'var(--muted)',
           transition: 'all 0.2s'
         }}>
-          {task.title}
+          {titleParts.title}
         </p>
+        {titleParts.note && (
+          <p style={{ margin: '5px 0 0', fontSize: 'var(--text-body)', color: 'var(--muted)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+            {titleParts.note}
+          </p>
+        )}
         {task.completedAt && (
           <p style={{ margin: '7px 0 0', fontSize: 'var(--text-meta)', fontWeight: 600, color: 'var(--muted)' }}>
             {format(new Date(task.completedAt), 'MMM d, h:mm a')}

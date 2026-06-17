@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
+import { splitTaskTitle } from '@/utils/taskTitle';
 
 export default function ConfirmCompleteDialog({
   task,
@@ -27,6 +28,7 @@ export default function ConfirmCompleteDialog({
 
   const taskDate = task.dueDate ? new Date(task.dueDate) : null;
   const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'Someday';
+  const titleParts = splitTaskTitle(task.title);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100 }}>
@@ -82,15 +84,15 @@ export default function ConfirmCompleteDialog({
               margin: 0,
               color: 'var(--foreground)'
             }}>
-              {task.title}
+              {titleParts.title}
             </p>
-            {task.notes && (
+            {titleParts.note && (
               <p style={{
                 fontSize: 14,
                 color: 'var(--muted)',
                 margin: '4px 0 0 0'
               }}>
-                {task.notes}
+                {titleParts.note}
               </p>
             )}
           </div>

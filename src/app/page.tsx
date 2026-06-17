@@ -106,10 +106,7 @@ export default function HomePage() {
       if (selectedDateFilter && !isSameDay(new Date(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
-      return (
-        t.title.toLowerCase().includes(query) ||
-        (t.notes && t.notes.toLowerCase().includes(query))
-      );
+      return t.title.toLowerCase().includes(query);
     });
     return filtered.sort((a, b) => 
       new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
@@ -122,10 +119,7 @@ export default function HomePage() {
     if (selectedDateFilter) return [];
     if (!searchQuery.trim()) return allCompleted;
     const query = searchQuery.toLowerCase();
-    return allCompleted.filter(t => 
-      t.title.toLowerCase().includes(query) ||
-      (t.notes && t.notes.toLowerCase().includes(query))
-    );
+    return allCompleted.filter(t => t.title.toLowerCase().includes(query));
   }, [getCompletedTasks, searchQuery, selectedDateFilter]);
 
   // Get tomorrow's tasks
@@ -335,6 +329,7 @@ export default function HomePage() {
       if (!target) return;
       if (target.closest('[data-task-inline-form="true"]')) return;
       if (target.closest('[data-task-inline-portal="true"]')) return;
+      if (target.closest('[data-task-card="true"]') && !target.closest('[data-task-checkbox="true"]')) return;
       handleCloseModal();
     };
 

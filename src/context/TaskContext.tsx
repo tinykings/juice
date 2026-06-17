@@ -465,7 +465,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         const newTask: Task = {
           id: uuidv4(),
           title: task.title,
-          notes: task.notes,
+          notes: '',
           dueDate: getNextRecurrenceDate(task.dueDate, task.recurrenceType),
           completed: false,
           completedAt: null,

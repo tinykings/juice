@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { format, isBefore, isToday, startOfDay, addDays } from 'date-fns';
 import { Task } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
+import { splitTaskTitle } from '@/utils/taskTitle';
 
 interface TaskItemProps {
   task: Task;
@@ -58,6 +59,7 @@ export default function TaskItem({
   }
   
   const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
+  const titleParts = splitTaskTitle(displayTitle || task.title);
 
   const handleComplete = () => {
     if (needsConfirmation) {
@@ -76,6 +78,7 @@ export default function TaskItem({
   return (
     <div style={{ position: 'relative' }}>
       <div 
+        data-task-card="true"
         onClick={onEdit}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -97,6 +100,7 @@ export default function TaskItem({
       >
         {/* Checkbox */}
         <button
+          data-task-checkbox="true"
           onClick={(e) => {
             e.stopPropagation();
             handleComplete();
@@ -150,9 +154,9 @@ export default function TaskItem({
                   transition: 'color 0.2s',
                   overflowWrap: 'anywhere',
                 }}>
-                  {displayTitle || task.title}
+                  {titleParts.title}
                 </p>
-                {task.notes && (
+                {titleParts.note && (
                   <p style={{ 
                     margin: '5px 0 0', 
                     fontSize: 'var(--text-body)', 
@@ -162,7 +166,7 @@ export default function TaskItem({
                     overflowWrap: 'anywhere',
                     maxWidth: '100%'
                   }}>
-                    {task.notes}
+                    {titleParts.note}
                   </p>
                 )}
               {(task.isRecurring || taskTime) && (

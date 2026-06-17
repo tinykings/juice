@@ -57,9 +57,8 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
 });
 
 export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean }) {
-  const { addTask, updateTask, deleteTask, completeTask } = useTasks();
+  const { addTask, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
 
   const initialDueDate = editTask
@@ -69,7 +68,10 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     : (initialDate ?? format(new Date(), 'yyyy-MM-dd'));
   
   const [dueDate, setDueDate] = useState(initialDueDate);
-  const [titleValue, setTitleValue] = useState(editTask?.title || '');
+  const initialTitle = editTask?.notes
+    ? `${editTask.title}${editTask.title.trim().endsWith('.') ? '' : '.'} ${editTask.notes}`
+    : editTask?.title || '';
+  const [titleValue, setTitleValue] = useState(initialTitle);
 
   const dateWordMatch = useMemo<DateWordMatch | null>(
     () => findDateWord(titleValue),
@@ -103,8 +105,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   const [showHelp, setShowHelp] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const originalData = useRef({
-    title: editTask?.title || '',
-    notes: editTask?.notes || '',
+    title: initialTitle,
     dueDate: initialDueDate,
     isRecurring: editTask?.isRecurring || false,
     recurrenceType: editTask?.recurrenceType || 'daily'
@@ -119,13 +120,11 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     recurrenceType?: RecurrenceType;
   }) => {
     const currentTitle = titleValue;
-    const currentNotes = notesRef.current?.value || '';
     const nextDueDate = overrides?.dueDate ?? dueDate;
     const nextIsRecurring = overrides?.isRecurring ?? isRecurring;
     const nextRecurrenceType = overrides?.recurrenceType ?? recurrenceType;
     const changed = 
       currentTitle !== originalData.current.title ||
-      currentNotes !== originalData.current.notes ||
       nextDueDate !== originalData.current.dueDate ||
       nextIsRecurring !== originalData.current.isRecurring ||
       (nextIsRecurring && nextRecurrenceType !== originalData.current.recurrenceType);
@@ -163,7 +162,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     e.preventDefault();
     
     let title = titleValue.trim();
-    const notes = notesRef.current?.value.trim() || '';
     
     if (!title) return;
 
@@ -185,7 +183,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
       const taskData = {
         title,
-        notes,
+        notes: '',
         dueDate: dateAtMidnight.toISOString(),
         isRecurring,
         recurrenceType: isRecurring ? recurrenceType : null,
@@ -200,7 +198,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     } else {
       const taskData = {
         title,
-        notes,
+        notes: '',
         dueDate: '',
         isRecurring,
         recurrenceType: isRecurring ? recurrenceType : null,
@@ -242,14 +240,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     if (editTask) {
       deleteTask(editTask.id);
       onClose();
-    }
-  };
-
-  const handleComplete = () => {
-    if (editTask) {
-      completeTask(editTask.id);
-      onClose();
-      if (onSave) onSave();
     }
   };
 
@@ -359,28 +349,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             </div>
           </div>
         </div>
-        
-        <textarea
-          ref={notesRef}
-          name="notes"
-          placeholder="Notes"
-          defaultValue={editTask?.notes || ''}
-          onChange={() => checkForChanges()}
-          rows={3}
-          style={{
-            width: '100%',
-            fontSize: 17,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: 'var(--muted)',
-            padding: '4px 0',
-            lineHeight: 1.5,
-            resize: 'vertical',
-            overflow: 'auto',
-            whiteSpace: 'pre-wrap',
-          }}
-        />
       </div>
 
       {/* Options */}
@@ -496,6 +464,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>jan 15</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>15 jan</span> — specific date</div>
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>someday</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>future</span> — no due date</div>
             <div style={{ marginTop: 4 }}><span style={{ color: 'var(--purple)', fontWeight: 600 }}>@9am</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@530</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@2:30pm</span> — set time</div>
+            <div><span style={{ color: 'var(--muted)', fontWeight: 600 }}>.</span> text after a period becomes a note</div>
           </div>
         </div>
       )}
@@ -568,7 +537,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         {editTask ? (
           <button
             type="button"
-            onClick={hasChanges ? handleSubmit : handleComplete}
+            onClick={handleSubmit}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = 'var(--accent)';
             }}
@@ -587,7 +556,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               transition: 'background 0.15s, border-color 0.15s',
             }}
           >
-            {hasChanges ? 'Save' : 'Complete'}
+            Save
           </button>
         ) : (
           <button
