@@ -81,14 +81,17 @@ export default function TaskItem({
         onMouseLeave={() => setIsHovered(false)}
         style={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-start',
           justifyContent: 'flex-start',
-          gap: 16,
-          padding: '16px 0',
-          borderBottom: '2px solid var(--border)',
+          gap: 14,
+          padding: '14px 14px 14px 12px',
+          border: `1px solid ${isHovered ? 'var(--accent-border)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius-md)',
           opacity: isCompleting ? 0.3 : 1,
-          transition: 'opacity 0.15s, background 0.15s',
-          background: isHovered ? 'var(--accent-subtle)' : 'transparent',
+          transform: isCompleting ? 'translateX(-6px)' : 'translateX(0)',
+          transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
+          background: isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
+          boxShadow: isHovered ? 'var(--shadow-sm)' : 'none',
           cursor: 'pointer',
         }}
       >
@@ -108,19 +111,23 @@ export default function TaskItem({
             cursor: 'pointer',
             background: 'none',
             border: 'none',
-            padding: 10,
+            padding: 6,
+            marginTop: 1,
             transition: 'all 0.2s ease',
           }}
+          aria-label="Complete task"
         >
           <div style={{
-            width: 24,
-            height: 24,
+            width: 30,
+            height: 30,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: isCheckboxHovered ? (isOverdue ? 'var(--red)' : 'var(--accent)') : 'transparent',
-            border: `2px solid ${isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent)' : 'var(--border)')}`,
-            transition: 'background 0.15s, border-color 0.15s',
+            background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--accent-surface)' : 'var(--surface-inset)'),
+            border: `1px solid ${isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent-border)' : 'var(--border)')}`,
+            borderRadius: 'var(--radius-sm)',
+            transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
+            boxShadow: isCheckboxHovered ? '0 0 0 3px var(--accent-subtle)' : 'none',
           }}>
             {isCompleting && (
               <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
@@ -131,14 +138,14 @@ export default function TaskItem({
         </button>
 
         {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ 
                   margin: 0, 
-                  fontSize: 16, 
-                  fontWeight: 500,
-                  lineHeight: 1.4,
+                  fontSize: 'var(--text-task-title)', 
+                  fontWeight: 650,
+                  lineHeight: 1.35,
                   color: isOverdue ? 'var(--red)' : 'var(--foreground)',
                   transition: 'color 0.2s',
                   overflowWrap: 'anywhere',
@@ -147,10 +154,10 @@ export default function TaskItem({
                 </p>
                 {task.notes && (
                   <p style={{ 
-                    margin: '4px 0 0', 
-                    fontSize: 14, 
+                    margin: '5px 0 0', 
+                    fontSize: 'var(--text-body)', 
                     color: 'var(--muted)', 
-                    lineHeight: 1.4,
+                    lineHeight: 1.45,
                     whiteSpace: 'pre-wrap',
                     overflowWrap: 'anywhere',
                     maxWidth: '100%'
@@ -163,14 +170,14 @@ export default function TaskItem({
                   display: 'flex',
                   alignItems: 'center',
                   flexWrap: 'wrap',
-                  gap: 8,
-                  margin: '6px 0 0',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: 'var(--accent)',
+                  gap: 10,
+                  margin: '8px 0 0',
+                  fontSize: 'var(--text-meta)',
+                  fontWeight: 600,
+                  color: 'var(--muted)',
                 }}>
                   {task.isRecurring && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
                       </svg>
@@ -178,7 +185,7 @@ export default function TaskItem({
                     </span>
                   )}
                   {taskTime && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <circle cx="12" cy="12" r="10"/>
                         <path d="M12 6v6l4 2"/>
@@ -205,23 +212,28 @@ export default function TaskItem({
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.color = isOverdue ? 'var(--red)' : 'var(--muted)';
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.backgroundColor = 'var(--surface-inset)';
                   }}
                   style={{
-                    background: 'none',
-                    border: '2px solid transparent',
-                    padding: '4px 8px',
+                    background: 'var(--surface-inset)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '6px 8px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4,
+                    gap: 5,
                     color: isOverdue ? 'var(--red)' : 'var(--muted)',
-                    fontSize: 13,
-                    fontWeight: 500,
+                    fontSize: 'var(--text-meta)',
+                    fontWeight: 600,
                     transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                     whiteSpace: 'nowrap',
                   }}
                 >
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
+                  </svg>
                   {taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <path d="M6 9l6 6 6-6"/>
@@ -272,10 +284,11 @@ function RescheduleMenu({
         left: Math.min(window.innerWidth - 180, Math.max(16, triggerRect.left - 80)),
         width: 160,
         background: 'var(--card)',
-        boxShadow: '8px 8px 0 rgba(0,0,0,0.2)',
+        boxShadow: 'var(--shadow-lg)',
         padding: 6,
         zIndex: 9999,
-        border: '2px solid var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
       }}>
         <RescheduleOption label="Today" date={startOfDay(new Date())} onClick={onSelect} />
         <RescheduleOption label="Tomorrow" date={addDays(startOfDay(new Date()), 1)} onClick={onSelect} />
@@ -314,7 +327,8 @@ function RescheduleOption({ label, date, onClick }: { label: string; date: Date;
         width: '100%',
         padding: '10px 12px',
         border: 'none',
-        background: isHovered ? 'var(--accent-subtle)' : 'transparent',
+        borderRadius: 'var(--radius-sm)',
+        background: isHovered ? 'var(--surface-hover)' : 'transparent',
         cursor: 'pointer',
         fontSize: 14,
         color: 'var(--foreground)',

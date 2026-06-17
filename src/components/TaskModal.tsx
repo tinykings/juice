@@ -35,6 +35,7 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
     >
       {/* Modal */}
       <div style={{
+        position: 'relative',
         background: 'var(--card)',
         width: '100%',
         maxWidth: 420,
@@ -260,87 +261,123 @@ function TaskForm({ editTask, onClose, onSave, initialDate }: { editTask?: Task 
     <form onSubmit={handleSubmit}>
       {/* Inputs */}
       <div style={{ padding: 24 }}>
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <textarea
-            ref={titleRef}
-            name="title"
-            placeholder="New To-Do"
-            aria-label="Task title"
-            rows={1}
-            value={titleValue}
-            autoFocus={!editTask}
-            onChange={(e) => {
-              setTitleValue(e.target.value);
-              checkForChanges();
-              e.target.style.height = 'auto';
-              e.target.style.height = e.target.scrollHeight + 'px';
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (!editTask || hasChanges) {
-                  handleSubmit(e as unknown as React.FormEvent);
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+          <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+            <textarea
+              ref={titleRef}
+              name="title"
+              placeholder="New To-Do"
+              aria-label="Task title"
+              rows={1}
+              value={titleValue}
+              autoFocus={!editTask}
+              onChange={(e) => {
+                setTitleValue(e.target.value);
+                checkForChanges();
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!editTask || hasChanges) {
+                    handleSubmit(e as unknown as React.FormEvent);
+                  }
                 }
-              }
-            }}
-            style={{
-              width: '100%',
+              }}
+              style={{
+                width: '100%',
+                fontSize: 22,
+                fontWeight: 600,
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '2px solid transparent',
+                outline: 'none',
+                color: 'var(--foreground)',
+                caretColor: 'var(--foreground)',
+                padding: '4px 0',
+                lineHeight: 1.4,
+                fontFamily: 'var(--font-body)',
+                transition: 'border-color 0.2s',
+                resize: 'none',
+                overflow: 'hidden',
+              }}
+              onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
+              onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
+            />
+            <div aria-hidden="true" style={{
+              position: 'absolute',
+              inset: 0,
+              padding: '4px 0',
+              pointerEvents: 'none',
               fontSize: 22,
               fontWeight: 600,
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '2px solid transparent',
-              outline: 'none',
-              color: 'var(--foreground)',
-              caretColor: 'var(--foreground)',
-              padding: '4px 0',
               lineHeight: 1.4,
               fontFamily: 'var(--font-body)',
-              transition: 'border-color 0.2s',
-              resize: 'none',
-              overflow: 'hidden',
-            }}
-            onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
-            onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
-          />
-          <div aria-hidden="true" style={{
-            position: 'absolute',
-            inset: 0,
-            padding: '4px 0',
-            pointerEvents: 'none',
-            fontSize: 22,
-            fontWeight: 600,
-            lineHeight: 1.4,
-            fontFamily: 'var(--font-body)',
-            color: 'transparent',
-            whiteSpace: 'pre-wrap',
-          }}>
-            {titleValue ? (() => {
-              if (highlights.length === 0) {
-                return <span style={{ color: 'transparent' }}>{titleValue}</span>;
-              }
-
-              const segs: React.ReactNode[] = [];
-              let pos = 0;
-              for (const h of highlights) {
-                if (h.start > pos) {
-                  segs.push(<span key={`t${pos}`} style={{ color: 'transparent' }}>{titleValue.slice(pos, h.start)}</span>);
+              color: 'transparent',
+              whiteSpace: 'pre-wrap',
+            }}>
+              {titleValue ? (() => {
+                if (highlights.length === 0) {
+                  return <span style={{ color: 'transparent' }}>{titleValue}</span>;
                 }
-                segs.push(
-                  <span key={`h${h.start}`} style={{ color: h.color, fontWeight: 600 }}>
-                    {titleValue.slice(h.start, h.end)}
-                  </span>
-                );
-                pos = h.end;
-              }
-              if (pos < titleValue.length) {
-                segs.push(<span key={`t${pos}`} style={{ color: 'transparent' }}>{titleValue.slice(pos)}</span>);
-              }
-              return segs;
-            })() : (
-              <span style={{ color: 'var(--muted)' }}>New To-Do</span>
-            )}
+
+                const segs: React.ReactNode[] = [];
+                let pos = 0;
+                for (const h of highlights) {
+                  if (h.start > pos) {
+                    segs.push(<span key={`t${pos}`} style={{ color: 'transparent' }}>{titleValue.slice(pos, h.start)}</span>);
+                  }
+                  segs.push(
+                    <span key={`h${h.start}`} style={{ color: h.color, fontWeight: 600 }}>
+                      {titleValue.slice(h.start, h.end)}
+                    </span>
+                  );
+                  pos = h.end;
+                }
+                if (pos < titleValue.length) {
+                  segs.push(<span key={`t${pos}`} style={{ color: 'transparent' }}>{titleValue.slice(pos)}</span>);
+                }
+                return segs;
+              })() : (
+                <span style={{ color: 'var(--muted)' }}>New To-Do</span>
+              )}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--accent-surface)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.borderColor = 'var(--accent-border)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-inset)';
+              e.currentTarget.style.color = 'var(--muted)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+            }}
+            style={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--surface-inset)',
+              color: 'var(--muted)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+            }}
+          >
+            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         
         <textarea

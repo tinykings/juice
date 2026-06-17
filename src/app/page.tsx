@@ -371,10 +371,12 @@ export default function HomePage() {
             padding: '16px 24px',
             background: 'var(--card)',
             color: 'var(--foreground)',
-            border: '3px solid var(--accent)',
+            border: '1px solid var(--accent-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-lg)',
             fontSize: 14,
             fontWeight: 700,
-            letterSpacing: '0.02em',
+            letterSpacing: '0.01em',
           }}>
             Syncing tasks from Gist...
           </div>
@@ -409,10 +411,11 @@ export default function HomePage() {
           left: 0,
           right: 0,
           zIndex: 20,
-          background: 'var(--background)',
+          background: 'color-mix(in srgb, var(--background) 92%, transparent)',
           padding: '12px 16px',
           paddingRight: showSplitView ? 196 : 72,
-          borderBottom: '4px solid var(--accent)',
+          borderBottom: '1px solid var(--border)',
+          backdropFilter: 'blur(16px)',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
@@ -438,7 +441,8 @@ export default function HomePage() {
                 padding: '10px 12px 10px 40px',
                 fontSize: 16,
                 background: 'var(--card)',
-                border: '2px solid var(--accent-border)',
+                border: '1px solid var(--accent-border)',
+                borderRadius: 'var(--radius-md)',
                 color: 'var(--foreground)',
                 height: 44
               }}
@@ -473,7 +477,8 @@ export default function HomePage() {
               fontWeight: 600,
               color: 'var(--foreground)',
               background: 'var(--accent-surface)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               padding: '0 16px',
               height: 44,
@@ -507,10 +512,10 @@ export default function HomePage() {
       {(view === 'list' || showSplitView) && (
       <main ref={listScrollRef} style={{ 
         flex: 1, 
-        padding: isSearchExpanded ? '88px 24px 100px' : '24px 24px 100px', 
+        padding: isSearchExpanded ? '88px clamp(10px, 2vw, 18px) 100px' : '24px clamp(10px, 2vw, 18px) 100px', 
         overflow: 'auto',
         minHeight: 0,
-        borderRight: (isWideScreen || showSplitView) ? '2px solid var(--border)' : 'none',
+        borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
@@ -529,7 +534,8 @@ export default function HomePage() {
               fontWeight: 600,
               color: 'var(--accent)',
               background: 'var(--accent-surface)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
             }}
           >
@@ -584,11 +590,13 @@ Back
                   <div style={{
                     marginTop: 8,
                     padding: '12px 24px',
-                    background: 'var(--surface-inset)',
+                    background: 'var(--card)',
                     color: 'var(--foreground)',
                     fontSize: 15,
                     fontWeight: 600,
-                    border: '2px solid var(--border)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}>
                     <span style={{ color: 'var(--accent)' }}>
                       {tomorrowTasks.length}
@@ -600,11 +608,32 @@ Back
             )}
             {/* Someday Section */}
             {showSomeday && (
-              <section style={{ marginBottom: 32, border: '2px solid var(--border)' }}>
-                <div style={{ padding: '8px 16px', background: 'var(--accent-surface)', borderBottom: '2px solid var(--accent)', fontSize: 13, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--accent)' }}>
+              <section style={{
+                marginBottom: 24,
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-sm)',
+                padding: 8,
+              }}>
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'var(--accent-surface)',
+                  border: '1px solid var(--accent-border)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  color: 'var(--accent)',
+                }}>
                   SOMEDAY
                 </div>
-                <div style={{ padding: '0 16px' }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                  padding: '12px 0 0',
+                }}>
                   {somedayTasks.length > 0 ? (
                     somedayTasks.map((task) => (
                       <TaskItem 
@@ -623,7 +652,7 @@ Back
                     ))
                   ) : (
                     <div style={{
-                      padding: '32px 0',
+                      padding: '28px 16px',
                       textAlign: 'center',
                       color: 'var(--muted)',
                       fontSize: 14,
@@ -645,33 +674,43 @@ Back
                 <section
                   key={group.label}
                   style={{
-                    marginBottom: 32,
+                    marginBottom: 24,
+                    background: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-sm)',
+                    padding: 8,
                   }}
                 >
                   <div style={{
-                    padding: '8px 16px',
-                    background: group.isOverdue ? 'var(--red)' : 'var(--accent-surface)',
-                    borderBottom: `2px solid ${group.isOverdue ? 'var(--red)' : 'var(--accent)'}`,
-                    fontSize: 14,
+                    padding: '10px 14px',
+                    background: group.isOverdue ? 'rgba(248, 113, 113, 0.14)' : 'var(--accent-surface)',
+                    border: `1px solid ${group.isOverdue ? 'rgba(248, 113, 113, 0.35)' : 'var(--accent-border)'}`,
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 13,
                     fontWeight: 700,
                     letterSpacing: '0.02em',
-                    color: group.isOverdue ? 'white' : 'var(--accent)',
+                    color: group.isOverdue ? 'var(--red)' : 'var(--accent)',
                   }}>
                     {group.label}
                   </div>
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
+                    gap: 10,
+                    padding: '12px 0 0',
                     justifyContent: groupHasTasks ? 'flex-start' : 'center',
                     alignItems: groupHasTasks ? 'stretch' : 'center'
                   }}>
                     {showTodayCompletedSummary && (
                       <div style={{
-                        padding: '18px 0',
-                        borderBottom: '2px solid var(--border)',
+                        padding: '14px 16px',
+                        background: 'var(--task-surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
                         color: 'var(--muted)',
                         fontSize: 15,
-                        fontWeight: 700,
+                        fontWeight: 600,
                         lineHeight: 1.45,
                       }}>
                         <div style={{ color: 'var(--foreground)' }}>
@@ -714,13 +753,14 @@ Back
 {!showSplitView && (
       <footer
         style={{
-          background: 'var(--background)',
+          background: 'color-mix(in srgb, var(--background) 92%, transparent)',
           padding: '12px 16px max(12px, env(safe-area-inset-bottom, 0px))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 8,
-          borderTop: '3px solid var(--border)',
+          borderTop: '1px solid var(--border)',
+          backdropFilter: 'blur(16px)',
           userSelect: 'none',
           position: 'relative',
         }}
@@ -742,8 +782,9 @@ Back
               justifyContent: 'center',
               color: view === 'calendar' ? 'var(--accent)' : 'var(--foreground)',
               background: view === 'calendar' ? 'var(--accent-surface)' : 'transparent',
-              border: '2px solid',
-              borderColor: view === 'calendar' ? 'var(--accent)' : 'var(--border)',
+              border: '1px solid',
+              borderColor: view === 'calendar' ? 'var(--accent-border)' : 'var(--border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
             }}
@@ -786,7 +827,8 @@ Back
               alignItems: 'center',
               justifyContent: 'center',
               background: 'transparent',
-              border: '2px solid var(--border)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               color: 'var(--muted)',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
@@ -822,8 +864,9 @@ Back
               alignItems: 'center',
               justifyContent: 'center',
               background: showSomeday ? 'var(--accent-surface)' : 'transparent',
-              border: '2px solid',
-              borderColor: showSomeday ? 'var(--accent)' : 'var(--border)',
+              border: '1px solid',
+              borderColor: showSomeday ? 'var(--accent-border)' : 'var(--border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               color: showSomeday ? 'var(--accent)' : 'var(--muted)',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
@@ -863,6 +906,7 @@ Back
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '0 2px',
+                borderRadius: 999,
               }}>
                 {somedayTasks.length}
               </span>
@@ -881,7 +925,8 @@ Back
               alignItems: 'center',
               justifyContent: 'center',
               background: 'transparent',
-              border: '2px solid var(--border)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               color: 'var(--muted)',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
@@ -926,9 +971,11 @@ Back
               justifyContent: 'center',
               color: 'white',
               background: 'var(--accent)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
-              transition: 'background 0.15s',
+              boxShadow: 'var(--shadow-md)',
+              transition: 'background 0.15s, box-shadow 0.15s',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--accent-surface)';
@@ -1020,9 +1067,11 @@ function FloatingButtons({
             justifyContent: 'center',
             color: 'white',
             background: 'var(--accent)',
-            border: '2px solid var(--accent)',
+            border: '1px solid var(--accent-border)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-md)',
             cursor: 'pointer',
-            transition: 'background 0.15s',
+            transition: 'background 0.15s, box-shadow 0.15s',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'var(--accent-surface)';
@@ -1056,9 +1105,11 @@ function FloatingButtons({
               justifyContent: 'center',
               color: 'white',
               background: 'var(--accent)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-md)',
               cursor: 'pointer',
-              transition: 'background 0.15s',
+              transition: 'background 0.15s, box-shadow 0.15s',
             }}
             aria-label="Settings"
             onMouseEnter={(e) => {
@@ -1084,9 +1135,11 @@ function FloatingButtons({
               justifyContent: 'center',
               color: 'white',
               background: 'var(--accent)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-md)',
               cursor: 'pointer',
-              transition: 'background 0.15s',
+              transition: 'background 0.15s, box-shadow 0.15s',
             }}
             aria-label="Search"
             onMouseEnter={(e) => {
@@ -1113,9 +1166,11 @@ function FloatingButtons({
               justifyContent: 'center',
               color: 'white',
               background: 'var(--accent)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-md)',
               cursor: 'pointer',
-              transition: 'background 0.15s',
+              transition: 'background 0.15s, box-shadow 0.15s',
             }}
             aria-label="Someday"
             onMouseEnter={(e) => {
@@ -1144,6 +1199,7 @@ function FloatingButtons({
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: '0 2px',
+                borderRadius: 999,
               }}>
                 {somedayTasksLength}
               </span>

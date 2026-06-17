@@ -4,80 +4,121 @@
 
 :root,
 [data-theme="dark"] {
-  /* Base - warm charcoal, never blue-black */
-  --background: #1C1C1C;
-  --foreground: #E8E7E4;
-  --card: #252524;
-  --muted: #8A8A85;
-  --muted-light: #3A3A38;
-  --border: #3A3A38;
+  /* Base */
+  --background: #11100F;
+  --foreground: #F3F0EA;
+  --card: #1B1A18;
+  --muted: #9B958B;
+  --muted-light: #34312D;
+  --border: #2B2824;
 
-  /* Accent - yellow (F4E26A) */
-  --accent: oklch(85% 0.14 85);
-  --accent-hover: oklch(78% 0.16 85);
-  --accent-subtle: oklch(35% 0.05 85);
-  --accent-surface: oklch(50% 0.1 85);
-  --accent-border: oklch(65% 0.12 85);
+  /* Accent */
+  --accent: #D8A84D;
+  --accent-hover: #F0C268;
+  --accent-subtle: rgba(216, 168, 77, 0.1);
+  --accent-surface: rgba(216, 168, 77, 0.16);
+  --accent-border: rgba(216, 168, 77, 0.38);
 
   /* Semantic colors */
   --yellow: #F5B041;
-  --red: #EF4444;
+  --red: #F87171;
   --green: #2ECC71;
   --purple: #9B59B6;
 
   /* UI surfaces */
-  --surface-raised: #252524;
-  --surface-inset: #2A2A2A;
-  --calendar-month-start: #2E2E2C;
+  --surface-raised: #201F1D;
+  --surface-inset: #171614;
+  --surface-hover: #25231F;
+  --task-surface: #211F1C;
+  --task-surface-hover: #28251F;
+  --calendar-month-start: #24221F;
 
-  /* Brutalist shadows - hard offset, no blur */
-  --shadow-sm: 3px 3px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 5px 5px 0 rgba(0, 0, 0, 0.4);
-  --shadow-lg: 8px 8px 0 rgba(0, 0, 0, 0.35);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.02);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.42);
 
   /* Border thickness */
   --border-thin: 1px;
-  --border-thick: 2px;
+  --border-thick: 1px;
+
+  /* Radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* Spacing */
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Typography */
+  --text-task-title: 17px;
+  --text-body: 15px;
+  --text-meta: 12px;
 
   /* Calendar */
-  --calendar-bg: #1C1C1C;
-  --calendar-text: #E8E7E4;
-  --calendar-event-border: oklch(65% 0.12 85);
+  --calendar-bg: #11100F;
+  --calendar-text: #F3F0EA;
+  --calendar-event-border: rgba(216, 168, 77, 0.42);
 }
 
 [data-theme="light"] {
-  --background: #F2F0EB;
-  --foreground: #1A1A18;
-  --card: #FFFFFF;
-  --muted: #8A8A85;
-  --muted-light: #D4D2CC;
-  --border: #B8B6B0;
+  --background: #F4F1EA;
+  --foreground: #1A1712;
+  --card: #FFFCF5;
+  --muted: #7E7669;
+  --muted-light: #DDD5C7;
+  --border: #D6CDBD;
 
-  --accent: oklch(60% 0.14 85);
-  --accent-hover: oklch(52% 0.14 85);
-  --accent-subtle: oklch(92% 0.04 85);
-  --accent-surface: oklch(94% 0.08 85);
-  --accent-border: oklch(55% 0.12 85);
+  --accent: #B7791F;
+  --accent-hover: #935F18;
+  --accent-subtle: rgba(183, 121, 31, 0.1);
+  --accent-surface: rgba(183, 121, 31, 0.14);
+  --accent-border: rgba(183, 121, 31, 0.38);
 
   --yellow: #D4A017;
   --red: #DC2626;
   --green: #16A34A;
   --purple: #7C3AED;
 
-  --surface-raised: #FFFFFF;
-  --surface-inset: #E8E6E0;
-  --calendar-month-start: #E0DDD6;
+  --surface-raised: #FFFCF5;
+  --surface-inset: #ECE6DA;
+  --surface-hover: #F8F1E3;
+  --task-surface: #FFFCF5;
+  --task-surface-hover: #F8F1E3;
+  --calendar-month-start: #E8DFCF;
 
-  --shadow-sm: 3px 3px 0 rgba(0, 0, 0, 0.12);
-  --shadow-md: 5px 5px 0 rgba(0, 0, 0, 0.1);
-  --shadow-lg: 8px 8px 0 rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(77, 54, 28, 0.08), 0 0 0 1px rgba(77, 54, 28, 0.02);
+  --shadow-md: 0 12px 32px rgba(77, 54, 28, 0.12);
+  --shadow-lg: 0 24px 60px rgba(77, 54, 28, 0.18);
 
   --border-thin: 1px;
-  --border-thick: 2px;
+  --border-thick: 1px;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --text-task-title: 17px;
+  --text-body: 15px;
+  --text-meta: 12px;
 
   --calendar-bg: #F2F0EB;
   --calendar-text: #1A1A18;
-  --calendar-event-border: oklch(55% 0.12 85);
+  --calendar-event-border: rgba(183, 121, 31, 0.42);
 }
 
 * {
@@ -141,10 +182,10 @@ input, textarea, button {
   color: inherit;
 }
 
-/* Focus visible - 4px offset solid accent */
+/* Focus visible */
 :focus-visible {
   outline: none;
-  box-shadow: 4px 4px 0 var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-border), 0 0 0 6px var(--accent-subtle);
 }
 
 /* Animations */
