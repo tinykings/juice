@@ -42,7 +42,8 @@ const TaskModal = memo(function TaskModal({ isOpen, onClose, onSave, editTask, i
         maxHeight: '90vh',
         overflow: 'auto',
         boxShadow: '12px 12px 0 rgba(0,0,0,0.2)',
-        border: '2px solid var(--border)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)',
       }}>
         <TaskForm 
           key={editTask ? editTask.id : 'new'} 
@@ -259,7 +260,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         background: 'var(--task-surface)',
         border: '1px solid var(--accent-border)',
         borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-sm)',
+        boxShadow: '0 0 0 1px rgba(215, 169, 58, 0.06)',
         overflow: 'hidden',
         transformOrigin: 'top',
         animation: isClosing
@@ -268,8 +269,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       } : undefined}
     >
       {/* Inputs */}
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+      <div style={{ padding: '16px 16px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 0 }}>
           <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
             <textarea
               ref={titleRef}
@@ -295,30 +296,36 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               }}
               style={{
                 width: '100%',
-                fontSize: 22,
+                fontSize: 19,
                 fontWeight: 600,
-                background: 'transparent',
-                border: 'none',
-                borderBottom: '2px solid transparent',
+                background: 'rgba(255, 255, 255, 0.035)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
                 outline: 'none',
                 color: 'var(--foreground)',
                 caretColor: 'var(--foreground)',
-                padding: '4px 0',
+                padding: '10px 12px',
                 lineHeight: 1.4,
                 fontFamily: 'var(--font-body)',
-                transition: 'border-color 0.2s',
+                transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
                 resize: 'none',
                 overflow: 'hidden',
               }}
-              onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent)'}
-              onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--accent-border)';
+                e.target.style.background = 'rgba(255, 255, 255, 0.045)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--border)';
+                e.target.style.background = 'rgba(255, 255, 255, 0.035)';
+              }}
             />
             <div aria-hidden="true" style={{
               position: 'absolute',
               inset: 0,
-              padding: '4px 0',
+              padding: '10px 12px',
               pointerEvents: 'none',
-              fontSize: 22,
+              fontSize: 19,
               fontWeight: 600,
               lineHeight: 1.4,
               fontFamily: 'var(--font-body)',
@@ -356,7 +363,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       </div>
 
       {/* Options */}
-      <div style={{ padding: '0 24px 24px', display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ padding: '0 16px 14px', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         <CalendarPicker value={dueDate} onChange={(val) => { setDueDate(val); checkForChanges({ dueDate: val }); }} />
 
         <button
@@ -382,15 +389,16 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '12px 16px',
-            background: isRecurring ? 'var(--accent)' : 'var(--background)',
-            color: isRecurring ? 'var(--background)' : 'var(--muted)',
-            border: isRecurring ? '2px solid var(--accent)' : '2px solid var(--border)',
-            fontSize: 16,
+            padding: '0 14px',
+            background: isRecurring ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
+            color: isRecurring ? 'var(--accent)' : 'var(--muted)',
+            border: isRecurring ? '1px solid var(--accent-border)' : '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 14,
             cursor: 'pointer',
-            minHeight: 48,
+            height: 42,
             fontWeight: 500,
-            transition: 'all 0.2s'
+            transition: 'background 0.15s, border-color 0.15s, color 0.15s'
           }}
         >
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -403,7 +411,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       {/* Recurrence options */}
       {isRecurring && (
         <div style={{ 
-          padding: '0 24px 24px', 
+          padding: '0 16px 14px', 
           display: 'grid', 
           gridTemplateColumns: '1fr 1fr',
           gap: 10
@@ -429,16 +437,17 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
                 }
               }}
               style={{
-                padding: '10px 18px',
-                fontSize: 15,
+                padding: '0 14px',
+                fontSize: 13,
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 background: recurrenceType === type ? 'var(--foreground)' : 'var(--background)',
                 color: recurrenceType === type ? 'var(--background)' : 'var(--muted)',
-                border: '2px solid var(--border)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
-                minHeight: 44,
+                height: 40,
                 transition: 'all 0.2s'
               }}
             >
@@ -451,7 +460,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       {/* Quick-add help */}
       {showHelp && (
         <div style={{
-          padding: '16px 24px',
+          padding: '14px 16px',
           background: 'var(--muted-light)',
           borderTop: '1px solid var(--border)',
           fontSize: 14,
@@ -478,11 +487,11 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '16px 24px',
-        background: 'var(--background)',
-        borderTop: '2px solid var(--border)'
+        padding: '12px 16px',
+        background: 'var(--card)',
+        borderTop: '1px solid var(--border)'
       }}>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           <button
             type="button"
             onClick={() => setShowHelp(!showHelp)}
@@ -495,13 +504,14 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               e.currentTarget.style.color = showHelp ? 'var(--accent)' : 'var(--muted)';
             }}
             style={{
-              width: 48,
-              height: 48,
-              fontSize: 18,
+              width: 42,
+              height: 42,
+              fontSize: 14,
               fontWeight: 700,
               color: showHelp ? 'var(--accent)' : 'var(--muted)',
-              background: 'none',
-              border: showHelp ? '2px solid var(--accent)' : '2px solid var(--border)',
+              background: showHelp ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
+              border: showHelp ? '1px solid var(--accent-border)' : '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
               display: 'flex',
@@ -523,13 +533,14 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
                 e.currentTarget.style.borderColor = 'var(--border)';
               }}
               style={{
-                padding: '12px 20px',
-                fontSize: 16,
+                padding: '0 16px',
+                fontSize: 14,
                 color: 'var(--red)',
-                background: 'none',
-                border: '2px solid var(--border)',
+                background: 'rgba(255, 107, 107, 0.06)',
+                border: '1px solid rgba(255, 107, 107, 0.2)',
+                borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
-                minHeight: 48,
+                height: 42,
                 fontWeight: 500,
                 transition: 'background 0.15s, border-color 0.15s',
               }}
@@ -549,14 +560,15 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               e.currentTarget.style.borderColor = 'var(--border)';
             }}
             style={{
-              padding: '12px 24px',
-              fontSize: 16,
+              padding: '0 20px',
+              fontSize: 14,
               fontWeight: 600,
-              color: 'var(--accent)',
-              background: 'none',
-              border: '2px solid var(--border)',
+              color: 'var(--background)',
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              minHeight: 48,
+              height: 42,
               transition: 'background 0.15s, border-color 0.15s',
             }}
           >
@@ -566,14 +578,15 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           <button
             type="submit"
             style={{
-              padding: '12px 24px',
-              fontSize: 16,
+              padding: '0 20px',
+              fontSize: 14,
               fontWeight: 600,
               color: 'var(--background)',
               background: 'var(--accent)',
-              border: '2px solid var(--accent)',
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              minHeight: 48,
+              height: 42,
               transition: 'background 0.15s',
             }}
             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-surface)'}

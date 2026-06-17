@@ -98,13 +98,14 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
         <label style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          padding: '12px 16px',
-          background: 'var(--background)',
-          border: '2px solid var(--border)',
-          fontSize: 16,
+          gap: 8,
+          padding: '0 14px',
+          background: 'rgba(255, 255, 255, 0.035)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: 14,
           cursor: 'pointer',
-          minHeight: 48,
+          height: 42,
           transition: 'border-color 0.15s',
           color: hasDate ? 'var(--foreground)' : 'var(--muted)',
         }}
@@ -123,7 +124,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
               border: 'none',
               outline: 'none',
               color: 'var(--foreground)',
-              fontSize: 16,
+              fontSize: 14,
               fontFamily: 'inherit',
               minWidth: hasDate ? 'auto' : 80,
             }}
@@ -143,24 +144,25 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          padding: '12px 16px',
-          background: hasDate ? 'var(--background)' : 'var(--accent-surface)',
-          border: '2px solid',
-          borderColor: hasDate ? 'var(--border)' : 'var(--accent)',
-          fontSize: 16,
+          gap: 8,
+          padding: '0 14px',
+          background: hasDate ? 'rgba(255, 255, 255, 0.035)' : 'var(--accent-surface)',
+          border: '1px solid',
+          borderColor: hasDate ? 'var(--border)' : 'var(--accent-border)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: 14,
           cursor: 'pointer',
-          minHeight: 48,
+          height: 42,
           transition: 'border-color 0.15s, background 0.15s',
-          color: hasDate ? 'var(--foreground)' : 'var(--accent)',
+          color: hasDate ? 'var(--muted)' : 'var(--accent)',
           fontFamily: 'inherit',
           fontWeight: hasDate ? 400 : 600,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'var(--accent)';
+          e.currentTarget.style.borderColor = hasDate ? 'rgba(255,255,255,0.16)' : 'var(--accent-border)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = hasDate ? 'var(--border)' : 'var(--accent)';
+          e.currentTarget.style.borderColor = hasDate ? 'var(--border)' : 'var(--accent-border)';
         }}
       >
         {hasDate ? <CalendarIcon /> : <SomedayIcon />}
@@ -173,8 +175,9 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           top: dropdownPos.top,
           left: dropdownPos.left,
           background: 'var(--card)',
-          border: '2px solid var(--border)',
-          boxShadow: '8px 8px 0 rgba(0,0,0,0.15)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-lg)',
           zIndex: 300,
           padding: 12,
           width: 280,
@@ -275,7 +278,8 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
                 flex: 1,
                 padding: '6px 0',
                 background: 'none',
-                border: '2px solid var(--border)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
                 color: 'var(--accent)',
                 fontSize: 13,
                 fontWeight: 600,
@@ -293,7 +297,8 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
                 flex: 1,
                 padding: '6px 0',
                 background: 'none',
-                border: '2px solid var(--border)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
                 color: 'var(--muted)',
                 fontSize: 13,
                 fontWeight: 600,
@@ -337,7 +342,7 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
   }
 
   if (isToday && !isSelected) {
-    border = '1px solid var(--accent)';
+    border = '1px solid var(--accent-border)';
     fontWeight = 600;
   }
 
@@ -359,7 +364,7 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
         color,
         border,
         cursor: 'pointer',
-        borderRadius: 0,
+        borderRadius: 'var(--radius-xs)',
         padding: 0,
         transition: 'background 0.1s',
       }}
@@ -372,7 +377,7 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
 function CalendarIcon() {
   return (
     <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="4" width="18" height="18" rx="0" />
+      <rect x="3" y="4" width="18" height="18" rx="2" />
       <path d="M16 2v4M8 2v4M3 10h18" />
     </svg>
   );
@@ -389,7 +394,8 @@ function SomedayIcon() {
 
 const navBtnStyle: React.CSSProperties = {
   background: 'none',
-  border: '2px solid var(--border)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-sm)',
   cursor: 'pointer',
   padding: 6,
   display: 'flex',

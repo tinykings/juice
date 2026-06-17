@@ -83,18 +83,19 @@ export default function TaskItem({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
-          display: 'flex',
+          display: 'grid',
+          gridTemplateColumns: '38px minmax(0, 1fr)',
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
-          gap: 14,
-          padding: '14px 14px 14px 12px',
-          border: `1px solid ${isHovered ? 'var(--accent-border)' : 'var(--border)'}`,
+          columnGap: 12,
+          padding: '13px 14px 13px 12px',
+          border: '1px solid var(--border)',
           borderRadius: 'var(--radius-md)',
           opacity: isCompleting ? 0.3 : 1,
           transform: isCompleting ? 'translateX(-6px)' : 'translateX(0)',
           transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
           background: isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
-          boxShadow: isHovered ? 'var(--shadow-sm)' : 'none',
+          boxShadow: isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
           cursor: 'pointer',
         }}
       >
@@ -115,23 +116,23 @@ export default function TaskItem({
             cursor: 'pointer',
             background: 'none',
             border: 'none',
-            padding: 6,
-            marginTop: 1,
+            padding: 4,
+            marginTop: 0,
             transition: 'all 0.2s ease',
           }}
           aria-label="Complete task"
         >
           <div style={{
-            width: 30,
-            height: 30,
+            width: 28,
+            height: 28,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--accent-surface)' : 'var(--surface-inset)'),
-            border: `1px solid ${isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent-border)' : 'var(--border)')}`,
+            background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)'),
+            border: `1px solid ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
             borderRadius: 'var(--radius-sm)',
             transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-            boxShadow: isCheckboxHovered ? '0 0 0 3px var(--accent-subtle)' : 'none',
+            boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
           }}>
             {isCompleting && (
               <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
@@ -142,8 +143,8 @@ export default function TaskItem({
         </button>
 
         {/* Content */}
-        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ minWidth: 0, paddingTop: 1 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showDate && !isSomeday ? 'minmax(0, 1fr) auto' : '1fr', alignItems: 'start', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ 
                   margin: 0, 
@@ -159,7 +160,7 @@ export default function TaskItem({
                 {titleParts.note && (
                   <p style={{ 
                     margin: '5px 0 0', 
-                    fontSize: 'var(--text-body)', 
+                  fontSize: 'var(--text-body)', 
                     color: 'var(--muted)', 
                     lineHeight: 1.45,
                     whiteSpace: 'pre-wrap',
@@ -177,7 +178,7 @@ export default function TaskItem({
                   gap: 10,
                   margin: '8px 0 0',
                   fontSize: 'var(--text-meta)',
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: 'var(--muted)',
                 }}>
                   {task.isRecurring && (
@@ -219,17 +220,17 @@ export default function TaskItem({
                     e.currentTarget.style.backgroundColor = 'var(--surface-inset)';
                   }}
                   style={{
-                    background: 'var(--surface-inset)',
+                    background: 'rgba(255, 255, 255, 0.035)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '6px 8px',
+                    padding: '7px 9px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
                     color: isOverdue ? 'var(--red)' : 'var(--muted)',
                     fontSize: 'var(--text-meta)',
-                    fontWeight: 600,
+                    fontWeight: 500,
                     transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                     whiteSpace: 'nowrap',
                   }}

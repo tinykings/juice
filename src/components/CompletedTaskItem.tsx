@@ -21,17 +21,18 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '38px minmax(0, 1fr)',
         alignItems: 'flex-start',
-        gap: 14,
-        padding: '14px 14px 14px 12px',
+        columnGap: 12,
+        padding: '13px 14px 13px 12px',
         background: isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
-        border: `1px solid ${isHovered ? 'var(--accent-border)' : 'var(--border)'}`,
+        border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
-        opacity: isUncompleting ? 0.3 : 0.78,
+        opacity: isUncompleting ? 0.3 : 0.58,
         transform: isUncompleting ? 'translateX(6px)' : 'translateX(0)',
         transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
-        boxShadow: isHovered ? 'var(--shadow-sm)' : 'none',
+        boxShadow: isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
       }}
     >
       <button
@@ -43,29 +44,29 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          marginTop: 1,
+          marginTop: 0,
           cursor: 'pointer',
           background: 'none',
           border: 'none',
-          padding: 6,
+          padding: 4,
           transition: 'all 0.2s',
         }}
         aria-label="Mark task incomplete"
       >
         <div style={{
-          width: 30,
-          height: 30,
-          background: isCheckboxHovered ? 'var(--accent-surface)' : 'var(--surface-inset)',
-          border: `1px solid ${isCheckboxHovered ? 'var(--accent-border)' : 'var(--border)'}`,
+          width: 28,
+          height: 28,
+          background: isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)',
+          border: '1px solid var(--border)',
           borderRadius: 'var(--radius-sm)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-          boxShadow: isCheckboxHovered ? '0 0 0 3px var(--accent-subtle)' : 'none',
+          boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
         }}>
           {!isUncompleting && (
-            <svg width="16" height="16" fill="none" stroke="var(--accent)" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+            <svg width="16" height="16" fill="none" stroke={isCheckboxHovered ? 'var(--accent)' : 'var(--muted)'} strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12l5 5L20 7" />
             </svg>
           )}

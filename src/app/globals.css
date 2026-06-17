@@ -5,33 +5,33 @@
 :root,
 [data-theme="dark"] {
   /* Base */
-  --background: #11100F;
+  --background: #0f0e0c;
   --foreground: #F3F0EA;
-  --card: #1B1A18;
-  --muted: #9B958B;
-  --muted-light: #34312D;
-  --border: #2B2824;
+  --card: #191713;
+  --muted: #a8a29a;
+  --muted-light: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.08);
 
   /* Accent */
-  --accent: #D8A84D;
-  --accent-hover: #F0C268;
-  --accent-subtle: rgba(216, 168, 77, 0.1);
-  --accent-surface: rgba(216, 168, 77, 0.16);
-  --accent-border: rgba(216, 168, 77, 0.38);
+  --accent: #d7a93a;
+  --accent-hover: #e6bd59;
+  --accent-subtle: rgba(215, 169, 58, 0.08);
+  --accent-surface: rgba(215, 169, 58, 0.11);
+  --accent-border: rgba(215, 169, 58, 0.28);
 
   /* Semantic colors */
   --yellow: #F5B041;
-  --red: #F87171;
+  --red: #ff6b6b;
   --green: #2ECC71;
   --purple: #9B59B6;
 
   /* UI surfaces */
-  --surface-raised: #201F1D;
-  --surface-inset: #171614;
-  --surface-hover: #25231F;
-  --task-surface: #211F1C;
-  --task-surface-hover: #28251F;
-  --calendar-month-start: #24221F;
+  --surface-raised: #191713;
+  --surface-inset: rgba(255, 255, 255, 0.035);
+  --surface-hover: rgba(255, 255, 255, 0.045);
+  --task-surface: #1f1c18;
+  --task-surface-hover: #24211d;
+  --calendar-month-start: #211e19;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.02);
@@ -43,11 +43,11 @@
   --border-thick: 1px;
 
   /* Radius */
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
 
   /* Spacing */
   --space-2: 8px;
@@ -57,12 +57,12 @@
   --space-6: 24px;
 
   /* Typography */
-  --text-task-title: 17px;
+  --text-task-title: 18px;
   --text-body: 15px;
-  --text-meta: 12px;
+  --text-meta: 13px;
 
   /* Calendar */
-  --calendar-bg: #11100F;
+  --calendar-bg: #0f0e0c;
   --calendar-text: #F3F0EA;
   --calendar-event-border: rgba(216, 168, 77, 0.42);
 }

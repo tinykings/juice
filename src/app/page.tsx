@@ -436,7 +436,7 @@ export default function HomePage() {
             padding: '16px 24px',
             background: 'var(--card)',
             color: 'var(--foreground)',
-            border: '1px solid var(--accent-border)',
+            border: '1px solid var(--border)',
             borderRadius: 'var(--radius-lg)',
             boxShadow: 'var(--shadow-lg)',
             fontSize: 14,
@@ -505,7 +505,7 @@ export default function HomePage() {
                 padding: '10px 12px 10px 40px',
                 fontSize: 16,
                 background: 'var(--card)',
-                border: '1px solid var(--accent-border)',
+                border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-md)',
                 color: 'var(--foreground)',
                 height: 44
@@ -541,7 +541,7 @@ export default function HomePage() {
               fontWeight: 600,
               color: 'var(--foreground)',
               background: 'var(--accent-surface)',
-              border: '1px solid var(--accent-border)',
+              border: '1px solid var(--border)',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               padding: '0 16px',
@@ -598,7 +598,7 @@ export default function HomePage() {
               fontWeight: 600,
               color: 'var(--accent)',
               background: 'var(--accent-surface)',
-              border: '1px solid var(--accent-border)',
+              border: '1px solid var(--border)',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
             }}
@@ -677,17 +677,16 @@ Back
                 background: 'var(--card)',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-sm)',
                 padding: 8,
               }}>
                 <div style={{
-                  padding: '10px 14px',
+                  padding: '8px 12px',
                   background: 'var(--accent-surface)',
-                  border: '1px solid var(--accent-border)',
-                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
                   fontSize: 12,
                   fontWeight: 700,
-                  letterSpacing: '0.04em',
+                  letterSpacing: '0.03em',
                   color: 'var(--accent)',
                 }}>
                   SOMEDAY
@@ -760,19 +759,18 @@ Back
                     background: 'var(--card)',
                     border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-lg)',
-                    boxShadow: 'var(--shadow-sm)',
                     padding: 8,
                   }}
                 >
                   <div style={{
-                    padding: '10px 14px',
-                    background: group.isOverdue ? 'rgba(248, 113, 113, 0.14)' : 'var(--accent-surface)',
-                    border: `1px solid ${group.isOverdue ? 'rgba(248, 113, 113, 0.35)' : 'var(--accent-border)'}`,
-                    borderRadius: 'var(--radius-md)',
+                    padding: '8px 12px',
+                    background: group.isOverdue ? 'rgba(255, 107, 107, 0.1)' : (group.isToday ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)'),
+                    border: `1px solid ${group.isOverdue ? 'rgba(255, 107, 107, 0.24)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: 13,
                     fontWeight: 700,
-                    letterSpacing: '0.02em',
-                    color: group.isOverdue ? 'var(--red)' : 'var(--accent)',
+                    letterSpacing: '0.01em',
+                    color: group.isOverdue ? 'var(--red)' : (group.isToday ? 'var(--accent)' : 'var(--muted)'),
                   }}>
                     {group.label}
                   </div>
@@ -1070,7 +1068,7 @@ Back
               justifyContent: 'center',
               color: 'white',
               background: 'var(--accent)',
-              border: '1px solid var(--accent-border)',
+              border: '1px solid var(--accent)',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               boxShadow: 'var(--shadow-md)',
