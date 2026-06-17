@@ -41,12 +41,28 @@ export default function HomePage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [mounted, setMounted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
+  const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'someday'>('pending');
+  const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
   const listScrollRef = useRef<HTMLElement | null>(null);
   const inlineCloseTimerRef = useRef<number | null>(null);
-  const hasOpenedNewTaskFromUrlRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('newTask')) {
+        setNewTaskUrlMode('off');
+        return;
+      }
+
+      const value = params.get('newTask')?.toLowerCase();
+      setNewTaskUrlMode(value === 'someday' ? 'someday' : 'today');
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Track window width for responsive layout
@@ -307,21 +323,6 @@ export default function HomePage() {
     setIsModalOpen(true);
   }, [showSplitView, view]);
 
-  useEffect(() => {
-    if (hasOpenedNewTaskFromUrlRef.current) return;
-
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has('newTask')) return;
-
-    hasOpenedNewTaskFromUrlRef.current = true;
-    const value = params.get('newTask')?.toLowerCase();
-    const timer = window.setTimeout(() => {
-      openInlineTaskForm(value === 'someday' ? '' : null);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [openInlineTaskForm]);
-
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
     if (isTodayOrOverdue) {
@@ -448,6 +449,86 @@ export default function HomePage() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openInlineTaskForm]);
+
+  if (newTaskUrlMode === 'pending' || (newTaskUrlMode !== 'off' && !isLoaded)) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        background: 'var(--background)',
+      }} />
+    );
+  }
+
+  if (newTaskUrlMode !== 'off') {
+    return (
+      <main style={{
+        minHeight: '100dvh',
+        background: 'var(--background)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: '24px 14px',
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: 520,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}>
+          {hasAddedTaskFromUrl ? (
+            <div style={{
+              color: 'var(--foreground)',
+              fontSize: 18,
+              fontWeight: 700,
+              padding: '14px 2px',
+            }}>
+              task added
+            </div>
+          ) : (
+            <>
+              <TaskForm
+                key={`url-new-task-${newTaskUrlMode}`}
+                inline
+                onClose={() => {}}
+                onSave={() => setHasAddedTaskFromUrl(true)}
+                initialDate={newTaskUrlMode === 'someday' ? '' : null}
+              />
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                style={{
+                  alignSelf: 'flex-start',
+                  color: 'var(--muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px 2px',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--accent)';
+                  e.currentTarget.style.textDecoration = 'underline';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--muted)';
+                  e.currentTarget.style.textDecoration = 'none';
+                }}
+              >
+                Settings
+              </button>
+            </>
+          )}
+        </div>
+
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      </main>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
