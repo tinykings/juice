@@ -1,4 +1,4 @@
-const CACHE_NAME = 'juice-v11';
+const CACHE_NAME = 'juice-v12';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -14,7 +14,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       // Add files individually to handle missing files gracefully
       return Promise.allSettled(
-        STATIC_ASSETS.map(url => 
+        STATIC_ASSETS.map(url =>
           cache.add(url).catch(err => {
             console.warn(`Failed to cache ${url}:`, err);
             return null;
@@ -44,7 +44,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
-  
+
   // Skip cross-origin requests (like Gist API)
   if (!event.request.url.startsWith(self.location.origin)) return;
 
