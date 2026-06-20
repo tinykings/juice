@@ -2,6 +2,7 @@ import { Task } from '@/types/task';
 
 const GIST_API_URL = 'https://api.github.com/gists';
 const TASKS_FILENAME = 'juice-tasks.json';
+const UNKNOWN_TIMESTAMP = '1970-01-01T00:00:00.000Z';
 
 interface GistFile {
   content: string;
@@ -47,8 +48,35 @@ function normalizeTask(task: Task): Task {
     tags: task.tags ?? [],
     completed: Boolean(task.completed),
     completedAt: task.completedAt ?? null,
-    updatedAt: task.updatedAt ?? task.createdAt ?? new Date().toISOString(),
+    updatedAt: task.updatedAt ?? task.createdAt ?? UNKNOWN_TIMESTAMP,
     deletedAt: task.deletedAt ?? null,
+  };
+}
+
+function comparableTask(task: Task) {
+  const normalized = normalizeTask(task);
+  return {
+    id: normalized.id,
+    title: normalized.title,
+    notes: normalized.notes,
+    dueDate: normalized.dueDate,
+    completed: normalized.completed,
+    completedAt: normalized.completedAt,
+    createdAt: normalized.createdAt,
+    updatedAt: normalized.updatedAt,
+    deletedAt: normalized.deletedAt,
+    conflictOf: normalized.conflictOf ?? null,
+    isRecurring: normalized.isRecurring,
+    recurrenceType: normalized.recurrenceType,
+    tags: [...normalized.tags].sort(),
+  };
+}
+
+function comparableTombstone(tombstone: TaskTombstone) {
+  return {
+    id: tombstone.id,
+    deletedAt: tombstone.deletedAt,
+    updatedAt: tombstone.updatedAt,
   };
 }
 
@@ -95,9 +123,10 @@ export function createSyncDocument(
 function comparableSyncContent(document: SyncDocument): string {
   return JSON.stringify({
     tasks: document.tasks
-      .map(normalizeTask)
+      .map(comparableTask)
       .sort((a, b) => a.id.localeCompare(b.id)),
     tombstones: normalizeTombstones(document.tombstones)
+      .map(comparableTombstone)
       .sort((a, b) => a.id.localeCompare(b.id)),
   });
 }
@@ -109,7 +138,7 @@ export function syncDocumentContentEquals(a: SyncDocument, b: SyncDocument): boo
 function taskChangedSinceBase(task: Task | undefined, baseTask: Task | undefined): boolean {
   if (!task) return false;
   if (!baseTask) return true;
-  return JSON.stringify(normalizeTask(task)) !== JSON.stringify(normalizeTask(baseTask));
+  return JSON.stringify(comparableTask(task)) !== JSON.stringify(comparableTask(baseTask));
 }
 
 function tombstoneChangedSinceBase(
@@ -143,6 +172,16 @@ function makeConflictCopy(task: Task, originalId: string, now: string): Task {
     updatedAt: now,
     deletedAt: null,
   };
+}
+
+function chooseWithoutBase(localTask: Task, remoteTask: Task): Task {
+  if (JSON.stringify(comparableTask(localTask)) === JSON.stringify(comparableTask(remoteTask))) {
+    return remoteTask;
+  }
+
+  const localUpdatedAt = localTask.updatedAt ?? localTask.createdAt;
+  const remoteUpdatedAt = remoteTask.updatedAt ?? remoteTask.createdAt;
+  return new Date(localUpdatedAt) > new Date(remoteUpdatedAt) ? localTask : remoteTask;
 }
 
 export function mergeSyncDocuments(
@@ -207,8 +246,13 @@ export function mergeSyncDocuments(
       }
     }
 
+    if (!base && localTask && remoteTask) {
+      mergedTasks.push(chooseWithoutBase(localTask, remoteTask));
+      continue;
+    }
+
     if (localTask && remoteTask && localChanged && remoteChanged) {
-      if (JSON.stringify(localTask) === JSON.stringify(remoteTask)) {
+      if (JSON.stringify(comparableTask(localTask)) === JSON.stringify(comparableTask(remoteTask))) {
         mergedTasks.push(localTask);
       } else {
         mergedTasks.push(remoteTask);
