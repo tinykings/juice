@@ -15,7 +15,7 @@ interface SettingsModalProps {
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
   const { theme, toggleTheme } = useTheme();
-  const { loadFromGist } = useTasks();
+  const { loadFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
   const [token, setToken] = useState(gistSettings.githubToken);
@@ -29,6 +29,29 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setToken(gistSettings.githubToken);
     }
   }, [isOpen, gistSettings.gistId, gistSettings.githubToken]);
+
+  const syncLabel = !isGistConfigured
+    ? 'Auto-sync disabled'
+    : syncStatus === 'syncing'
+      ? 'Syncing...'
+      : syncStatus === 'error'
+        ? 'Sync error'
+        : syncStatus === 'conflict'
+          ? 'Conflict preserved'
+          : 'Auto-sync enabled';
+  const syncDotColor = !isGistConfigured
+    ? 'var(--muted)'
+    : syncStatus === 'error'
+      ? 'var(--red)'
+      : syncStatus === 'conflict'
+        ? 'var(--accent)'
+        : 'var(--green)';
+  const syncDescription = syncError
+    ?? (syncStatus === 'conflict'
+      ? 'Two devices edited the same task, so Juice kept both versions.'
+      : lastSyncedAt
+        ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
+        : 'Tasks will automatically sync to your Gist when changed.');
 
   if (!isOpen) return null;
 
@@ -420,15 +443,15 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 width: 10,
                 height: 10,
                 borderRadius: '50%',
-                background: isGistConfigured ? 'var(--green)' : 'var(--muted)',
+                background: syncDotColor,
               }} />
               <span style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 650 }}>
-                {isGistConfigured ? 'Auto-sync enabled' : 'Auto-sync disabled'}
+                {syncLabel}
               </span>
             </div>
             {isGistConfigured && (
               <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.45 }}>
-                Tasks will automatically sync to your Gist when changed.
+                {syncDescription}
               </p>
             )}
           </div>
@@ -438,4 +461,3 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     </div>
   );
 }
-

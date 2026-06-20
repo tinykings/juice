@@ -1,18 +1,30 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useEffect, useState, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDays, addWeeks, addMonths, addYears, format, startOfDay } from 'date-fns';
+import { addDays, addMonths, addWeeks, addYears, format, startOfDay } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSettings } from '@/context/SettingsContext';
-import { saveTasksToGist, loadTasksFromGist } from '@/services/gistSync';
+import {
+  createSyncDocument,
+  loadSyncDocumentFromGist,
+  mergeSyncDocuments,
+  saveSyncDocumentToGist,
+  syncDocumentContentEquals,
+  SyncDocument,
+  TaskTombstone,
+} from '@/services/gistSync';
 
 const DEV = process.env.NODE_ENV !== 'production';
+const LAST_SYNC_DOCUMENT_KEY = 'juice-last-sync-document';
+
+type SyncStatus = 'idle' | 'syncing' | 'error' | 'conflict';
+type TombstoneMap = Record<string, TaskTombstone>;
 
 interface TaskContextType {
   tasks: Task[];
-  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'completed' | 'completedAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'conflictOf' | 'completed' | 'completedAt'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   completeTask: (id: string) => void;
@@ -24,6 +36,9 @@ interface TaskContextType {
   syncFromGist: () => Promise<void>;
   isLoaded: boolean;
   isSyncing: boolean;
+  syncStatus: SyncStatus;
+  syncError: string | null;
+  lastSyncedAt: string | null;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
@@ -47,434 +62,245 @@ function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceTy
 function cleanupCompletedTasksFromPreviousDays(taskList: Task[]): Task[] {
   const today = startOfDay(new Date());
   return taskList.filter((task) => {
+    if (task.deletedAt) return false;
     if (!task.completed || !task.completedAt) return true;
     return new Date(task.completedAt) >= today;
   });
 }
 
+function normalizeTask(task: Task, fallbackTime = new Date().toISOString()): Task {
+  return {
+    ...task,
+    notes: task.notes ?? '',
+    tags: task.tags ?? [],
+    completedAt: task.completedAt ?? null,
+    updatedAt: task.updatedAt ?? task.createdAt ?? fallbackTime,
+    deletedAt: task.deletedAt ?? null,
+  };
+}
+
+function tombstonesFromMap(map: TombstoneMap): TaskTombstone[] {
+  return Object.values(map);
+}
+
+function mapFromTombstones(tombstones: TaskTombstone[]): TombstoneMap {
+  return Object.fromEntries(tombstones.map((tombstone) => [tombstone.id, tombstone]));
+}
+
+function loadLastSyncDocument(): SyncDocument | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const item = window.localStorage.getItem(LAST_SYNC_DOCUMENT_KEY);
+    return item ? (JSON.parse(item) as SyncDocument) : null;
+  } catch (error) {
+    console.error('Error reading last sync document:', error);
+    return null;
+  }
+}
+
+function saveLastSyncDocument(document: SyncDocument) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(LAST_SYNC_DOCUMENT_KEY, JSON.stringify(document));
+}
+
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useLocalStorage<Task[]>('juice-tasks', []);
+  const [tombstones, setTombstones] = useLocalStorage<TombstoneMap>('juice-task-tombstones', {});
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const { gistSettings, isGistConfigured } = useSettings();
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSyncedRef = useRef<string>('');
-  const hasLoadedFromGistRef = useRef(false);
-  const isLoadingFromGistRef = useRef(false);
-  const isSyncingToGistRef = useRef(false);
-  const syncFromGistTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousGistIdRef = useRef<string>('');
-  const hasRunMountEffectRef = useRef(false);
-  const syncFromGistGenerationRef = useRef(0);
+  const baseSyncDocumentRef = useRef<SyncDocument | null>(null);
+  const isSyncingRef = useRef(false);
+  const isApplyingSyncRef = useRef(false);
+  const performSyncRef = useRef<() => Promise<void>>(async () => {});
+  const tasksRef = useRef(tasks);
+  const tombstonesRef = useRef(tombstones);
 
-  // Function to load from Gist (debounced to prevent overwriting new tasks)
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  useEffect(() => {
+    tombstonesRef.current = tombstones;
+  }, [tombstones]);
+
+  const buildLocalDocument = useCallback((taskList = tasks, tombstoneMap = tombstones) => {
+    return createSyncDocument(
+      cleanupCompletedTasksFromPreviousDays(taskList).map((task) => normalizeTask(task)),
+      tombstonesFromMap(tombstoneMap)
+    );
+  }, [tasks, tombstones]);
+
+  const applySyncedDocument = useCallback((document: SyncDocument) => {
+    isApplyingSyncRef.current = true;
+
+    const currentDocument = createSyncDocument(tasksRef.current, tombstonesFromMap(tombstonesRef.current), document.updatedAt);
+    if (!syncDocumentContentEquals(currentDocument, document)) {
+      setTasks(cleanupCompletedTasksFromPreviousDays(document.tasks).map((task) => normalizeTask(task)));
+      setTombstones(mapFromTombstones(document.tombstones));
+    }
+
+    baseSyncDocumentRef.current = document;
+    saveLastSyncDocument(document);
+    setLastSyncedAt(document.updatedAt);
+    window.setTimeout(() => {
+      isApplyingSyncRef.current = false;
+    }, 0);
+  }, [setTasks, setTombstones]);
+
+  const performSync = useCallback(async () => {
+    if (!isGistConfigured || isSyncingRef.current) return;
+
+    isSyncingRef.current = true;
+    setIsSyncing(true);
+    setSyncStatus('syncing');
+    setSyncError(null);
+
+    try {
+      const remoteDocument = await loadSyncDocumentFromGist(gistSettings);
+      const localDocument = buildLocalDocument();
+      const baseDocument = baseSyncDocumentRef.current ?? loadLastSyncDocument();
+      const merged = mergeSyncDocuments(localDocument, remoteDocument, baseDocument);
+      const mergedDocument = createSyncDocument(merged.tasks, merged.tombstones, remoteDocument.updatedAt);
+      const shouldSave = !syncDocumentContentEquals(mergedDocument, remoteDocument);
+      const syncedDocument = shouldSave
+        ? createSyncDocument(merged.tasks, merged.tombstones)
+        : remoteDocument;
+
+      if (shouldSave) {
+        await saveSyncDocumentToGist(syncedDocument, gistSettings);
+      }
+
+      applySyncedDocument(syncedDocument);
+      setSyncStatus(merged.conflicts.length > 0 ? 'conflict' : 'idle');
+      if (DEV && merged.conflicts.length > 0) {
+        console.log('Sync preserved conflicts:', merged.conflicts.length);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync tasks';
+      console.error('Failed to sync tasks:', error);
+      setSyncStatus('error');
+      setSyncError(message);
+    } finally {
+      setIsSyncing(false);
+      isSyncingRef.current = false;
+    }
+  }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured]);
+
   const syncFromGist = useCallback(async () => {
-    if (!isGistConfigured || isSyncingToGistRef.current || isLoadingFromGistRef.current) return;
-    
-    // Debounce to prevent too frequent calls
-    if (syncFromGistTimeoutRef.current) {
-      clearTimeout(syncFromGistTimeoutRef.current);
-    }
-    
-    // Set loading flag immediately to block auto-sync during debounce window.
-    // Without this, auto-sync (1s debounce) can fire before syncFromGist (2s debounce)
-    // and write stale local data to the gist.
-    isLoadingFromGistRef.current = true;
-    
-    // Clear any pending auto-save to prevent stale writes after syncFromGist
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current);
-      syncTimeoutRef.current = null;
-    }
-    syncFromGistGenerationRef.current += 1;
-    
-    syncFromGistTimeoutRef.current = setTimeout(async () => {
-      // Double-check we're not syncing to Gist before proceeding
-      if (isSyncingToGistRef.current) {
-        isLoadingFromGistRef.current = false;
-        return;
-      }
-      
-      try {
-        const gistTasks = await loadTasksFromGist(gistSettings);
-        const gistTasksJson = JSON.stringify(gistTasks);
-        
-        // Only update if Gist has different data than what we last synced
-        if (gistTasksJson !== lastSyncedRef.current) {
-          // Remove completed tasks from prior days before setting
-          const cleanedTasks = cleanupCompletedTasksFromPreviousDays(gistTasks);
-          
-          // Merge with current local tasks to preserve any unsynced local changes
-          setTasks((currentLocalTasks) => {
-            // Check again if we're syncing to Gist (race condition protection)
-            if (isSyncingToGistRef.current) {
-              // Don't overwrite if we're in the middle of syncing to Gist
-              return currentLocalTasks;
-            }
-            
-            const currentTasksJson = JSON.stringify(currentLocalTasks);
-            
-            // If local tasks match what we last synced, use Gist as source of truth
-            if (currentTasksJson === lastSyncedRef.current) {
-              lastSyncedRef.current = JSON.stringify(cleanedTasks);
-              localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
-              return cleanedTasks;
-            }
-            
-            // Otherwise, merge: Gist tasks + local tasks that aren't in Gist
-            // Prioritize local tasks that are newer (created more recently)
-            const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
-            const mergedTasks = [...cleanedTasks];
-            for (const localTask of currentLocalTasks) {
-              if (gistTaskIds.has(localTask.id)) {
-                // Task exists in both - check if local is newer
-                const gistTask = cleanedTasks.find(t => t.id === localTask.id);
-                if (gistTask && new Date(localTask.createdAt) > new Date(gistTask.createdAt)) {
-                  // Local task is newer, replace the Gist version
-                  const index = mergedTasks.findIndex(t => t.id === localTask.id);
-                  if (index !== -1) {
-                    mergedTasks[index] = localTask;
-                  }
-                }
-              } else {
-                // New local task not in Gist - add it
-                mergedTasks.push(localTask);
-              }
-            }
-            
-            // Don't update lastSyncedRef yet since we have unsynced local changes
-            return mergedTasks;
-          });
-          
-          DEV && console.log('Synced tasks from Gist');
-        }
-      } catch (error) {
-        console.error('Failed to sync from Gist:', error);
-      } finally {
-        isLoadingFromGistRef.current = false;
-      }
-    }, 2000); // 2 second debounce to allow local changes to sync first
-  }, [isGistConfigured, gistSettings, setTasks]);
+    await performSync();
+  }, [performSync]);
 
-  // Load from Gist on mount if configured - only on initial mount or when Gist ID actually changes
   useEffect(() => {
-    // Prevent multiple simultaneous loads
-    if (isLoadingFromGistRef.current) return;
-    
-    // Get current Gist ID for comparison
-    const currentGistId = gistSettings.gistId || '';
-    
-    // Only run if:
-    // 1. This is the first time (hasRunMountEffectRef is false), OR
-    // 2. The Gist ID actually changed (not just object reference)
-    const shouldRun = !hasRunMountEffectRef.current || 
-                     (previousGistIdRef.current !== currentGistId && currentGistId !== '');
-    
-    if (!shouldRun) {
-      // If Gist not configured and we haven't loaded yet, mark as loaded
-      if (!isGistConfigured && !hasLoadedFromGistRef.current) {
-        setIsLoaded(true);
-        hasLoadedFromGistRef.current = true;
-      }
-      return;
-    }
-    
-    const loadFromGistOnMount = async () => {
-      if (!isGistConfigured) {
-        // If Gist not configured, just use local storage
-        setIsLoaded(true);
-        setIsSyncing(false);
-        hasLoadedFromGistRef.current = true; // Allow local saves to work
-        previousGistIdRef.current = '';
-        hasRunMountEffectRef.current = true;
-        return;
-      }
+    performSyncRef.current = performSync;
+  }, [performSync]);
 
-      setIsSyncing(true);
-      setIsLoaded(true); // Allow UI to render while Gist syncs in background
-      
-      // Check if this is a Gist ID change (settings update) vs initial mount
-      const isGistIdChange = previousGistIdRef.current !== '' && 
-                             previousGistIdRef.current !== currentGistId;
-      
-      // Update the previous Gist ID and mark that we've run
-      previousGistIdRef.current = currentGistId;
-      hasRunMountEffectRef.current = true;
-      
-      isLoadingFromGistRef.current = true;
-      
-      try {
-        const gistTasks = await loadTasksFromGist(gistSettings);
-        
-        // Remove completed tasks from prior days
-        const cleanedTasks = cleanupCompletedTasksFromPreviousDays(gistTasks);
-        
-        const gistTasksJson = JSON.stringify(cleanedTasks);
-        
-        // Use Gist as source of truth on load, but merge with any local tasks that were added before Gist loaded
-        setTasks((currentLocalTasks) => {
-          // Check if we're syncing to Gist (race condition protection)
-          if (isSyncingToGistRef.current) {
-            // Don't overwrite if we're in the middle of syncing to Gist
-            return currentLocalTasks;
-          }
-          
-          // On page refresh/load, always use Gist as source of truth to respect deletions from other devices
-          // Use persisted last-synced state to distinguish tasks deleted from another device
-          // from tasks that were created locally and never synced to Gist.
-          // Exception: If this is a Gist ID change, we merge instead (handled below)
-          if (!isGistIdChange) {
-            // Load last synced state from localStorage to determine which local tasks
-            // were already synced (and thus safe to discard if absent from Gist) vs.
-            // newly created locally (and need to be preserved).
-            const lastSyncedState = localStorage.getItem('juice-last-synced-state');
-
-            // If no persisted state exists (first run of new code, or cleared storage),
-            // trust Gist as source of truth to prevent stale local data from being written back
-            if (lastSyncedState === null) {
-              DEV && console.log('Page refresh: no persisted state, trusting Gist as source of truth');
-              lastSyncedRef.current = gistTasksJson;
-              localStorage.setItem('juice-last-synced-state', gistTasksJson);
-              return cleanedTasks;
-            }
-
-            const lastSyncedTasks: Task[] = JSON.parse(lastSyncedState);
-            const lastSyncedIds = new Set(lastSyncedTasks.map(t => t.id));
-            
-            // Use Gist as source of truth, but preserve local tasks that were never synced
-            const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
-            const finalTasks = [...cleanedTasks];
-            
-            for (const localTask of currentLocalTasks) {
-              if (gistTaskIds.has(localTask.id)) continue; // Already in Gist, use Gist version
-              
-              if (lastSyncedIds.has(localTask.id)) {
-                // Was in last synced state but not in current Gist → deleted from another device
-                // Respect the deletion
-                continue;
-              }
-              
-              // Not in Gist, not in last synced state → new local task, never synced
-              // Preserve it so we don't lose unsynced work
-              finalTasks.push(localTask);
-            }
-            
-            // Clean finalTasks before storing lastSyncedRef so the auto-save effect's
-            // cleanupCompletedTasksFromPreviousDays pass won't detect a spurious mismatch
-            const cleanedFinalTasks = cleanupCompletedTasksFromPreviousDays(finalTasks);
-            DEV && console.log('Page refresh: using Gist as source of truth', cleanedTasks.length, 'tasks from Gist,', cleanedFinalTasks.length - cleanedTasks.length, 'local tasks preserved');
-            lastSyncedRef.current = JSON.stringify(cleanedFinalTasks);
-            localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
-            return cleanedFinalTasks;
-          }
-          
-          // If settings changed (Gist ID change), merge to preserve local tasks
-          if (isGistIdChange) {
-            DEV && console.log('Gist ID changed: merging to preserve local tasks', currentLocalTasks.length, 'local tasks');
-            const gistTaskIds = new Set(cleanedTasks.map(t => t.id));
-            const mergedTasks = [...cleanedTasks];
-            
-            for (const localTask of currentLocalTasks) {
-              if (gistTaskIds.has(localTask.id)) {
-                // Task exists in both - check if local is newer
-                const gistTask = cleanedTasks.find(t => t.id === localTask.id);
-                if (gistTask && new Date(localTask.createdAt) > new Date(gistTask.createdAt)) {
-                  // Local task is newer, replace the Gist version
-                  const index = mergedTasks.findIndex(t => t.id === localTask.id);
-                  if (index !== -1) {
-                    mergedTasks[index] = localTask;
-                  }
-                }
-              } else {
-                // New local task not in Gist - add it
-                mergedTasks.push(localTask);
-              }
-            }
-            
-            DEV && console.log('Merged tasks:', mergedTasks.length, 'total (', cleanedTasks.length, 'from Gist,', mergedTasks.length - cleanedTasks.length, 'local)');
-            return mergedTasks;
-          }
-          
-          // Fallback: shouldn't reach here, but use Gist as source of truth
-          DEV && console.log('Fallback: using Gist as source of truth', cleanedTasks.length, 'tasks');
-          lastSyncedRef.current = gistTasksJson;
-          localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
-          return cleanedTasks;
-        });
-        
-        DEV && console.log('Loaded tasks from Gist on mount');
-        hasLoadedFromGistRef.current = true;
-      } catch (error) {
-        console.error('Failed to load from Gist on mount:', error);
-        // Protect against auto-save pushing stale localStorage data to Gist by marking
-        // the current state as synced. This prevents the auto-save effect from detecting
-        // a mismatch and overwriting Gist with possibly stale local data.
-        const currentTasksJson = JSON.stringify(cleanupCompletedTasksFromPreviousDays(tasks));
-        lastSyncedRef.current = currentTasksJson;
-        localStorage.setItem('juice-last-synced-state', currentTasksJson);
-        hasLoadedFromGistRef.current = true;
-      } finally {
-        isLoadingFromGistRef.current = false;
-        setIsLoaded(true);
-        setIsSyncing(false);
-      }
-    };
-
-    loadFromGistOnMount();
-  }, [isGistConfigured, gistSettings, setTasks]);
-
-
-  // Auto-sync to gist when tasks change (but not on initial load from Gist)
   useEffect(() => {
-    if (!isLoaded || !isGistConfigured || !hasLoadedFromGistRef.current) {
-      DEV && console.log('Auto-sync skipped:', { isLoaded, isGistConfigured, hasLoadedFromGist: hasLoadedFromGistRef.current });
+    baseSyncDocumentRef.current = loadLastSyncDocument();
+
+    if (!isGistConfigured) {
+      setIsLoaded(true);
       return;
     }
-    
-    // Remove completed tasks from prior days before syncing
-    const cleanedTasks = cleanupCompletedTasksFromPreviousDays(tasks);
-    
-    const tasksJson = JSON.stringify(cleanedTasks);
-    // Skip if nothing changed
-    if (tasksJson === lastSyncedRef.current) {
-      DEV && console.log('Auto-sync skipped: no changes');
-      return;
-    }
-    
-    // Skip if we're currently loading from Gist (to avoid race conditions)
-    if (isLoadingFromGistRef.current) {
-      DEV && console.log('Auto-sync skipped: loading from Gist');
-      return;
-    }
-    
-    DEV && console.log('Auto-sync triggered:', cleanedTasks.length, 'tasks (after cleanup), syncing in 1 second...');
-    
-    // Debounce the sync
+
+    setIsLoaded(true);
+    void performSyncRef.current();
+  }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
+
+  useEffect(() => {
+    if (!isLoaded || !isGistConfigured || isApplyingSyncRef.current) return;
+
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
-    
-    // Capture the cleaned tasks for the sync
-    const tasksToSync = cleanedTasks;
-    const tasksJsonToSync = tasksJson;
-    const generationAtSchedule = syncFromGistGenerationRef.current;
-    
-    syncTimeoutRef.current = setTimeout(async () => {
-      // If syncFromGist has run since this was scheduled, skip stale write
-      if (generationAtSchedule !== syncFromGistGenerationRef.current) {
-        DEV && console.log('Auto-sync skipped: syncFromGist invalidated pending write');
-        return;
-      }
-      
-      // Double-check we're not loading from Gist before syncing
-      if (isLoadingFromGistRef.current) {
-        DEV && console.log('Auto-sync: waiting for Gist load to complete...');
-        // Wait a bit and try again
-        await new Promise(resolve => setTimeout(resolve, 500));
-        if (isLoadingFromGistRef.current) {
-          // Still loading, skip this sync - it will retry on next change
-          DEV && console.log('Auto-sync: still loading, skipping');
-          return;
-        }
-      }
-      
-      isSyncingToGistRef.current = true;
-      try {
-        DEV && console.log('Syncing', tasksToSync.length, 'tasks to Gist...');
-        await saveTasksToGist(tasksToSync, gistSettings);
-        lastSyncedRef.current = tasksJsonToSync;
-        localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
-        DEV && console.log('Tasks synced to Gist successfully');
-      } catch (error) {
-        console.error('Failed to sync to Gist:', error);
-      } finally {
-        isSyncingToGistRef.current = false;
-      }
-    }, 1000); // 1 second debounce
-    
+
+    syncTimeoutRef.current = setTimeout(() => {
+      void performSync();
+    }, 1000);
+
     return () => {
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
     };
-  }, [tasks, isLoaded, isGistConfigured, gistSettings]);
+  }, [tasks, tombstones, isLoaded, isGistConfigured, performSync]);
 
   const loadFromGist = useCallback((loadedTasks: Task[]) => {
-    const cleanedTasks = cleanupCompletedTasksFromPreviousDays(loadedTasks);
-    lastSyncedRef.current = JSON.stringify(cleanedTasks);
-    localStorage.setItem('juice-last-synced-state', lastSyncedRef.current);
-    setTasks(cleanedTasks);
-  }, [setTasks]);
+    const document = createSyncDocument(cleanupCompletedTasksFromPreviousDays(loadedTasks));
+    applySyncedDocument(document);
+  }, [applySyncedDocument]);
 
-  const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'completed' | 'completedAt'>) => {
+  const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'conflictOf' | 'completed' | 'completedAt'>) => {
+    const now = new Date().toISOString();
     const newTask: Task = {
       ...taskData,
       id: uuidv4(),
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       completed: false,
       completedAt: null,
+      deletedAt: null,
     };
-    DEV && console.log('Adding new task:', newTask);
-    
-    setTasks((prev) => {
-      // Clean up completed tasks from prior days when adding a new task
-      const cleaned = cleanupCompletedTasksFromPreviousDays(prev);
-      
-      if (cleaned.length < prev.length) {
-        DEV && console.log(`Cleaned up ${prev.length - cleaned.length} old completed tasks from prior days`);
-      }
-      
-      const updated = [...cleaned, newTask];
-      DEV && console.log('Tasks after adding:', updated.length, 'tasks');
-      return updated;
-    });
+
+    setTasks((prev) => [...cleanupCompletedTasksFromPreviousDays(prev), newTask]);
   }, [setTasks]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
+    const now = new Date().toISOString();
     setTasks((prev) =>
-      prev.map((task) => (task.id === id ? { ...task, ...updates } : task))
+      prev.map((task) => (
+        task.id === id
+          ? normalizeTask({ ...task, ...updates, updatedAt: now })
+          : task
+      ))
     );
   }, [setTasks]);
 
   const deleteTask = useCallback((id: string) => {
-    DEV && console.log('Deleting task:', id);
-    setTasks((prev) => {
-      const updated = prev.filter((task) => task.id !== id);
-      DEV && console.log('Tasks after delete:', updated.length, 'tasks (was', prev.length, ')');
-      return updated;
-    });
-  }, [setTasks]);
+    const now = new Date().toISOString();
+    setTombstones((prev) => ({
+      ...prev,
+      [id]: { id, deletedAt: now, updatedAt: now },
+    }));
+    setTasks((prev) => prev.filter((task) => task.id !== id));
+  }, [setTasks, setTombstones]);
 
   const completeTask = useCallback((id: string) => {
+    const now = new Date().toISOString();
     setTasks((prev) => {
-      const taskIndex = prev.findIndex((t) => t.id === id);
+      const taskIndex = prev.findIndex((task) => task.id === id);
       if (taskIndex === -1) return prev;
 
       const task = prev[taskIndex];
       const updatedTasks = [...prev];
-      
-      // Mark current task as completed
-      updatedTasks[taskIndex] = {
+
+      updatedTasks[taskIndex] = normalizeTask({
         ...task,
         completed: true,
-        completedAt: new Date().toISOString(),
-      };
+        completedAt: now,
+        updatedAt: now,
+      });
 
-      // If recurring, create a new task with next due date
       if (task.isRecurring && task.recurrenceType) {
-        const newTask: Task = {
+        updatedTasks.push({
           id: uuidv4(),
           title: task.title,
           notes: '',
           dueDate: getNextRecurrenceDate(task.dueDate, task.recurrenceType),
           completed: false,
           completedAt: null,
-          createdAt: new Date().toISOString(),
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
           isRecurring: true,
           recurrenceType: task.recurrenceType,
           tags: task.tags,
-        };
-        updatedTasks.push(newTask);
+        });
       }
 
       return updatedTasks;
@@ -482,10 +308,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [setTasks]);
 
   const uncompleteTask = useCallback((id: string) => {
+    const now = new Date().toISOString();
     setTasks((prev) =>
       prev.map((task) =>
         task.id === id
-          ? { ...task, completed: false, completedAt: null }
+          ? normalizeTask({ ...task, completed: false, completedAt: null, updatedAt: now })
           : task
       )
     );
@@ -495,7 +322,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
     return tasks.filter((task) => {
-      if (!task.dueDate) return false;
+      if (task.deletedAt || !task.dueDate) return false;
       const taskDate = format(new Date(task.dueDate), 'yyyy-MM-dd');
       return taskDate <= todayStr && !task.completed;
     });
@@ -505,21 +332,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const today = startOfDay(new Date());
     const todayStr = format(today, 'yyyy-MM-dd');
     return tasks.filter((task) => {
-      if (!task.dueDate) return false;
+      if (task.deletedAt || !task.dueDate) return false;
       const taskDate = format(new Date(task.dueDate), 'yyyy-MM-dd');
       return taskDate > todayStr && !task.completed;
     }).sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }, [tasks]);
 
-  // Get all completed tasks from today
   const getCompletedTasks = useCallback(() => {
     const today = startOfDay(new Date());
     return tasks
-      .filter((task) => task.completed && task.completedAt && new Date(task.completedAt) >= today)
+      .filter((task) => !task.deletedAt && task.completed && task.completedAt && new Date(task.completedAt) >= today)
       .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
   }, [tasks]);
 
-  // Sync from Gist when app comes into focus and clean up completed tasks once the day changes
   useEffect(() => {
     const cleanupNow = () => {
       setTasks((currentTasks) => cleanupCompletedTasksFromPreviousDays(currentTasks));
@@ -539,22 +364,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     const handleFocus = () => {
-      if (document.visibilityState === 'visible') {
-        // Sync from Gist to get latest updates (sets isLoadingFromGistRef to block auto-sync writes)
-        if (isGistConfigured) {
-          syncFromGist();
-        }
+      if (document.visibilityState !== 'visible') return;
 
-        // Clean up completed tasks from prior days
-        const lastCleanup = localStorage.getItem('juice-last-completed-cleanup');
-        const now = new Date();
-        const today = startOfDay(now);
+      if (isGistConfigured) {
+        void syncFromGist();
+      }
 
-        const shouldCleanup = !lastCleanup || startOfDay(new Date(lastCleanup)) < today;
-        
-        if (shouldCleanup) {
-          cleanupNow();
-        }
+      const lastCleanup = localStorage.getItem('juice-last-completed-cleanup');
+      const now = new Date();
+      const today = startOfDay(now);
+      const shouldCleanup = !lastCleanup || startOfDay(new Date(lastCleanup)) < today;
+
+      if (shouldCleanup) {
+        cleanupNow();
       }
     };
 
@@ -574,7 +396,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   return (
     <TaskContext.Provider
       value={{
-        tasks,
+        tasks: tasks.filter((task) => !task.deletedAt),
         addTask,
         updateTask,
         deleteTask,
@@ -587,6 +409,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         syncFromGist,
         isLoaded,
         isSyncing,
+        syncStatus,
+        syncError,
+        lastSyncedAt,
       }}
     >
       {children}

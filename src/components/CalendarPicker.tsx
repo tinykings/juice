@@ -35,10 +35,13 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   // Detect coarse pointer (touch devices) to use native picker
   useEffect(() => {
     const mq = window.matchMedia('(pointer: coarse)');
-    setUseNative(mq.matches);
+    const timer = window.setTimeout(() => setUseNative(mq.matches), 0);
     const handler = (e: MediaQueryListEvent) => setUseNative(e.matches);
     mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
+    return () => {
+      window.clearTimeout(timer);
+      mq.removeEventListener('change', handler);
+    };
   }, []);
 
   // Close on outside click
@@ -67,7 +70,10 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   // Sync viewMonth when value changes externally
   useEffect(() => {
     if (value) {
-      setViewMonth(startOfMonth(parse(value, 'yyyy-MM-dd', new Date())));
+      const timer = window.setTimeout(() => {
+        setViewMonth(startOfMonth(parse(value, 'yyyy-MM-dd', new Date())));
+      }, 0);
+      return () => window.clearTimeout(timer);
     }
   }, [value]);
 

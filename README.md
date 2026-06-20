@@ -34,9 +34,9 @@ By default, tasks are saved to `localStorage` in your browser. To sync between d
 
 1. Create a [GitHub personal access token](https://github.com/settings/tokens) with the `gist` scope
 2. Open **Settings** in the app
-3. Paste your token and either create a new Gist or paste an existing Gist ID
+3. Create a private Gist with a `juice-tasks.json` file, then paste its Gist ID and your token in Settings
 
-The app syncs automatically 1 second after changes and whenever the tab regains focus. Conflict resolution uses timestamps — the Gist is treated as the source of truth on first load, with very recent local changes (under 5 seconds old) preserved.
+The app syncs automatically 1 second after changes and whenever the tab regains focus. Sync pulls the latest Gist data before saving, preserves deletes across devices, and keeps both versions when two devices edit the same task before syncing.
 
 Completed tasks from previous days are deleted automatically once a new day starts.
 

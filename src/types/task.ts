@@ -8,6 +8,9 @@ export interface Task {
   completed: boolean;
   completedAt: string | null;
   createdAt: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  conflictOf?: string;
   isRecurring: boolean;
   recurrenceType: RecurrenceType;
   tags: string[];
@@ -18,4 +21,3 @@ export interface TaskGroup {
   date: string;
   tasks: Task[];
 }
-

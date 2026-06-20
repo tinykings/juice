@@ -47,7 +47,8 @@ export default function HomePage() {
   const inlineCloseTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => setMounted(true), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export default function HomePage() {
     return () => window.clearTimeout(timer);
   }, [view, showSplitView]);
 
-  const todayTaskCount = useMemo(() => getTodayTasks().length, [getTodayTasks, currentDate]);
+  const todayTaskCount = getTodayTasks().length;
   useAppBadge(todayTaskCount, badgeEnabled);
   // Callback ref to focus search input immediately when mounted (preserves user gesture for mobile keyboards)
   const searchInputRef = useCallback((node: HTMLInputElement | null) => {
@@ -452,7 +453,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openInlineTaskForm]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openInlineTaskForm, view]);
 
   if (newTaskUrlMode === 'pending' || (newTaskUrlMode !== 'off' && !isLoaded)) {
     return (
