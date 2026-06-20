@@ -120,7 +120,7 @@ export function createSyncDocument(
   };
 }
 
-function comparableSyncContent(document: SyncDocument): string {
+export function syncDocumentContentKey(document: SyncDocument): string {
   return JSON.stringify({
     tasks: document.tasks
       .map(comparableTask)
@@ -132,7 +132,7 @@ function comparableSyncContent(document: SyncDocument): string {
 }
 
 export function syncDocumentContentEquals(a: SyncDocument, b: SyncDocument): boolean {
-  return comparableSyncContent(a) === comparableSyncContent(b);
+  return syncDocumentContentKey(a) === syncDocumentContentKey(b);
 }
 
 function taskChangedSinceBase(task: Task | undefined, baseTask: Task | undefined): boolean {

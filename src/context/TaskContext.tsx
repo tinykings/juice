@@ -11,6 +11,7 @@ import {
   loadSyncDocumentFromGist,
   mergeSyncDocuments,
   saveSyncDocumentToGist,
+  syncDocumentContentKey,
   syncDocumentContentEquals,
   SyncDocument,
   TaskTombstone,
@@ -118,6 +119,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const isSyncingRef = useRef(false);
   const isApplyingSyncRef = useRef(false);
   const performSyncRef = useRef<() => Promise<void>>(async () => {});
+  const lastSyncedContentKeyRef = useRef<string | null>(null);
   const tasksRef = useRef(tasks);
   const tombstonesRef = useRef(tombstones);
 
@@ -146,6 +148,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
 
     baseSyncDocumentRef.current = document;
+    lastSyncedContentKeyRef.current = syncDocumentContentKey(document);
     saveLastSyncDocument(document);
     setLastSyncedAt(document.updatedAt);
     window.setTimeout(() => {
@@ -201,7 +204,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [performSync]);
 
   useEffect(() => {
-    baseSyncDocumentRef.current = loadLastSyncDocument();
+    const lastSyncDocument = loadLastSyncDocument();
+    baseSyncDocumentRef.current = lastSyncDocument;
+    lastSyncedContentKeyRef.current = lastSyncDocument
+      ? syncDocumentContentKey(lastSyncDocument)
+      : null;
 
     if (!isGistConfigured) {
       setIsLoaded(true);
@@ -214,6 +221,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoaded || !isGistConfigured || isApplyingSyncRef.current) return;
+
+    const localDocument = createSyncDocument(tasks, tombstonesFromMap(tombstones));
+    if (syncDocumentContentKey(localDocument) === lastSyncedContentKeyRef.current) {
+      return;
+    }
 
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
