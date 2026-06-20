@@ -120,6 +120,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const isApplyingSyncRef = useRef(false);
   const performSyncRef = useRef<() => Promise<void>>(async () => {});
   const lastSyncedContentKeyRef = useRef<string | null>(null);
+  const hasPendingLocalSyncRef = useRef(false);
   const tasksRef = useRef(tasks);
   const tombstonesRef = useRef(tombstones);
 
@@ -137,6 +138,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       tombstonesFromMap(tombstoneMap)
     );
   }, [tasks, tombstones]);
+
+  const markLocalChange = useCallback(() => {
+    hasPendingLocalSyncRef.current = true;
+  }, []);
 
   const applySyncedDocument = useCallback((document: SyncDocument) => {
     isApplyingSyncRef.current = true;
@@ -156,12 +161,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }, 0);
   }, [setTasks, setTombstones]);
 
-  const performSync = useCallback(async () => {
+  const performSync = useCallback(async (showStatus = true) => {
     if (!isGistConfigured || isSyncingRef.current) return;
 
     isSyncingRef.current = true;
-    setIsSyncing(true);
-    setSyncStatus('syncing');
+    if (showStatus) {
+      setIsSyncing(true);
+      setSyncStatus('syncing');
+    }
     setSyncError(null);
 
     try {
@@ -180,6 +187,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       }
 
       applySyncedDocument(syncedDocument);
+      hasPendingLocalSyncRef.current = false;
       setSyncStatus(merged.conflicts.length > 0 ? 'conflict' : 'idle');
       if (DEV && merged.conflicts.length > 0) {
         console.log('Sync preserved conflicts:', merged.conflicts.length);
@@ -190,13 +198,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       setSyncStatus('error');
       setSyncError(message);
     } finally {
-      setIsSyncing(false);
+      if (showStatus) {
+        setIsSyncing(false);
+      }
       isSyncingRef.current = false;
     }
   }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured]);
 
   const syncFromGist = useCallback(async () => {
-    await performSync();
+    await performSync(false);
   }, [performSync]);
 
   useEffect(() => {
@@ -222,8 +232,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoaded || !isGistConfigured || isApplyingSyncRef.current) return;
 
+    if (!hasPendingLocalSyncRef.current) return;
+
     const localDocument = createSyncDocument(tasks, tombstonesFromMap(tombstones));
     if (syncDocumentContentKey(localDocument) === lastSyncedContentKeyRef.current) {
+      hasPendingLocalSyncRef.current = false;
       return;
     }
 
@@ -248,6 +261,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [applySyncedDocument]);
 
   const addTask = useCallback((taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'conflictOf' | 'completed' | 'completedAt'>) => {
+    markLocalChange();
     const now = new Date().toISOString();
     const newTask: Task = {
       ...taskData,
@@ -260,9 +274,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     setTasks((prev) => [...cleanupCompletedTasksFromPreviousDays(prev), newTask]);
-  }, [setTasks]);
+  }, [markLocalChange, setTasks]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
+    markLocalChange();
     const now = new Date().toISOString();
     setTasks((prev) =>
       prev.map((task) => (
@@ -271,18 +286,20 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           : task
       ))
     );
-  }, [setTasks]);
+  }, [markLocalChange, setTasks]);
 
   const deleteTask = useCallback((id: string) => {
+    markLocalChange();
     const now = new Date().toISOString();
     setTombstones((prev) => ({
       ...prev,
       [id]: { id, deletedAt: now, updatedAt: now },
     }));
     setTasks((prev) => prev.filter((task) => task.id !== id));
-  }, [setTasks, setTombstones]);
+  }, [markLocalChange, setTasks, setTombstones]);
 
   const completeTask = useCallback((id: string) => {
+    markLocalChange();
     const now = new Date().toISOString();
     setTasks((prev) => {
       const taskIndex = prev.findIndex((task) => task.id === id);
@@ -317,9 +334,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       return updatedTasks;
     });
-  }, [setTasks]);
+  }, [markLocalChange, setTasks]);
 
   const uncompleteTask = useCallback((id: string) => {
+    markLocalChange();
     const now = new Date().toISOString();
     setTasks((prev) =>
       prev.map((task) =>
@@ -328,7 +346,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           : task
       )
     );
-  }, [setTasks]);
+  }, [markLocalChange, setTasks]);
 
   const getTodayTasks = useCallback(() => {
     const today = startOfDay(new Date());

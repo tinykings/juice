@@ -1,4 +1,4 @@
-const CACHE_NAME = 'juice-v12.5';
+const CACHE_NAME = 'juice-v12.6';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -40,7 +40,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+function cacheResponse(request, response) {
+  if (!response.ok) return;
+  const responseClone = response.clone();
+  caches.open(CACHE_NAME).then((cache) => {
+    cache.put(request, responseClone);
+  });
+}
+
+function isNavigationOrHtmlRequest(request) {
+  return request.mode === 'navigate' ||
+    request.headers.get('accept')?.includes('text/html');
+}
+
+// Fetch event - network-first for app shell, stale-while-revalidate for static assets
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
@@ -48,17 +61,27 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests (like Gist API)
   if (!event.request.url.startsWith(self.location.origin)) return;
 
+  if (isNavigationOrHtmlRequest(event.request)) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        cacheResponse(event.request, response);
+        return response;
+      }).catch(() => {
+        return caches.match(event.request)
+          .then((cachedResponse) => cachedResponse || caches.match('./index.html'))
+          .then((fallback) => fallback || new Response('Offline', { status: 503 }));
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       // Return cached response if available
       if (cachedResponse) {
         // Fetch and update cache in background
         fetch(event.request).then((response) => {
-          if (response.ok) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, response);
-            });
-          }
+          cacheResponse(event.request, response);
         }).catch(() => {});
         return cachedResponse;
       }
@@ -66,18 +89,9 @@ self.addEventListener('fetch', (event) => {
       // Otherwise fetch from network
       return fetch(event.request).then((response) => {
         // Cache successful responses
-        if (response.ok) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
+        cacheResponse(event.request, response);
         return response;
       }).catch(() => {
-        // Return offline fallback for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
         return new Response('Offline', { status: 503 });
       });
     })

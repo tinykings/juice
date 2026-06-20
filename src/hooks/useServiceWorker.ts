@@ -8,7 +8,7 @@ export function useServiceWorker() {
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register(`${basePath}/sw.js`, { scope: `${basePath}/` })
+        .register(`${basePath}/sw.js`, { scope: `${basePath}/`, updateViaCache: 'none' })
         .then((registration) => {
           console.log('Service Worker registered:', registration.scope);
         })
