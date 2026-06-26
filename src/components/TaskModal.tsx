@@ -8,8 +8,8 @@ import CalendarPicker from './CalendarPicker';
 import ConfirmCompleteDialog from './ConfirmCompleteDialog';
 import { findDateWord, removeDateWord, DateWordMatch } from '@/utils/dateWords';
 
-export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean }) {
-  const { addTask, updateTask, deleteTask } = useTasks();
+export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false, captureUrlMode = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean, captureUrlMode?: boolean }) {
+  const { addTask, addTaskFromCaptureUrl, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
 
@@ -111,7 +111,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     }
   }, [editTask]);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     let title = titleValue.trim();
@@ -145,6 +145,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
       if (editTask) {
         updateTask(editTask.id, taskData);
+      } else if (captureUrlMode) {
+        await addTaskFromCaptureUrl(taskData);
       } else {
         addTask(taskData);
       }
@@ -160,6 +162,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
       if (editTask) {
         updateTask(editTask.id, taskData);
+      } else if (captureUrlMode) {
+        await addTaskFromCaptureUrl(taskData);
       } else {
         addTask(taskData);
       }
@@ -167,7 +171,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
     onClose();
     if (onSave) onSave();
-  }, [addTask, dueDate, editTask, isRecurring, onClose, onSave, recurrenceType, updateTask, titleValue]);
+  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, isRecurring, onClose, onSave, recurrenceType, updateTask, titleValue]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

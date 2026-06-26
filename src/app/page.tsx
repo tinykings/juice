@@ -54,12 +54,13 @@ export default function HomePage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
-      if (!params.has('newTask')) {
+      const newTaskEntry = Array.from(params.entries()).find(([key]) => key.toLowerCase() === 'newtask');
+      if (!newTaskEntry) {
         setNewTaskUrlMode('off');
         return;
       }
 
-      const value = params.get('newTask')?.toLowerCase();
+      const value = newTaskEntry[1].toLowerCase();
       setNewTaskUrlMode(value === 'someday' ? 'someday' : 'today');
     }, 0);
 
@@ -498,6 +499,7 @@ export default function HomePage() {
                 onClose={() => {}}
                 onSave={() => setHasAddedTaskFromUrl(true)}
                 initialDate={newTaskUrlMode === 'someday' ? '' : null}
+                captureUrlMode
               />
               <button
                 type="button"
