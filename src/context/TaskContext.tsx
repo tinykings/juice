@@ -139,7 +139,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const baseSyncDocumentRef = useRef<SyncDocument | null>(null);
   const isSyncingRef = useRef(false);
   const isApplyingSyncRef = useRef(false);
-  const performSyncRef = useRef<() => Promise<void>>(async () => {});
+  const pullRemoteDocumentRef = useRef<() => Promise<void>>(async () => {});
   const lastSyncedContentKeyRef = useRef<string | null>(null);
   const hasPendingLocalSyncRef = useRef(false);
   const isCaptureUrlRef = useRef(isCaptureUrl());
@@ -154,12 +154,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     tombstonesRef.current = tombstones;
   }, [tombstones]);
 
-  const buildLocalDocument = useCallback((taskList = tasks, tombstoneMap = tombstones) => {
+  const buildLocalDocument = useCallback((taskList = tasksRef.current, tombstoneMap = tombstonesRef.current) => {
     return createSyncDocument(
       cleanupCompletedTasksFromPreviousDays(taskList).map((task) => normalizeTask(task)),
       tombstonesFromMap(tombstoneMap)
     );
-  }, [tasks, tombstones]);
+  }, []);
 
   const markLocalChange = useCallback(() => {
     hasPendingLocalSyncRef.current = true;
@@ -227,13 +227,46 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured]);
 
+  const pullRemoteDocument = useCallback(async (showStatus = true) => {
+    if (!isGistConfigured || isSyncingRef.current) return;
+
+    isSyncingRef.current = true;
+    if (showStatus) {
+      setIsSyncing(true);
+      setSyncStatus('syncing');
+    }
+    setSyncError(null);
+
+    try {
+      const remoteDocument = await loadSyncDocumentFromGist(gistSettings);
+      applySyncedDocument(remoteDocument);
+      hasPendingLocalSyncRef.current = false;
+      setSyncStatus('idle');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync tasks';
+      console.error('Failed to pull tasks from gist:', error);
+      setSyncStatus('error');
+      setSyncError(message);
+    } finally {
+      if (showStatus) {
+        setIsSyncing(false);
+      }
+      isSyncingRef.current = false;
+    }
+  }, [applySyncedDocument, gistSettings, isGistConfigured]);
+
   const syncFromGist = useCallback(async () => {
-    await performSync(false);
-  }, [performSync]);
+    if (hasPendingLocalSyncRef.current) {
+      await performSync(false);
+      return;
+    }
+
+    await pullRemoteDocument(false);
+  }, [performSync, pullRemoteDocument]);
 
   useEffect(() => {
-    performSyncRef.current = performSync;
-  }, [performSync]);
+    pullRemoteDocumentRef.current = pullRemoteDocument;
+  }, [pullRemoteDocument]);
 
   useEffect(() => {
     const lastSyncDocument = loadLastSyncDocument();
@@ -250,7 +283,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setIsLoaded(true);
     if (isCaptureUrlRef.current) return;
 
-    void performSyncRef.current();
+    void pullRemoteDocumentRef.current();
   }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
 
   useEffect(() => {
