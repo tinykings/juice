@@ -22,6 +22,10 @@ interface CalendarViewProps {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MOBILE_BREAKPOINT = 1000;
+const DESKTOP_DAY_MIN_HEIGHT = 150;
+const DESKTOP_COMPRESSED_DAY_MIN_HEIGHT = 28;
+const MOBILE_DAY_MIN_HEIGHT = 88;
+const MOBILE_COMPRESSED_DAY_MIN_HEIGHT = 24;
 
 export default function CalendarView({ tasks, onDaySelect, selectedDate = null }: CalendarViewProps) {
   const [windowWidth, setWindowWidth] = useState(() =>
@@ -116,6 +120,11 @@ function ContinuousCalendar({
 
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [months]);
+  const currentWeekStart = startOfWeek(today).getTime();
+  const compressedWeekRows = useMemo(
+    () => getEmptyPastWeekRows(calendarDays, tasksByDate, currentWeekStart),
+    [calendarDays, tasksByDate, currentWeekStart]
+  );
 
   return (
     <div style={{
@@ -147,6 +156,7 @@ function ContinuousCalendar({
         const isMonthStart = day.getDate() === 1 && inVisibleMonth;
         const row = Math.floor(index / 7) + 2;
         const column = (index % 7) + 1;
+        const isCompressedWeek = compressedWeekRows.has(Math.floor(index / 7));
 
         return (
           <DayCell
@@ -162,6 +172,7 @@ function ContinuousCalendar({
             gridRow={row}
             monthLabel={isMonthStart ? format(day, 'MMMM') : undefined}
             dayKey={key}
+            isCompressedWeek={isCompressedWeek}
           />
         );
       })}
@@ -180,6 +191,7 @@ function DayCell({
   gridRow,
   monthLabel,
   dayKey,
+  isCompressedWeek,
 }: {
   day: Date;
   inVisibleMonth: boolean;
@@ -192,6 +204,7 @@ function DayCell({
   gridRow: number;
   monthLabel?: string;
   dayKey: string;
+  isCompressedWeek: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const isTodayCell = isSameDay(day, today);
@@ -211,8 +224,8 @@ function DayCell({
         flexDirection: 'column',
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
-        padding: '10px 9px',
-        minHeight: 150,
+        padding: isCompressedWeek ? '3px 6px' : '10px 9px',
+        minHeight: isCompressedWeek ? DESKTOP_COMPRESSED_DAY_MIN_HEIGHT : DESKTOP_DAY_MIN_HEIGHT,
         fontSize: 13,
         fontWeight: isActive ? 700 : 500,
         background: isActive
@@ -229,7 +242,7 @@ function DayCell({
         overflow: 'visible',
         gridColumn: `${gridColumn} / ${gridColumn + 1}`,
         gridRow: `${gridRow} / ${gridRow + 1}`,
-        transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
+        transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s, min-height 0.15s',
         opacity: inVisibleMonth ? 1 : 0.55,
       }}>
         <span style={{
@@ -244,11 +257,11 @@ function DayCell({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 24,
-            height: 24,
+            width: isCompressedWeek ? 20 : 24,
+            height: isCompressedWeek ? 16 : 24,
             borderRadius: 'var(--radius-xs)',
             background: isActive ? 'var(--accent-surface)' : 'transparent',
-            fontSize: 13,
+            fontSize: isCompressedWeek ? 12 : 13,
             fontWeight: 750,
           }}>
             {day.getDate()}
@@ -332,6 +345,11 @@ function MobileMonth({
     const calendarEnd = endOfWeek(endOfMonth(month));
     return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [month]);
+  const currentWeekStart = startOfWeek(today).getTime();
+  const compressedWeekRows = useMemo(
+    () => getEmptyPastWeekRows(days, tasksByDate, currentWeekStart),
+    [days, tasksByDate, currentWeekStart]
+  );
 
   return (
     <section>
@@ -386,7 +404,8 @@ function MobileMonth({
           gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
           gap: 6,
         }}>
-          {days.map(day => {
+          {days.map((day, index) => {
+            const weekRow = Math.floor(index / 7);
             const key = format(day, 'yyyy-MM-dd');
             const dayTasks = tasksByDate[key] || [];
             const inMonth = isSameMonth(day, month);
@@ -403,6 +422,7 @@ function MobileMonth({
                 inMonth={inMonth}
                 isActive={isActive}
                 onDaySelect={onDaySelect}
+                isCompressedWeek={compressedWeekRows.has(weekRow)}
               />
             );
           })}
@@ -419,6 +439,7 @@ function MobileDayButton({
   inMonth,
   isActive,
   onDaySelect,
+  isCompressedWeek,
 }: {
   day: Date;
   dayKey: string;
@@ -426,6 +447,7 @@ function MobileDayButton({
   inMonth: boolean;
   isActive: boolean;
   onDaySelect: (date: Date, tasks: Task[]) => void;
+  isCompressedWeek: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const hasTasks = dayTasks.length > 0;
@@ -440,8 +462,8 @@ function MobileDayButton({
       onMouseLeave={() => setIsHovered(false)}
       style={{
         position: 'relative',
-        minHeight: 88,
-        padding: '6px 4px',
+        minHeight: isCompressedWeek ? MOBILE_COMPRESSED_DAY_MIN_HEIGHT : MOBILE_DAY_MIN_HEIGHT,
+        padding: isCompressedWeek ? '3px 2px' : '6px 4px',
         border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border)'}`,
         borderRadius: 'var(--radius-sm)',
         background: isActive ? 'var(--accent-subtle)' : (isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)'),
@@ -454,7 +476,7 @@ function MobileDayButton({
         justifyContent: 'flex-start',
         fontSize: 13,
         fontWeight: isActive ? 750 : 600,
-        transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+        transition: 'background 0.15s, border-color 0.15s, color 0.15s, min-height 0.15s',
       }}
     >
       <span style={{
@@ -515,6 +537,27 @@ function MobileDayButton({
 function getCalendarTaskTitle(task: Task) {
   const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
   return splitTaskTitle(displayTitle || task.title).title;
+}
+
+function getEmptyPastWeekRows(days: Date[], tasksByDate: Record<string, Task[]>, currentWeekStart: number) {
+  const rows = new Set<number>();
+
+  for (let row = 0; row < days.length; row += 7) {
+    const weekDays = days.slice(row, row + 7);
+    if (weekDays.length < 7) continue;
+
+    const weekEndedBeforeCurrentWeek = endOfWeek(weekDays[0]).getTime() < currentWeekStart;
+    const weekHasTasks = weekDays.some(day => {
+      const key = format(day, 'yyyy-MM-dd');
+      return (tasksByDate[key] || []).length > 0;
+    });
+
+    if (weekEndedBeforeCurrentWeek && !weekHasTasks) {
+      rows.add(row / 7);
+    }
+  }
+
+  return rows;
 }
 
 function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boolean }) {
