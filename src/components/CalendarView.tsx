@@ -12,6 +12,7 @@ import {
   isSameDay,
 } from 'date-fns';
 import { Task } from '@/types/task';
+import { splitTaskTitle } from '@/utils/taskTitle';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -513,7 +514,7 @@ function MobileDayButton({
 
 function getCalendarTaskTitle(task: Task) {
   const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
-  return displayTitle || task.title;
+  return splitTaskTitle(displayTitle || task.title).title;
 }
 
 function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boolean }) {
