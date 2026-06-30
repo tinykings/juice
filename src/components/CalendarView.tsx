@@ -451,7 +451,6 @@ function MobileDayButton({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const hasTasks = dayTasks.length > 0;
-  const visibleTasks = dayTasks.slice(0, 2);
 
   return (
     <button
@@ -494,7 +493,7 @@ function MobileDayButton({
           minWidth: 0,
           marginTop: 6,
         }}>
-          {visibleTasks.map(task => (
+          {dayTasks.map(task => (
             <span
               key={task.id}
               style={{
@@ -517,17 +516,6 @@ function MobileDayButton({
               {getCalendarTaskTitle(task)}
             </span>
           ))}
-          {dayTasks.length > visibleTasks.length && (
-            <span style={{
-              color: isActive ? 'var(--accent)' : 'var(--muted)',
-              fontSize: 9,
-              fontWeight: 700,
-              lineHeight: 1,
-              paddingLeft: 2,
-            }}>
-              +{dayTasks.length - visibleTasks.length}
-            </span>
-          )}
         </span>
       )}
     </button>
@@ -571,11 +559,11 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
         display: 'block',
         minWidth: 0,
         width: '100%',
-        color: 'var(--foreground)',
+        color: compact ? 'var(--muted)' : 'var(--foreground)',
         background: compact ? 'rgba(255, 255, 255, 0.035)' : 'var(--task-surface)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-sm)',
-        padding: compact ? '4px 6px' : '9px 10px',
+        padding: compact ? '2px 3px' : '9px 10px',
         lineHeight: 1.25,
         transition: 'background 0.15s, border-color 0.15s',
       }}
@@ -583,10 +571,10 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
       <span style={{ minWidth: 0 }}>
         <span style={{
           display: 'block',
-          color: 'var(--foreground)',
-          fontSize: compact ? 11 : 15,
-          fontWeight: compact ? 650 : 650,
-          lineHeight: compact ? 1.2 : 1.3,
+          color: compact ? 'var(--muted)' : 'var(--foreground)',
+          fontSize: compact ? 9 : 15,
+          fontWeight: 650,
+          lineHeight: compact ? 1.15 : 1.3,
           overflow: 'visible',
           whiteSpace: 'normal',
           overflowWrap: 'anywhere',
