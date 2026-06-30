@@ -585,9 +585,10 @@ function MobileDayButton({
                 fontSize: 9,
                 fontWeight: 650,
                 lineHeight: 1.15,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                whiteSpace: 'normal',
+                overflow: 'visible',
+                overflowWrap: 'anywhere',
+                textAlign: 'left',
               }}
             >
               {getCalendarTaskTitle(task)}
@@ -612,8 +613,7 @@ function MobileDayButton({
 
 function getCalendarTaskTitle(task: Task) {
   const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
-  const titleParts = splitTaskTitle(displayTitle || task.title);
-  return titleParts.title;
+  return displayTitle || task.title;
 }
 
 function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boolean }) {
