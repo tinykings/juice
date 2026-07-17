@@ -139,7 +139,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const baseSyncDocumentRef = useRef<SyncDocument | null>(null);
   const isSyncingRef = useRef(false);
   const isApplyingSyncRef = useRef(false);
-  const pullRemoteDocumentRef = useRef<() => Promise<void>>(async () => {});
+  const performSyncRef = useRef<() => Promise<void>>(async () => {});
   const lastSyncedContentKeyRef = useRef<string | null>(null);
   const hasPendingLocalSyncRef = useRef(false);
   const isCaptureUrlRef = useRef(isCaptureUrl());
@@ -265,8 +265,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [performSync, pullRemoteDocument]);
 
   useEffect(() => {
-    pullRemoteDocumentRef.current = pullRemoteDocument;
-  }, [pullRemoteDocument]);
+    performSyncRef.current = performSync;
+  }, [performSync]);
 
   useEffect(() => {
     const lastSyncDocument = loadLastSyncDocument();
@@ -283,7 +283,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setIsLoaded(true);
     if (isCaptureUrlRef.current) return;
 
-    void pullRemoteDocumentRef.current();
+    // Always merge on startup. A previous sync may have failed before a reload,
+    // leaving local changes that are newer than the last successful sync base.
+    void performSyncRef.current();
   }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
 
   useEffect(() => {
