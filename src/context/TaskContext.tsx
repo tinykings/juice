@@ -71,6 +71,35 @@ function cleanupCompletedTasksFromPreviousDays(taskList: Task[]): Task[] {
   });
 }
 
+function createDocumentWithCompletedCleanup(
+  taskList: Task[],
+  tombstones: TaskTombstone[] = [],
+  updatedAt = new Date().toISOString()
+): SyncDocument {
+  const today = startOfDay(new Date());
+  const cleanupAt = new Date().toISOString();
+  const tombstonesById = new Map(tombstones.map((tombstone) => [tombstone.id, tombstone]));
+
+  for (const task of taskList) {
+    if (!task.completed || !task.completedAt || new Date(task.completedAt) >= today) continue;
+
+    const existing = tombstonesById.get(task.id);
+    if (!existing || new Date(existing.updatedAt) < new Date(cleanupAt)) {
+      tombstonesById.set(task.id, {
+        id: task.id,
+        deletedAt: cleanupAt,
+        updatedAt: cleanupAt,
+      });
+    }
+  }
+
+  return createSyncDocument(
+    cleanupCompletedTasksFromPreviousDays(taskList),
+    Array.from(tombstonesById.values()),
+    updatedAt
+  );
+}
+
 function normalizeTask(task: Task, fallbackTime = new Date().toISOString()): Task {
   return {
     ...task,
@@ -155,8 +184,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [tombstones]);
 
   const buildLocalDocument = useCallback((taskList = tasksRef.current, tombstoneMap = tombstonesRef.current) => {
-    return createSyncDocument(
-      cleanupCompletedTasksFromPreviousDays(taskList).map((task) => normalizeTask(task)),
+    return createDocumentWithCompletedCleanup(
+      taskList.map((task) => normalizeTask(task)),
       tombstonesFromMap(tombstoneMap)
     );
   }, []);
@@ -168,16 +197,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const applySyncedDocument = useCallback((document: SyncDocument) => {
     isApplyingSyncRef.current = true;
 
-    const currentDocument = createSyncDocument(tasksRef.current, tombstonesFromMap(tombstonesRef.current), document.updatedAt);
-    if (!syncDocumentContentEquals(currentDocument, document)) {
-      setTasks(cleanupCompletedTasksFromPreviousDays(document.tasks).map((task) => normalizeTask(task)));
-      setTombstones(mapFromTombstones(document.tombstones));
+    const cleanedDocument = createDocumentWithCompletedCleanup(
+      document.tasks,
+      document.tombstones,
+      document.updatedAt
+    );
+    const currentDocument = createSyncDocument(tasksRef.current, tombstonesFromMap(tombstonesRef.current), cleanedDocument.updatedAt);
+    if (!syncDocumentContentEquals(currentDocument, cleanedDocument)) {
+      setTasks(cleanedDocument.tasks.map((task) => normalizeTask(task)));
+      setTombstones(mapFromTombstones(cleanedDocument.tombstones));
     }
 
-    baseSyncDocumentRef.current = document;
-    lastSyncedContentKeyRef.current = syncDocumentContentKey(document);
-    saveLastSyncDocument(document);
-    setLastSyncedAt(document.updatedAt);
+    baseSyncDocumentRef.current = cleanedDocument;
+    lastSyncedContentKeyRef.current = syncDocumentContentKey(cleanedDocument);
+    saveLastSyncDocument(cleanedDocument);
+    setLastSyncedAt(cleanedDocument.updatedAt);
     window.setTimeout(() => {
       isApplyingSyncRef.current = false;
     }, 0);
@@ -194,7 +228,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setSyncError(null);
 
     try {
-      const remoteDocument = await loadSyncDocumentFromGist(gistSettings);
+      const loadedRemoteDocument = await loadSyncDocumentFromGist(gistSettings);
+      const remoteDocument = createDocumentWithCompletedCleanup(
+        loadedRemoteDocument.tasks,
+        loadedRemoteDocument.tombstones,
+        loadedRemoteDocument.updatedAt
+      );
       const localDocument = buildLocalDocument();
       const baseDocument = baseSyncDocumentRef.current ?? loadLastSyncDocument();
       const merged = mergeSyncDocuments(localDocument, remoteDocument, baseDocument);
@@ -227,42 +266,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured]);
 
-  const pullRemoteDocument = useCallback(async (showStatus = true) => {
-    if (!isGistConfigured || isSyncingRef.current) return;
-
-    isSyncingRef.current = true;
-    if (showStatus) {
-      setIsSyncing(true);
-      setSyncStatus('syncing');
-    }
-    setSyncError(null);
-
-    try {
-      const remoteDocument = await loadSyncDocumentFromGist(gistSettings);
-      applySyncedDocument(remoteDocument);
-      hasPendingLocalSyncRef.current = false;
-      setSyncStatus('idle');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to sync tasks';
-      console.error('Failed to pull tasks from gist:', error);
-      setSyncStatus('error');
-      setSyncError(message);
-    } finally {
-      if (showStatus) {
-        setIsSyncing(false);
-      }
-      isSyncingRef.current = false;
-    }
-  }, [applySyncedDocument, gistSettings, isGistConfigured]);
-
   const syncFromGist = useCallback(async () => {
-    if (hasPendingLocalSyncRef.current) {
-      await performSync(false);
-      return;
-    }
-
-    await pullRemoteDocument(false);
-  }, [performSync, pullRemoteDocument]);
+    await performSync(false);
+  }, [performSync]);
 
   useEffect(() => {
     performSyncRef.current = performSync;
@@ -316,7 +322,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [tasks, tombstones, isLoaded, isGistConfigured, performSync]);
 
   const loadFromGist = useCallback((loadedTasks: Task[]) => {
-    const document = createSyncDocument(cleanupCompletedTasksFromPreviousDays(loadedTasks));
+    const document = createDocumentWithCompletedCleanup(loadedTasks);
     applySyncedDocument(document);
   }, [applySyncedDocument]);
 
@@ -324,14 +330,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     markLocalChange();
     const newTask = createTaskFromInput(taskData);
 
-    setTasks((prev) => [...cleanupCompletedTasksFromPreviousDays(prev), newTask]);
+    setTasks((prev) => [...prev, newTask]);
   }, [markLocalChange, setTasks]);
 
   const addTaskFromCaptureUrl = useCallback(async (taskData: TaskInput) => {
     const newTask = createTaskFromInput(taskData);
 
     if (!isGistConfigured) {
-      setTasks((prev) => [...cleanupCompletedTasksFromPreviousDays(prev), newTask]);
+      setTasks((prev) => [...prev, newTask]);
       return;
     }
 
@@ -341,9 +347,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setSyncError(null);
 
     try {
-      const remoteDocument = await loadSyncDocumentFromGist(gistSettings);
+      const loadedRemoteDocument = await loadSyncDocumentFromGist(gistSettings);
+      const remoteDocument = createDocumentWithCompletedCleanup(
+        loadedRemoteDocument.tasks,
+        loadedRemoteDocument.tombstones,
+        loadedRemoteDocument.updatedAt
+      );
       const nextDocument = createSyncDocument(
-        [...cleanupCompletedTasksFromPreviousDays(remoteDocument.tasks).map((task) => normalizeTask(task)), newTask],
+        [...remoteDocument.tasks.map((task) => normalizeTask(task)), newTask],
         remoteDocument.tombstones
       );
 
@@ -393,6 +404,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       if (taskIndex === -1) return prev;
 
       const task = prev[taskIndex];
+      if (task.completed) return prev;
+
       const updatedTasks = [...prev];
 
       updatedTasks[taskIndex] = normalizeTask({
@@ -464,7 +477,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const cleanupNow = () => {
-      setTasks((currentTasks) => cleanupCompletedTasksFromPreviousDays(currentTasks));
+      const currentTasks = tasksRef.current;
+      const cleanedDocument = createDocumentWithCompletedCleanup(
+        currentTasks,
+        tombstonesFromMap(tombstonesRef.current)
+      );
+
+      if (cleanedDocument.tasks.length !== currentTasks.length) {
+        markLocalChange();
+        setTasks(cleanedDocument.tasks);
+        setTombstones(mapFromTombstones(cleanedDocument.tombstones));
+      }
       localStorage.setItem('juice-last-completed-cleanup', new Date().toISOString());
     };
 
@@ -498,6 +521,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     const timerRef = { current: 0 as number | ReturnType<typeof window.setTimeout> };
+    cleanupNow();
     timerRef.current = scheduleMidnightCleanup();
 
     document.addEventListener('visibilitychange', handleFocus);
@@ -508,7 +532,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       document.removeEventListener('visibilitychange', handleFocus);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [isGistConfigured, syncFromGist, setTasks]);
+  }, [isGistConfigured, markLocalChange, setTasks, setTombstones, syncFromGist]);
 
   return (
     <TaskContext.Provider

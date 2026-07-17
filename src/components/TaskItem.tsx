@@ -60,6 +60,8 @@ export default function TaskItem({
   const titleParts = splitTaskTitle(displayTitle || task.title);
 
   const handleComplete = () => {
+    if (isCompleting) return;
+
     if (needsConfirmation) {
       onComplete();
     } else {
@@ -100,6 +102,7 @@ export default function TaskItem({
         {/* Checkbox */}
         <button
           data-task-checkbox="true"
+          disabled={isCompleting}
           onClick={(e) => {
             e.stopPropagation();
             handleComplete();
@@ -111,7 +114,7 @@ export default function TaskItem({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: 'pointer',
+            cursor: isCompleting ? 'default' : 'pointer',
             background: 'none',
             border: 'none',
             padding: 4,

@@ -110,21 +110,9 @@ function ContinuousCalendar({
 }) {
   const today = new Date();
 
-  const calendarDays = useMemo(() => {
-    if (months.length === 0) return [];
-
-    const firstMonth = months[0];
-    const lastMonth = months[months.length - 1];
-    const calendarStart = startOfWeek(startOfMonth(firstMonth));
-    const calendarEnd = endOfWeek(endOfMonth(lastMonth));
-
-    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-  }, [months]);
+  const calendarDays = getRelevantCalendarDays(months);
   const currentWeekStart = startOfWeek(today).getTime();
-  const compressedWeekRows = useMemo(
-    () => getEmptyPastWeekRows(calendarDays, tasksByDate, currentWeekStart),
-    [calendarDays, tasksByDate, currentWeekStart]
-  );
+  const compressedWeekRows = getEmptyPastWeekRows(calendarDays, tasksByDate, currentWeekStart);
 
   return (
     <div style={{
@@ -178,6 +166,32 @@ function ContinuousCalendar({
       })}
     </div>
   );
+}
+
+function getRelevantCalendarDays(months: Date[]): Date[] {
+  if (months.length === 0) return [];
+
+  const monthRuns: Date[][] = [];
+
+  for (const month of months) {
+    const currentRun = monthRuns.at(-1);
+    const previousMonth = currentRun?.at(-1);
+    const monthIndex = month.getFullYear() * 12 + month.getMonth();
+    const previousMonthIndex = previousMonth
+      ? previousMonth.getFullYear() * 12 + previousMonth.getMonth()
+      : null;
+
+    if (currentRun && previousMonthIndex !== null && monthIndex === previousMonthIndex + 1) {
+      currentRun.push(month);
+    } else {
+      monthRuns.push([month]);
+    }
+  }
+
+  return monthRuns.flatMap((run) => eachDayOfInterval({
+    start: startOfWeek(startOfMonth(run[0])),
+    end: endOfWeek(endOfMonth(run[run.length - 1])),
+  }));
 }
 
 function DayCell({
