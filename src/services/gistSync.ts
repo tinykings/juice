@@ -1,4 +1,5 @@
 import { Task } from '@/types/task';
+import { normalizeTaskDate } from '@/utils/taskDate';
 
 const GIST_API_URL = 'https://api.github.com/gists';
 const TASKS_FILENAME = 'juice-tasks.json';
@@ -13,6 +14,18 @@ interface GistResponse {
   files: {
     [filename: string]: GistFile;
   };
+}
+
+export interface SyncSnapshot {
+  document: SyncDocument;
+  etag: string | null;
+}
+
+export class GistChangedDuringSyncError extends Error {
+  constructor() {
+    super('The Gist changed during sync');
+    this.name = 'GistChangedDuringSyncError';
+  }
 }
 
 export interface GistSettings {
@@ -46,6 +59,7 @@ function normalizeTask(task: Task): Task {
     ...task,
     notes: task.notes ?? '',
     tags: task.tags ?? [],
+    dueDate: normalizeTaskDate(task.dueDate),
     completed: Boolean(task.completed),
     completedAt: task.completedAt ?? null,
     updatedAt: task.updatedAt ?? task.createdAt ?? UNKNOWN_TIMESTAMP,
@@ -296,7 +310,7 @@ function newestDate(...dates: Array<string | undefined | null>): string | undefi
   }, undefined);
 }
 
-async function fetchGist(settings: GistSettings): Promise<GistResponse> {
+async function fetchGist(settings: GistSettings): Promise<{ gist: GistResponse; etag: string | null }> {
   if (!settings.gistId || !settings.githubToken) {
     throw new Error('Gist ID and GitHub token are required');
   }
@@ -312,22 +326,32 @@ async function fetchGist(settings: GistSettings): Promise<GistResponse> {
     throw new Error(`Failed to load gist: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  const responseEtag = response.headers.get('etag');
+  return {
+    gist: await response.json(),
+    // GitHub currently returns weak ETags for Gists. Weak validators are not
+    // valid with If-Match and cause PATCH requests to fail with HTTP 400.
+    etag: responseEtag && !responseEtag.startsWith('W/') ? responseEtag : null,
+  };
 }
 
-export async function loadSyncDocumentFromGist(settings: GistSettings): Promise<SyncDocument> {
-  const gist = await fetchGist(settings);
+export async function loadSyncSnapshotFromGist(settings: GistSettings): Promise<SyncSnapshot> {
+  const { gist, etag } = await fetchGist(settings);
   const tasksFile = gist.files[TASKS_FILENAME];
 
   if (!tasksFile) {
-    return createSyncDocument([]);
+    return { document: createSyncDocument([]), etag };
   }
 
   try {
-    return parseSyncDocument(tasksFile.content);
+    return { document: parseSyncDocument(tasksFile.content), etag };
   } catch {
     throw new Error('Failed to parse tasks from gist');
   }
+}
+
+export async function loadSyncDocumentFromGist(settings: GistSettings): Promise<SyncDocument> {
+  return (await loadSyncSnapshotFromGist(settings)).document;
 }
 
 export async function loadTasksFromGist(settings: GistSettings): Promise<Task[]> {
@@ -335,7 +359,11 @@ export async function loadTasksFromGist(settings: GistSettings): Promise<Task[]>
   return document.tasks;
 }
 
-export async function saveSyncDocumentToGist(document: SyncDocument, settings: GistSettings): Promise<void> {
+export async function saveSyncDocumentToGist(
+  document: SyncDocument,
+  settings: GistSettings,
+  expectedEtag?: string | null
+): Promise<void> {
   if (!settings.gistId || !settings.githubToken) {
     return;
   }
@@ -346,18 +374,24 @@ export async function saveSyncDocumentToGist(document: SyncDocument, settings: G
       Authorization: `Bearer ${settings.githubToken}`,
       Accept: 'application/vnd.github+json',
       'Content-Type': 'application/json',
+      ...(expectedEtag ? { 'If-Match': expectedEtag } : {}),
     },
     body: JSON.stringify({
       files: {
         [TASKS_FILENAME]: {
-          content: JSON.stringify(createSyncDocument(document.tasks, document.tombstones), null, 2),
+          content: JSON.stringify(createSyncDocument(document.tasks, document.tombstones, document.updatedAt), null, 2),
         },
       },
     }),
   });
 
+  if (response.status === 409 || response.status === 412) {
+    throw new GistChangedDuringSyncError();
+  }
+
   if (!response.ok) {
-    throw new Error(`Failed to save to gist: ${response.status} ${response.statusText}`);
+    const details = await response.text();
+    throw new Error(`Failed to save to gist: ${response.status} ${response.statusText}${details ? ` — ${details}` : ''}`);
   }
 }
 

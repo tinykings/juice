@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
+import { parseTaskDate } from '@/utils/taskDate';
 import { splitTaskTitle } from '@/utils/taskTitle';
 
 export default function ConfirmCompleteDialog({
@@ -38,7 +39,7 @@ export default function ConfirmCompleteDialog({
     };
   }, [onCancel]);
 
-  const taskDate = task.dueDate ? new Date(task.dueDate) : null;
+  const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
   const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'Someday';
   const titleParts = splitTaskTitle(task.title);
 

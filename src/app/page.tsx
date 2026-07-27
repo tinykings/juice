@@ -13,6 +13,7 @@ import TaskItem from '@/components/TaskItem';
 import CompletedTaskItem from '@/components/CompletedTaskItem';
 import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
+import { parseTaskDate } from '@/utils/taskDate';
 
 interface TaskGroup {
   label: string;
@@ -123,14 +124,12 @@ export default function HomePage() {
     const filtered = tasks.filter(t => {
       if (t.completed) return false;
       if (!t.dueDate) return false; // Exclude someday tasks from normal groups
-      if (selectedDateFilter && !isSameDay(new Date(t.dueDate), selectedDateFilter)) return false;
+      if (selectedDateFilter && !isSameDay(parseTaskDate(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return t.title.toLowerCase().includes(query);
     });
-    return filtered.sort((a, b) => 
-      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    );
+    return filtered.sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
   }, [tasks, searchQuery, selectedDateFilter]);
 
   // Get completed tasks (filtered by search if query exists)
@@ -146,7 +145,7 @@ export default function HomePage() {
   const tomorrowTasks = useMemo(() => {
     if (selectedDateFilter) return [];
     const tomorrow = addDays(startOfDay(currentDate), 1);
-    return incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), tomorrow));
+    return incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), tomorrow));
   }, [incompleteTasks, selectedDateFilter, currentDate]);
 
   const hasNoTasks = tasks.length === 0;
@@ -165,7 +164,7 @@ export default function HomePage() {
     
     // Overdue tasks (due date is before today, not today)
     const overdueTasks = incompleteTasks.filter(t => {
-      const d = startOfDay(new Date(t.dueDate));
+      const d = startOfDay(parseTaskDate(t.dueDate));
       return isBefore(d, today) && !isToday(d);
     });
     if (overdueTasks.length > 0) {
@@ -179,7 +178,7 @@ export default function HomePage() {
     
     // Today's tasks (only today, not overdue)
     const todayTasks = incompleteTasks.filter(t => {
-      const d = new Date(t.dueDate);
+      const d = parseTaskDate(t.dueDate);
       return isSameDay(d, today);
     });
     // Sort: timed tasks first (by time), then alphabetically
@@ -240,7 +239,7 @@ export default function HomePage() {
     // Next 7 days (by day of week)
     for (let i = 1; i <= 7; i++) {
       const date = addDays(today, i);
-      const dayTasks = incompleteTasks.filter(t => isSameDay(new Date(t.dueDate), date));
+      const dayTasks = incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), date));
       // Sort alphabetically by title
       const sortedDayTasks = [...dayTasks].sort((a, b) => 
         a.title.localeCompare(b.title)
@@ -250,20 +249,18 @@ export default function HomePage() {
     }
 
     // Beyond this week - group by month
-    const futureTasks = incompleteTasks.filter(t => isAfter(new Date(t.dueDate), weekEnd));
+    const futureTasks = incompleteTasks.filter(t => isAfter(parseTaskDate(t.dueDate), weekEnd));
     const monthGroups: { [key: string]: Task[] } = {};
     
     futureTasks.forEach(task => {
-      const monthKey = format(new Date(task.dueDate), 'MMMM yyyy');
+      const monthKey = format(parseTaskDate(task.dueDate), 'MMMM yyyy');
       if (!monthGroups[monthKey]) monthGroups[monthKey] = [];
       monthGroups[monthKey].push(task);
     });
 
     Object.entries(monthGroups).forEach(([month, monthTasks]) => {
       // Sort by due date
-      const sortedMonthTasks = [...monthTasks].sort((a, b) => 
-        new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-      );
+      const sortedMonthTasks = [...monthTasks].sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
       groups.push({ label: month, tasks: sortedMonthTasks });
     });
 

@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { format, startOfDay, parse } from 'date-fns';
+import { format } from 'date-fns';
 import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import CalendarPicker from './CalendarPicker';
 import ConfirmCompleteDialog from './ConfirmCompleteDialog';
 import { findDateWord, removeDateWord, DateWordMatch } from '@/utils/dateWords';
+import { normalizeTaskDate } from '@/utils/taskDate';
 
 export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false, captureUrlMode = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean, captureUrlMode?: boolean }) {
   const { addTask, addTaskFromCaptureUrl, updateTask, deleteTask } = useTasks();
@@ -14,9 +15,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   const hasFocusedRef = useRef(false);
 
   const initialDueDate = editTask
-    ? (editTask.dueDate
-        ? `${new Date(editTask.dueDate).getUTCFullYear()}-${String(new Date(editTask.dueDate).getUTCMonth() + 1).padStart(2, '0')}-${String(new Date(editTask.dueDate).getUTCDate()).padStart(2, '0')}`
-        : '')
+    ? normalizeTaskDate(editTask.dueDate)
     : (initialDate ?? format(new Date(), 'yyyy-MM-dd'));
   
   const [dueDate, setDueDate] = useState(initialDueDate);
@@ -131,13 +130,10 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     }
 
     if (effectiveDueDate) {
-      const parsedDate = parse(effectiveDueDate, 'yyyy-MM-dd', new Date());
-      const dateAtMidnight = startOfDay(parsedDate);
-
       const taskData = {
         title,
         notes: '',
-        dueDate: dateAtMidnight.toISOString(),
+        dueDate: normalizeTaskDate(effectiveDueDate),
         isRecurring,
         recurrenceType: isRecurring ? recurrenceType : null,
         tags: [],

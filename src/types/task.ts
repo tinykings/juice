@@ -4,7 +4,7 @@ export interface Task {
   id: string;
   title: string;
   notes: string;
-  dueDate: string; // ISO date string
+  dueDate: string; // YYYY-MM-DD local calendar date, or empty for someday
   completed: boolean;
   completedAt: string | null;
   createdAt: string;

@@ -20,6 +20,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [gistId, setGistId] = useState(gistSettings.gistId);
   const [token, setToken] = useState(gistSettings.githubToken);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Sync local state with persisted settings when modal opens or settings change
@@ -27,6 +28,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     if (isOpen) {
       setGistId(gistSettings.gistId);
       setToken(gistSettings.githubToken);
+      setIsConfirmingReset(false);
     }
   }, [isOpen, gistSettings.gistId, gistSettings.githubToken]);
 
@@ -54,6 +56,21 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         : 'Tasks will automatically sync to your Gist when changed.');
 
   if (!isOpen) return null;
+
+  const handleResetApp = () => {
+    if (!isConfirmingReset) {
+      setIsConfirmingReset(true);
+      return;
+    }
+
+    const keysToRemove: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith('juice-')) keysToRemove.push(key);
+    }
+    keysToRemove.forEach((key) => window.localStorage.removeItem(key));
+    window.location.reload();
+  };
 
   const handleLoadFromGist = async () => {
     if (!gistId || !token) {
@@ -454,6 +471,59 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 {syncDescription}
               </p>
             )}
+          </div>
+
+          <div style={{
+            marginTop: 14,
+            padding: 14,
+            background: 'rgba(255, 107, 107, 0.05)',
+            border: '1px solid rgba(255, 107, 107, 0.18)',
+            borderRadius: 'var(--radius-md)',
+          }}>
+            <div style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 700 }}>
+              Reset App
+            </div>
+            <p style={{ margin: '6px 0 12px', color: 'var(--muted)', fontSize: 13, lineHeight: 1.45 }}>
+              Clears all local tasks, settings, sync history, Gist ID, and GitHub token. This does not delete the Gist itself.
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleResetApp}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  border: '1px solid var(--red)',
+                  borderRadius: 'var(--radius-sm)',
+                  background: isConfirmingReset ? 'var(--red)' : 'transparent',
+                  color: isConfirmingReset ? 'var(--background)' : 'var(--red)',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                {isConfirmingReset ? 'Confirm Reset' : 'Reset App'}
+              </button>
+              {isConfirmingReset && (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingReset(false)}
+                  style={{
+                    height: 40,
+                    padding: '0 14px',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'transparent',
+                    color: 'var(--muted)',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    fontWeight: 650,
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </div>
 
         </div>

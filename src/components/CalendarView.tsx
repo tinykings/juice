@@ -13,6 +13,7 @@ import {
 } from 'date-fns';
 import { Task } from '@/types/task';
 import { splitTaskTitle } from '@/utils/taskTitle';
+import { parseTaskDate } from '@/utils/taskDate';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -47,7 +48,7 @@ export default function CalendarView({ tasks, onDaySelect, selectedDate = null }
     monthSet.add(format(now, 'yyyy-MM'));
 
     tasks.filter(t => !t.completed && t.dueDate).forEach(task => {
-      monthSet.add(format(new Date(task.dueDate), 'yyyy-MM'));
+      monthSet.add(format(parseTaskDate(task.dueDate), 'yyyy-MM'));
     });
 
     return Array.from(monthSet)
@@ -61,7 +62,7 @@ export default function CalendarView({ tasks, onDaySelect, selectedDate = null }
   const tasksByDate = useMemo(() => {
     const map: Record<string, Task[]> = {};
     tasks.filter(t => !t.completed && t.dueDate).forEach(task => {
-      const key = format(new Date(task.dueDate), 'yyyy-MM-dd');
+      const key = format(parseTaskDate(task.dueDate), 'yyyy-MM-dd');
       if (!map[key]) map[key] = [];
       map[key].push(task);
     });

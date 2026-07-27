@@ -6,6 +6,7 @@ import { format, isBefore, isToday, startOfDay, addDays } from 'date-fns';
 import { Task } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import { splitTaskTitle } from '@/utils/taskTitle';
+import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
 
 interface TaskItemProps {
   task: Task;
@@ -32,7 +33,7 @@ export default function TaskItem({
   const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   
   const isSomeday = !task.dueDate;
-  const taskDate = isSomeday ? null : new Date(task.dueDate);
+  const taskDate = isSomeday ? null : parseTaskDate(task.dueDate);
   const isOverdue = isOverdueProp || (taskDate ? isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate) : false);
 
   // Extract time from @pattern - handles @1, @1pm, @130, @530, @2:30, @5pm
@@ -71,7 +72,7 @@ export default function TaskItem({
   };
 
   const handleReschedule = (date: Date) => {
-    updateTask(task.id, { dueDate: date.toISOString() });
+    updateTask(task.id, { dueDate: formatTaskDate(date) });
     setShowReschedule(false);
   };
 
