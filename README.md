@@ -30,13 +30,13 @@ Tasks are stored in your browser's local storage. Connect a GitHub Gist for opti
 
 ## Data & Sync
 
-By default, tasks are saved to `localStorage` in your browser. To sync between devices:
+By default, tasks are saved to `localStorage` in your browser. To sync between devices, open **Settings** and select **Connect GitHub**. Juice finds an existing `juice-tasks.json` Gist or creates one automatically. Manual Gist ID/token setup remains under advanced settings.
 
-1. Create a [GitHub personal access token](https://github.com/settings/tokens) with the `gist` scope
-2. Open **Settings** in the app
-3. Create a private Gist with a `juice-tasks.json` file, then paste its Gist ID and your token in Settings
+OAuth uses shared Cloudflare broker in [`auth-worker/`](auth-worker/README.md). Set `NEXT_PUBLIC_GIST_AUTH_URL` locally or repository variable `GIST_AUTH_URL` for GitHub Pages builds.
 
-The app syncs automatically 1 second after changes and whenever the tab regains focus. Sync pulls the latest Gist data before saving, preserves deletes across devices, and keeps both versions when two devices edit the same task before syncing.
+GitHub secret Gists are unlisted rather than access-controlled private data. GitHub's `gist` OAuth scope permits access to all Gists on account.
+
+App syncs automatically 1 second after changes and whenever tab regains focus. Sync pulls the latest Gist data before saving, preserves deletes across devices, and keeps both versions when two devices edit the same task before syncing.
 
 Completed tasks from previous days are deleted automatically once a new day starts.
 

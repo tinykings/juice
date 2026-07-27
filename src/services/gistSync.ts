@@ -11,6 +11,7 @@ interface GistFile {
 
 interface GistResponse {
   id: string;
+  description?: string;
   files: {
     [filename: string]: GistFile;
   };
@@ -31,6 +32,7 @@ export class GistChangedDuringSyncError extends Error {
 export interface GistSettings {
   gistId: string;
   githubToken: string;
+  githubLogin?: string;
 }
 
 export interface TaskTombstone {
@@ -455,6 +457,35 @@ export async function saveSyncDocumentToGist(
 
 export async function saveTasksToGist(tasks: Task[], settings: GistSettings): Promise<void> {
   await saveSyncDocumentToGist(createSyncDocument(tasks), settings);
+}
+
+export async function findJuiceGist(githubToken: string): Promise<string | null> {
+  if (!githubToken) throw new Error('GitHub token is required');
+
+  // Gists are returned newest-first. Follow pagination so older Juice installs
+  // remain discoverable on a new device.
+  for (let page = 1; page <= 10; page += 1) {
+    const response = await fetch(`${GIST_API_URL}?per_page=100&page=${page}`, {
+      headers: {
+        Authorization: `Bearer ${githubToken}`,
+        Accept: 'application/vnd.github+json',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to find Juice gist: ${response.status} ${response.statusText}`);
+    }
+
+    const gists = await response.json() as GistResponse[];
+    const match = gists.find((gist) => Boolean(gist.files[TASKS_FILENAME]));
+    if (match) return match.id;
+    if (gists.length < 100) return null;
+  }
+
+  return null;
+}
+
+export async function findOrCreateJuiceGist(tasks: Task[], githubToken: string): Promise<string> {
+  return (await findJuiceGist(githubToken)) ?? createNewGist(tasks, githubToken);
 }
 
 export async function createNewGist(tasks: Task[], githubToken: string): Promise<string> {

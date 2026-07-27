@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useTasks } from '@/context/TaskContext';
-import { loadSyncDocumentFromGist } from '@/services/gistSync';
+import { findOrCreateJuiceGist, loadSyncDocumentFromGist } from '@/services/gistSync';
+import { authorizeWithGitHub, isGitHubOAuthConfigured } from '@/services/githubOAuth';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 
 interface SettingsModalProps {
@@ -15,7 +16,7 @@ interface SettingsModalProps {
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
   const { theme, toggleTheme } = useTheme();
-  const { syncFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
+  const { tasks, syncFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
   const [token, setToken] = useState(gistSettings.githubToken);
@@ -70,6 +71,36 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
     keysToRemove.forEach((key) => window.localStorage.removeItem(key));
     window.location.reload();
+  };
+
+  const handleGitHubConnect = async () => {
+    setIsLoading(true);
+    setMessage(null);
+
+    try {
+      const authorization = await authorizeWithGitHub();
+      const foundGistId = await findOrCreateJuiceGist(tasks, authorization.token);
+      const loadedDocument = await loadSyncDocumentFromGist({
+        gistId: foundGistId,
+        githubToken: authorization.token,
+      });
+
+      setGistId(foundGistId);
+      setToken(authorization.token);
+      updateGistSettings({
+        gistId: foundGistId,
+        githubToken: authorization.token,
+        githubLogin: authorization.login,
+      });
+      setMessage({
+        type: 'success',
+        text: `Connected as @${authorization.login}. Merging ${loadedDocument.tasks.length} Gist tasks with local tasks.`,
+      });
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'GitHub sign-in failed' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLoadFromGist = async () => {
@@ -295,18 +326,62 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               GitHub Gist Sync
             </h3>
             <p style={{ fontSize: 14, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-              Sync your tasks across devices using a GitHub Gist as storage. 
-              You need a GitHub personal access token with <code style={{
-                background: 'var(--surface-inset)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-xs)',
-                padding: '2px 6px',
-                fontSize: 13,
-                color: 'var(--foreground)'
-              }}>gist</code> scope.
+              Sync tasks across devices using a secret GitHub Gist. GitHub grants Juice permission to manage your Gists.
             </p>
+            {gistSettings.githubLogin && isGistConfigured && (
+              <p style={{ fontSize: 13, color: 'var(--green)', margin: '8px 0 0', fontWeight: 650 }}>
+                Connected as @{gistSettings.githubLogin}
+              </p>
+            )}
           </div>
 
+          <button
+            type="button"
+            onClick={() => void handleGitHubConnect()}
+            disabled={isLoading || !isGitHubOAuthConfigured()}
+            style={{
+              width: '100%',
+              height: 44,
+              marginBottom: 14,
+              border: '1px solid var(--accent)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--accent)',
+              color: 'var(--background)',
+              cursor: isLoading || !isGitHubOAuthConfigured() ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !isGitHubOAuthConfigured() ? 0.55 : 1,
+              fontSize: 14,
+              fontWeight: 750,
+            }}
+          >
+            {isLoading ? 'Connecting…' : isGistConfigured ? 'Reconnect GitHub' : 'Connect GitHub'}
+          </button>
+
+          {!isGitHubOAuthConfigured() && (
+            <p style={{ margin: '-6px 0 14px', color: 'var(--muted)', fontSize: 12, lineHeight: 1.4 }}>
+              GitHub sign-in is not configured for this deployment. Manual setup remains available below.
+            </p>
+          )}
+
+          {message && (
+            <div style={{
+              padding: '12px 14px',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: 14,
+              fontSize: 14,
+              background: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 107, 107, 0.08)',
+              border: `1px solid ${message.type === 'success' ? 'rgba(46, 204, 113, 0.28)' : 'rgba(255, 107, 107, 0.22)'}`,
+              color: message.type === 'success' ? 'var(--green)' : 'var(--red)',
+              fontWeight: 600,
+              lineHeight: 1.4,
+            }}>
+              {message.text}
+            </div>
+          )}
+
+          <details style={{ marginBottom: 14 }}>
+            <summary style={{ cursor: 'pointer', color: 'var(--muted)', fontSize: 13, fontWeight: 650, marginBottom: 12 }}>
+              Advanced: connect with Gist ID and token
+            </summary>
           <form onSubmit={(e) => { e.preventDefault(); handleLoadFromGist(); }}>
             {/* Gist ID */}
             <div style={{ marginBottom: 14 }}>
@@ -402,23 +477,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               />
             </div>
 
-            {/* Message */}
-            {message && (
-              <div style={{
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-sm)',
-                marginBottom: 14,
-                fontSize: 14,
-                background: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255, 107, 107, 0.08)',
-                border: `1px solid ${message.type === 'success' ? 'rgba(46, 204, 113, 0.28)' : 'rgba(255, 107, 107, 0.22)'}`,
-                color: message.type === 'success' ? 'var(--green)' : 'var(--red)',
-                fontWeight: 600,
-                lineHeight: 1.4,
-              }}>
-                {message.text}
-              </div>
-            )}
-
             {/* Buttons */}
             <button
               type="submit"
@@ -453,6 +511,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               {isLoading ? 'Connecting...' : 'Connect & Merge with Gist'}
             </button>
           </form>
+          </details>
 
           {/* Sync Status */}
           <div style={{ 
