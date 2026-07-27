@@ -171,6 +171,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const performSyncRef = useRef<() => Promise<void>>(async () => {});
   const lastSyncedContentKeyRef = useRef<string | null>(null);
   const hasPendingLocalSyncRef = useRef(false);
+  const localChangeVersionRef = useRef(0);
   const isCaptureUrlRef = useRef(isCaptureUrl());
   const tasksRef = useRef(tasks);
   const tombstonesRef = useRef(tombstones);
@@ -192,9 +193,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   const markLocalChange = useCallback(() => {
     hasPendingLocalSyncRef.current = true;
+    localChangeVersionRef.current += 1;
   }, []);
 
-  const applySyncedDocument = useCallback((document: SyncDocument) => {
+  const replaceLocalDocument = useCallback((document: SyncDocument) => {
     isApplyingSyncRef.current = true;
 
     const cleanedDocument = createDocumentWithCompletedCleanup(
@@ -204,22 +206,42 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
     const currentDocument = createSyncDocument(tasksRef.current, tombstonesFromMap(tombstonesRef.current), cleanedDocument.updatedAt);
     if (!syncDocumentContentEquals(currentDocument, cleanedDocument)) {
-      setTasks(cleanedDocument.tasks.map((task) => normalizeTask(task)));
-      setTombstones(mapFromTombstones(cleanedDocument.tombstones));
+      const nextTasks = cleanedDocument.tasks.map((task) => normalizeTask(task));
+      const nextTombstones = mapFromTombstones(cleanedDocument.tombstones);
+      // Keep the refs current immediately so a queued sync does not have to wait
+      // for React's effects before taking its next local snapshot.
+      tasksRef.current = nextTasks;
+      tombstonesRef.current = nextTombstones;
+      setTasks(nextTasks);
+      setTombstones(nextTombstones);
     }
 
-    baseSyncDocumentRef.current = cleanedDocument;
-    lastSyncedContentKeyRef.current = syncDocumentContentKey(cleanedDocument);
-    saveLastSyncDocument(cleanedDocument);
-    setLastSyncedAt(cleanedDocument.updatedAt);
     window.setTimeout(() => {
       isApplyingSyncRef.current = false;
     }, 0);
   }, [setTasks, setTombstones]);
 
+  const recordSyncedDocument = useCallback((document: SyncDocument) => {
+    const cleanedDocument = createDocumentWithCompletedCleanup(
+      document.tasks,
+      document.tombstones,
+      document.updatedAt
+    );
+    baseSyncDocumentRef.current = cleanedDocument;
+    lastSyncedContentKeyRef.current = syncDocumentContentKey(cleanedDocument);
+    saveLastSyncDocument(cleanedDocument);
+    setLastSyncedAt(cleanedDocument.updatedAt);
+  }, []);
+
+  const applySyncedDocument = useCallback((document: SyncDocument) => {
+    replaceLocalDocument(document);
+    recordSyncedDocument(document);
+  }, [recordSyncedDocument, replaceLocalDocument]);
+
   const performSync = useCallback(async (showStatus = true) => {
     if (!isGistConfigured || isSyncingRef.current) return;
 
+    let shouldRunAgain = false;
     isSyncingRef.current = true;
     if (showStatus) {
       setIsSyncing(true);
@@ -235,6 +257,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         loadedRemoteDocument.updatedAt
       );
       const localDocument = buildLocalDocument();
+      const localChangeVersion = localChangeVersionRef.current;
       const baseDocument = baseSyncDocumentRef.current ?? loadLastSyncDocument();
       const merged = mergeSyncDocuments(localDocument, remoteDocument, baseDocument);
       const mergedDocument = createSyncDocument(merged.tasks, merged.tombstones, remoteDocument.updatedAt);
@@ -247,11 +270,31 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         await saveSyncDocumentToGist(syncedDocument, gistSettings);
       }
 
-      applySyncedDocument(syncedDocument);
-      hasPendingLocalSyncRef.current = false;
-      setSyncStatus(merged.conflicts.length > 0 ? 'conflict' : 'idle');
-      if (DEV && merged.conflicts.length > 0) {
-        console.log('Sync preserved conflicts:', merged.conflicts.length);
+      let conflictCount = merged.conflicts.length;
+      if (localChangeVersionRef.current === localChangeVersion) {
+        applySyncedDocument(syncedDocument);
+        hasPendingLocalSyncRef.current = false;
+      } else {
+        // A local edit landed while the request was in flight. Rebase that edit
+        // onto the result we just saved instead of replacing it with the older
+        // snapshot, then queue another sync to persist it.
+        const latestLocalDocument = buildLocalDocument();
+        const rebased = mergeSyncDocuments(latestLocalDocument, syncedDocument, localDocument);
+        const rebasedDocument = createSyncDocument(
+          rebased.tasks,
+          rebased.tombstones,
+          syncedDocument.updatedAt
+        );
+        replaceLocalDocument(rebasedDocument);
+        recordSyncedDocument(syncedDocument);
+        hasPendingLocalSyncRef.current = true;
+        shouldRunAgain = true;
+        conflictCount += rebased.conflicts.length;
+      }
+
+      setSyncStatus(conflictCount > 0 ? 'conflict' : 'idle');
+      if (DEV && conflictCount > 0) {
+        console.log('Sync preserved conflicts:', conflictCount);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to sync tasks';
@@ -263,8 +306,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         setIsSyncing(false);
       }
       isSyncingRef.current = false;
+      if (shouldRunAgain) {
+        window.setTimeout(() => {
+          void performSyncRef.current();
+        }, 0);
+      }
     }
-  }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured]);
+  }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured, recordSyncedDocument, replaceLocalDocument]);
 
   const syncFromGist = useCallback(async () => {
     await performSync(false);

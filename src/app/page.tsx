@@ -24,7 +24,7 @@ interface TaskGroup {
 
 export default function HomePage() {
   const { tasks, completeTask, uncompleteTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
-  const { isGistConfigured, badgeEnabled } = useSettings();
+  const { badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -538,40 +538,11 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
-      {/* Gist Sync Notice */}
-      {isGistConfigured && isSyncing && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 30,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-          padding: 24,
-        }}>
-          <div style={{
-            minWidth: 240,
-            maxWidth: '90vw',
-            padding: '16px 24px',
-            background: 'var(--card)',
-            color: 'var(--foreground)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-lg)',
-            fontSize: 14,
-            fontWeight: 700,
-            letterSpacing: '0.01em',
-          }}>
-            Syncing tasks from Gist...
-          </div>
-        </div>
-      )}
-
       {/* Bottom-right Buttons - only in split view */}
       {showSplitView && (
       <FloatingButtons
         mounted={mounted}
+        isSyncing={isSyncing}
         somedayTasksLength={somedayTasks.length}
         onToggleSomeday={() => setShowSomeday(prev => !prev)}
         onSearch={() => setIsSearchExpanded(true)}
@@ -1188,7 +1159,7 @@ Back
         {/* Add Task — always visible */}
         <div>
           <button
-            title="New (n)"
+            title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
             onClick={() => {
               if (selectedDateFilter) {
                 openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
@@ -1196,7 +1167,7 @@ Back
                 openInlineTaskForm(showSomeday ? '' : null);
               }
             }}
-            aria-label="Add task"
+            aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
             style={{
               width: 44,
               height: 44,
@@ -1218,9 +1189,7 @@ Back
               e.currentTarget.style.background = 'var(--accent)';
             }}
           >
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
+            <AddOrSyncIcon isSyncing={isSyncing} />
           </button>
         </div>
       </footer>
@@ -1243,8 +1212,25 @@ Back
   );
 }
 
+function AddOrSyncIcon({ isSyncing }: { isSyncing: boolean }) {
+  if (isSyncing) {
+    return (
+      <svg className="sync-spinner" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="36 16" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
 function FloatingButtons({
   mounted,
+  isSyncing,
   somedayTasksLength,
   onToggleSomeday,
   onSearch,
@@ -1252,6 +1238,7 @@ function FloatingButtons({
   onAddTask,
 }: {
   mounted: boolean;
+  isSyncing: boolean;
   somedayTasksLength: number;
   onToggleSomeday: () => void;
   onSearch: () => void;
@@ -1278,7 +1265,7 @@ function FloatingButtons({
     >
         <button
           onClick={onAddTask}
-          title="New (n)"
+          title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
           style={{
             width: 44,
             height: 44,
@@ -1299,11 +1286,9 @@ function FloatingButtons({
           onMouseLeave={(e) => {
             e.currentTarget.style.background = 'var(--accent)';
           }}
-          aria-label="Add task"
+          aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
         >
-          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <AddOrSyncIcon isSyncing={isSyncing} />
         </button>
 
         <div style={{
