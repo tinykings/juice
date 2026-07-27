@@ -37,7 +37,6 @@ interface TaskContextType {
   getTodayTasks: () => Task[];
   getUpcomingTasks: () => Task[];
   getCompletedTasks: () => Task[];
-  loadFromGist: (tasks: Task[]) => void;
   syncFromGist: () => Promise<void>;
   isLoaded: boolean;
   isSyncing: boolean;
@@ -180,6 +179,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const tasksRef = useRef(tasks);
   const tombstonesRef = useRef(tombstones);
   const syncContentionRetriesRef = useRef(0);
+  const syncFailureRetriesRef = useRef(0);
+  const syncRetryTimeoutRef = useRef<number | null>(null);
   const hasMigratedTaskDatesRef = useRef(false);
 
   useEffect(() => {
@@ -271,15 +272,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     recordSyncedDocument(document);
   }, [recordSyncedDocument, replaceLocalDocument]);
 
-  const performSync = useCallback(async (showStatus = true) => {
+  const performSync = useCallback(async () => {
     if (!isGistConfigured || isSyncingRef.current) return;
 
     let shouldRunAgain = false;
     isSyncingRef.current = true;
-    if (showStatus) {
-      setIsSyncing(true);
-      setSyncStatus('syncing');
-    }
+    setIsSyncing(true);
+    setSyncStatus('syncing');
     setSyncError(null);
 
     try {
@@ -336,6 +335,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       }
 
       syncContentionRetriesRef.current = 0;
+      syncFailureRetriesRef.current = 0;
+      if (syncRetryTimeoutRef.current) {
+        window.clearTimeout(syncRetryTimeoutRef.current);
+        syncRetryTimeoutRef.current = null;
+      }
       setSyncStatus(conflictCount > 0 ? 'conflict' : 'idle');
       if (DEV && conflictCount > 0) {
         console.log('Sync preserved conflicts:', conflictCount);
@@ -350,11 +354,21 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to sync tasks:', error);
         setSyncStatus('error');
         setSyncError(message);
+
+        if (syncFailureRetriesRef.current < 5) {
+          const delay = Math.min(30_000, 2 ** syncFailureRetriesRef.current * 2_000);
+          syncFailureRetriesRef.current += 1;
+          if (syncRetryTimeoutRef.current) {
+            window.clearTimeout(syncRetryTimeoutRef.current);
+          }
+          syncRetryTimeoutRef.current = window.setTimeout(() => {
+            syncRetryTimeoutRef.current = null;
+            void performSyncRef.current();
+          }, delay);
+        }
       }
     } finally {
-      if (showStatus) {
-        setIsSyncing(false);
-      }
+      setIsSyncing(false);
       isSyncingRef.current = false;
       if (shouldRunAgain) {
         window.setTimeout(() => {
@@ -365,12 +379,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured, recordSyncedDocument, replaceLocalDocument]);
 
   const syncFromGist = useCallback(async () => {
-    await performSync(false);
+    syncFailureRetriesRef.current = 0;
+    if (syncRetryTimeoutRef.current) {
+      window.clearTimeout(syncRetryTimeoutRef.current);
+      syncRetryTimeoutRef.current = null;
+    }
+    await performSync();
   }, [performSync]);
 
   useEffect(() => {
     performSyncRef.current = performSync;
   }, [performSync]);
+
+  useEffect(() => () => {
+    if (syncRetryTimeoutRef.current) {
+      window.clearTimeout(syncRetryTimeoutRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     const lastSyncDocument = loadLastSyncDocument();
@@ -418,11 +443,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       }
     };
   }, [tasks, tombstones, isLoaded, isGistConfigured, performSync]);
-
-  const loadFromGist = useCallback((loadedTasks: Task[]) => {
-    const document = createDocumentWithCompletedCleanup(loadedTasks);
-    applySyncedDocument(document);
-  }, [applySyncedDocument]);
 
   const addTask = useCallback((taskData: TaskInput) => {
     markLocalChange();
@@ -662,7 +682,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         getTodayTasks,
         getUpcomingTasks,
         getCompletedTasks,
-        loadFromGist,
         syncFromGist,
         isLoaded,
         isSyncing,

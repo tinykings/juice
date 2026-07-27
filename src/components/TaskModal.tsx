@@ -55,34 +55,22 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
   const [showHelp, setShowHelp] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
-  const originalData = useRef({
+  const [originalData] = useState(() => ({
     title: initialTitle,
     dueDate: initialDueDate,
     isRecurring: editTask?.isRecurring || false,
     recurrenceType: editTask?.recurrenceType || 'daily'
-  });
+  }));
 
   const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
 
-  const checkForChanges = useCallback((overrides?: {
-    dueDate?: string;
-    isRecurring?: boolean;
-    recurrenceType?: RecurrenceType;
-  }) => {
-    const currentTitle = titleValue;
-    const nextDueDate = overrides?.dueDate ?? dueDate;
-    const nextIsRecurring = overrides?.isRecurring ?? isRecurring;
-    const nextRecurrenceType = overrides?.recurrenceType ?? recurrenceType;
-    const changed = 
-      currentTitle !== originalData.current.title ||
-      nextDueDate !== originalData.current.dueDate ||
-      nextIsRecurring !== originalData.current.isRecurring ||
-      (nextIsRecurring && nextRecurrenceType !== originalData.current.recurrenceType);
-    
-    setHasChanges(changed);
-  }, [dueDate, isRecurring, recurrenceType, titleValue]);
+  const hasChanges = useMemo(() => (
+    titleValue !== originalData.title ||
+    dueDate !== originalData.dueDate ||
+    isRecurring !== originalData.isRecurring ||
+    (isRecurring && recurrenceType !== originalData.recurrenceType)
+  ), [dueDate, isRecurring, originalData, recurrenceType, titleValue]);
 
   const focusTitle = useCallback(() => {
     const input = titleRef.current;
@@ -240,7 +228,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               autoFocus={!editTask}
               onChange={(e) => {
                 setTitleValue(e.target.value);
-                checkForChanges();
                 e.target.style.height = 'auto';
                 e.target.style.height = e.target.scrollHeight + 'px';
               }}
@@ -322,14 +309,13 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
       {/* Options */}
       <div style={{ padding: '0 16px 14px', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-        <CalendarPicker value={dueDate} onChange={(val) => { setDueDate(val); checkForChanges({ dueDate: val }); }} />
+        <CalendarPicker value={dueDate} onChange={setDueDate} />
 
         <button
           type="button"
           onClick={() => {
             const nextIsRecurring = !isRecurring;
             setIsRecurring(nextIsRecurring);
-            checkForChanges({ isRecurring: nextIsRecurring });
           }}
           onMouseEnter={(e) => {
             if (!isRecurring) {
@@ -380,7 +366,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               type="button"
               onClick={() => {
                 setRecurrenceType(type);
-                checkForChanges({ recurrenceType: type });
               }}
               onMouseEnter={(e) => {
                 if (recurrenceType !== type) {

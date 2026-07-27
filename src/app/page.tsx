@@ -127,7 +127,7 @@ export default function HomePage() {
       if (selectedDateFilter && !isSameDay(parseTaskDate(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
-      return t.title.toLowerCase().includes(query);
+      return t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query);
     });
     return filtered.sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
   }, [tasks, searchQuery, selectedDateFilter]);
@@ -138,7 +138,9 @@ export default function HomePage() {
     if (selectedDateFilter) return [];
     if (!searchQuery.trim()) return allCompleted;
     const query = searchQuery.toLowerCase();
-    return allCompleted.filter(t => t.title.toLowerCase().includes(query));
+    return allCompleted.filter(t =>
+      t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query)
+    );
   }, [getCompletedTasks, searchQuery, selectedDateFilter]);
 
   // Get tomorrow's tasks

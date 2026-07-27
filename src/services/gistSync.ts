@@ -188,16 +188,6 @@ function makeConflictCopy(task: Task, originalId: string, now: string): Task {
   };
 }
 
-function chooseWithoutBase(localTask: Task, remoteTask: Task): Task {
-  if (JSON.stringify(comparableTask(localTask)) === JSON.stringify(comparableTask(remoteTask))) {
-    return remoteTask;
-  }
-
-  const localUpdatedAt = localTask.updatedAt ?? localTask.createdAt;
-  const remoteUpdatedAt = remoteTask.updatedAt ?? remoteTask.createdAt;
-  return new Date(localUpdatedAt) > new Date(remoteUpdatedAt) ? localTask : remoteTask;
-}
-
 export function mergeSyncDocuments(
   local: SyncDocument,
   remote: SyncDocument,
@@ -233,20 +223,23 @@ export function mergeSyncDocuments(
     const remoteDeleted = tombstoneChangedSinceBase(remoteTombstones.get(id), baseTombstones.get(id));
 
     if (tombstone) {
+      // Do not use wall-clock ordering when a delete races an edit. Device
+      // clocks can differ substantially, so preserve the edit as a conflict
+      // copy and keep the deletion rather than risking silent data loss.
+      if (localDeleted && remoteTask && remoteChanged) {
+        mergedTombstones.push(tombstone);
+        conflicts.push(makeConflictCopy(remoteTask, id, now));
+        continue;
+      }
+
+      if (remoteDeleted && localTask && localChanged) {
+        mergedTombstones.push(tombstone);
+        conflicts.push(makeConflictCopy(localTask, id, now));
+        continue;
+      }
+
       const taskUpdatedAt = newestDate(localTask?.updatedAt, remoteTask?.updatedAt);
       if (!taskUpdatedAt || new Date(tombstone.updatedAt) >= new Date(taskUpdatedAt)) {
-        if (localDeleted && remoteTask && remoteChanged) {
-          mergedTombstones.push(tombstone);
-          conflicts.push(makeConflictCopy(remoteTask, id, now));
-          continue;
-        }
-
-        if (remoteDeleted && localTask && localChanged) {
-          mergedTombstones.push(tombstone);
-          conflicts.push(makeConflictCopy(localTask, id, now));
-          continue;
-        }
-
         mergedTombstones.push(tombstone);
         continue;
       }
@@ -261,7 +254,14 @@ export function mergeSyncDocuments(
     }
 
     if (!base && localTask && remoteTask) {
-      mergedTasks.push(chooseWithoutBase(localTask, remoteTask));
+      if (JSON.stringify(comparableTask(localTask)) === JSON.stringify(comparableTask(remoteTask))) {
+        mergedTasks.push(remoteTask);
+      } else {
+        // Without a common ancestor, timestamps from different devices are
+        // not trustworthy enough to discard either version.
+        mergedTasks.push(remoteTask);
+        conflicts.push(makeConflictCopy(localTask, id, now));
+      }
       continue;
     }
 

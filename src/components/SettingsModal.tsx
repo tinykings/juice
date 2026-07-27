@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useTasks } from '@/context/TaskContext';
-import { loadTasksFromGist } from '@/services/gistSync';
+import { loadSyncDocumentFromGist } from '@/services/gistSync';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 
 interface SettingsModalProps {
@@ -15,7 +15,7 @@ interface SettingsModalProps {
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
   const { theme, toggleTheme } = useTheme();
-  const { loadFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
+  const { syncFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
   const [token, setToken] = useState(gistSettings.githubToken);
@@ -82,10 +82,18 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setMessage(null);
 
     try {
-      const loadedTasks = await loadTasksFromGist({ gistId, githubToken: token });
-      loadFromGist(loadedTasks);
+      const loadedDocument = await loadSyncDocumentFromGist({ gistId, githubToken: token });
+      const settingsChanged = gistId !== gistSettings.gistId || token !== gistSettings.githubToken;
       updateGistSettings({ gistId, githubToken: token });
-      setMessage({ type: 'success', text: `Loaded ${loadedTasks.length} tasks from Gist!` });
+      // Changed credentials trigger TaskProvider's normal three-way sync. If
+      // these are the existing credentials, trigger that merge explicitly.
+      if (!settingsChanged) {
+        await syncFromGist();
+      }
+      setMessage({
+        type: 'success',
+        text: `Connection verified. Merging ${loadedDocument.tasks.length} Gist tasks with local tasks.`,
+      });
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to load from Gist' });
     } finally {
@@ -442,7 +450,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }
               }}
             >
-              {isLoading ? 'Loading...' : 'Load Tasks from Gist'}
+              {isLoading ? 'Connecting...' : 'Connect & Merge with Gist'}
             </button>
           </form>
 
@@ -467,9 +475,30 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </span>
             </div>
             {isGistConfigured && (
-              <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.45 }}>
-                {syncDescription}
-              </p>
+              <>
+                <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 14, lineHeight: 1.45 }}>
+                  {syncDescription}
+                </p>
+                {syncStatus === 'error' && (
+                  <button
+                    type="button"
+                    onClick={() => void syncFromGist()}
+                    style={{
+                      marginTop: 10,
+                      padding: '7px 12px',
+                      border: '1px solid var(--red)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'transparent',
+                      color: 'var(--red)',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Retry sync
+                  </button>
+                )}
+              </>
             )}
           </div>
 
