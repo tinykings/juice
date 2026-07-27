@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "deploy": "next build && touch out/.nojekyll"
   },
   "dependencies": {
@@ -27,6 +29,7 @@
     "eslint-config-next": "16.0.5",
     "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^4.1.10"
   }
 }

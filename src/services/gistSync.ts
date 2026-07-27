@@ -64,6 +64,8 @@ function normalizeTask(task: Task): Task {
     completedAt: task.completedAt ?? null,
     updatedAt: task.updatedAt ?? task.createdAt ?? UNKNOWN_TIMESTAMP,
     deletedAt: task.deletedAt ?? null,
+    isRecurring: Boolean(task.isRecurring),
+    recurrenceType: task.recurrenceType ?? null,
   };
 }
 
@@ -111,14 +113,70 @@ function normalizeTombstones(tombstones: TaskTombstone[] = []): TaskTombstone[] 
   return Object.values(byId);
 }
 
-function parseSyncDocument(content: string): SyncDocument {
-  const parsed = JSON.parse(content) as SyncDocument | Task[];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isTask(value: unknown): value is Task {
+  if (!isRecord(value)) return false;
+
+  return typeof value.id === 'string'
+    && typeof value.title === 'string'
+    && typeof value.dueDate === 'string'
+    && typeof value.createdAt === 'string'
+    && (value.notes === undefined || typeof value.notes === 'string')
+    && (value.completed === undefined || typeof value.completed === 'boolean')
+    && (value.completedAt === undefined || value.completedAt === null || typeof value.completedAt === 'string')
+    && (value.updatedAt === undefined || typeof value.updatedAt === 'string')
+    && (value.deletedAt === undefined || value.deletedAt === null || typeof value.deletedAt === 'string')
+    && (value.conflictOf === undefined || typeof value.conflictOf === 'string')
+    && (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every((tag) => typeof tag === 'string')))
+    && (value.isRecurring === undefined || typeof value.isRecurring === 'boolean')
+    && (value.recurrenceType === undefined || value.recurrenceType === null
+      || ['daily', 'weekly', 'monthly', 'yearly'].includes(String(value.recurrenceType)));
+}
+
+function isTombstone(value: unknown): value is TaskTombstone {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.deletedAt === 'string'
+    && typeof value.updatedAt === 'string';
+}
+
+function assertArrayItems<T>(
+  value: unknown,
+  predicate: (item: unknown) => item is T,
+  label: string
+): asserts value is T[] {
+  if (!Array.isArray(value) || !value.every(predicate)) {
+    throw new Error(`Invalid ${label} in Gist sync document`);
+  }
+}
+
+export function parseSyncDocument(content: string): SyncDocument {
+  const parsed: unknown = JSON.parse(content);
 
   if (Array.isArray(parsed)) {
+    assertArrayItems(parsed, isTask, 'tasks');
     return createSyncDocument(parsed, []);
   }
 
-  return createSyncDocument(parsed.tasks ?? [], parsed.tombstones ?? [], parsed.updatedAt);
+  if (!isRecord(parsed)) {
+    throw new Error('Invalid Gist sync document');
+  }
+  if (parsed.version !== undefined && parsed.version !== 1) {
+    throw new Error(`Unsupported Gist sync document version: ${String(parsed.version)}`);
+  }
+
+  const tasks = parsed.tasks ?? [];
+  const tombstones = parsed.tombstones ?? [];
+  assertArrayItems(tasks, isTask, 'tasks');
+  assertArrayItems(tombstones, isTombstone, 'tombstones');
+  if (parsed.updatedAt !== undefined && typeof parsed.updatedAt !== 'string') {
+    throw new Error('Invalid updatedAt in Gist sync document');
+  }
+
+  return createSyncDocument(tasks, tombstones, parsed.updatedAt);
 }
 
 export function createSyncDocument(
