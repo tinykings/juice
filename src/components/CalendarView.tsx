@@ -159,7 +159,7 @@ function ContinuousCalendar({
             onDaySelect={onDaySelect}
             gridColumn={column}
             gridRow={row}
-            monthLabel={isMonthStart ? format(day, 'MMMM') : undefined}
+            monthLabel={isMonthStart ? format(day, 'MMM') : undefined}
             dayKey={key}
             isCompressedWeek={isCompressedWeek}
           />
