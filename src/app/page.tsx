@@ -787,13 +787,13 @@ Back
               }}>
                 <div style={{
                   padding: '8px 12px',
-                  background: 'var(--accent-surface)',
-                  border: '1px solid var(--border)',
+                  background: 'color-mix(in srgb, var(--purple) 14%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--purple) 42%, transparent)',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: '0.03em',
-                  color: 'var(--accent)',
+                  color: 'var(--purple)',
                 }}>
                   SOMEDAY
                 </div>
@@ -1064,15 +1064,17 @@ Back
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: showSomeday ? 'var(--accent-surface)' : 'transparent',
+              background: showSomeday ? 'var(--purple)' : 'transparent',
               border: '1px solid',
-              borderColor: showSomeday ? 'var(--accent-border)' : 'var(--border)',
+              borderColor: showSomeday ? 'var(--purple)' : 'var(--border)',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
-              color: showSomeday ? 'var(--accent)' : 'var(--muted)',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+              color: showSomeday ? 'white' : 'var(--muted)',
+              boxShadow: showSomeday ? '0 0 0 3px color-mix(in srgb, var(--purple) 22%, transparent)' : 'none',
+              transition: 'background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s',
             }}
             aria-label="Someday"
+            aria-pressed={showSomeday}
             onMouseEnter={(e) => {
               if (!showSomeday) {
                 e.currentTarget.style.background = 'var(--accent-subtle)';
