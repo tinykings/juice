@@ -546,7 +546,7 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column', height: '100dvh' }}>
+    <div className="app-shell" style={{ background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column' }}>
       {/* Search Header */}
       {view === 'list' && isSearchExpanded && (
         <div style={{
@@ -644,7 +644,7 @@ export default function HomePage() {
 
       {/* Calendar View - shown in calendar view OR split view */}
       {(view === 'calendar' || showSplitView) && isLoaded && (
-        <div style={{ flex: 1, overflow: 'auto', minHeight: 0, height: (isWideScreen || showSplitView) ? '100vh' : 'auto' }}>
+        <div className="app-scroll" style={{ flex: 1, height: (isWideScreen || showSplitView) ? '100%' : 'auto' }}>
           <CalendarView
             tasks={tasks}
             onDaySelect={handleDaySelect}
@@ -655,11 +655,9 @@ export default function HomePage() {
 
       {/* Main Content - List View - shown in list view OR split view */}
       {(view === 'list' || showSplitView) && (
-      <main ref={listScrollRef} style={{ 
+      <main ref={listScrollRef} className="app-scroll" style={{
         flex: 1, 
-        padding: isSearchExpanded ? '88px clamp(10px, 2vw, 18px) 100px' : '24px clamp(10px, 2vw, 18px) 100px', 
-        overflow: 'auto',
-        minHeight: 0,
+        padding: isSearchExpanded ? '88px clamp(10px, 2vw, 18px) 100px' : '24px clamp(10px, 2vw, 18px) 100px',
         borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}

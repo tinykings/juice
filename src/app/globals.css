@@ -144,6 +144,26 @@ body {
   line-height: 1.5;
 }
 
+/* Fixed app viewport with one explicit touch-scrolling surface. This avoids
+   delayed nested-scroll initialization in iOS browsers and standalone PWAs. */
+.app-shell {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-scroll {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-body), sans-serif;
