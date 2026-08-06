@@ -527,16 +527,25 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               padding: '0 20px',
               fontSize: 14,
               fontWeight: 600,
-              color: 'var(--background)',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
+              color: dueDate ? 'var(--background)' : 'white',
+              background: dueDate ? 'var(--accent)' : 'var(--purple)',
+              border: `1px solid ${dueDate ? 'var(--accent)' : 'var(--purple)'}`,
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               height: 42,
-              transition: 'background 0.15s',
+              boxShadow: dueDate
+                ? 'none'
+                : '0 0 0 3px color-mix(in srgb, var(--purple) 16%, transparent)',
+              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent-surface)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent)'}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = dueDate
+                ? 'var(--accent-surface)'
+                : 'color-mix(in srgb, var(--purple) 85%, white)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = dueDate ? 'var(--accent)' : 'var(--purple)';
+            }}
           >
             Add
           </button>

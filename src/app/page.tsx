@@ -1056,7 +1056,11 @@ Back
           {view !== 'calendar' && (
           <button
             title="Someday tasks"
-            onClick={() => setShowSomeday(prev => !prev)}
+            onClick={() => {
+              const nextShowSomeday = !showSomeday;
+              setShowSomeday(nextShowSomeday);
+              if (nextShowSomeday) setSelectedDateFilter(null);
+            }}
             style={{
               position: 'relative',
               width: 44,
@@ -1156,7 +1160,9 @@ Back
         {/* Add Task — always visible */}
         <div>
           <button
-            title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
+            title={isSyncing
+              ? `Syncing tasks — click to add${showSomeday ? ' to Someday' : ''}`
+              : showSomeday ? 'New Someday task (n)' : 'New (n)'}
             onClick={() => {
               if (selectedDateFilter) {
                 openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
@@ -1164,7 +1170,9 @@ Back
                 openInlineTaskForm(showSomeday ? '' : null);
               }
             }}
-            aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
+            aria-label={isSyncing
+              ? `Syncing tasks; add ${showSomeday ? 'Someday ' : ''}task`
+              : showSomeday ? 'Add Someday task' : 'Add task'}
             style={{
               width: 44,
               height: 44,
@@ -1172,18 +1180,22 @@ Back
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
+              background: showSomeday ? 'var(--purple)' : 'var(--accent)',
+              border: `1px solid ${showSomeday ? 'var(--purple)' : 'var(--accent)'}`,
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
-              boxShadow: 'var(--shadow-md)',
-              transition: 'background 0.15s, box-shadow 0.15s',
+              boxShadow: showSomeday
+                ? '0 0 0 3px color-mix(in srgb, var(--purple) 22%, transparent)'
+                : 'var(--shadow-md)',
+              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
+              e.currentTarget.style.background = showSomeday
+                ? 'color-mix(in srgb, var(--purple) 85%, white)'
+                : 'var(--accent-surface)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
+              e.currentTarget.style.background = showSomeday ? 'var(--purple)' : 'var(--accent)';
             }}
           >
             <AddOrSyncIcon isSyncing={isSyncing} />

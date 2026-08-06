@@ -106,17 +106,25 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           alignItems: 'center',
           gap: 8,
           padding: '0 14px',
-          background: 'rgba(255, 255, 255, 0.035)',
-          border: '1px solid var(--border)',
+          background: hasDate ? 'rgba(255, 255, 255, 0.035)' : 'color-mix(in srgb, var(--purple) 14%, transparent)',
+          border: '1px solid',
+          borderColor: hasDate ? 'var(--border)' : 'color-mix(in srgb, var(--purple) 42%, transparent)',
           borderRadius: 'var(--radius-sm)',
           fontSize: 14,
           cursor: 'pointer',
           height: 42,
-          transition: 'border-color 0.15s',
-          color: hasDate ? 'var(--foreground)' : 'var(--muted)',
+          transition: 'border-color 0.15s, background 0.15s',
+          color: hasDate ? 'var(--foreground)' : 'var(--purple)',
+          fontWeight: hasDate ? 400 : 600,
         }}
-        onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
-        onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = hasDate ? 'var(--accent)' : 'var(--purple)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = hasDate
+            ? 'var(--border)'
+            : 'color-mix(in srgb, var(--purple) 42%, transparent)';
+        }}
         >
           {hasDate ? <CalendarIcon /> : <SomedayIcon />}
           <input
@@ -152,23 +160,29 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           alignItems: 'center',
           gap: 8,
           padding: '0 14px',
-          background: hasDate ? 'rgba(255, 255, 255, 0.035)' : 'var(--accent-surface)',
+          background: hasDate
+            ? 'rgba(255, 255, 255, 0.035)'
+            : 'color-mix(in srgb, var(--purple) 14%, transparent)',
           border: '1px solid',
-          borderColor: hasDate ? 'var(--border)' : 'var(--accent-border)',
+          borderColor: hasDate
+            ? 'var(--border)'
+            : 'color-mix(in srgb, var(--purple) 42%, transparent)',
           borderRadius: 'var(--radius-sm)',
           fontSize: 14,
           cursor: 'pointer',
           height: 42,
           transition: 'border-color 0.15s, background 0.15s',
-          color: hasDate ? 'var(--muted)' : 'var(--accent)',
+          color: hasDate ? 'var(--muted)' : 'var(--purple)',
           fontFamily: 'inherit',
           fontWeight: hasDate ? 400 : 600,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = hasDate ? 'rgba(255,255,255,0.16)' : 'var(--accent-border)';
+          e.currentTarget.style.borderColor = hasDate ? 'rgba(255,255,255,0.16)' : 'var(--purple)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = hasDate ? 'var(--border)' : 'var(--accent-border)';
+          e.currentTarget.style.borderColor = hasDate
+            ? 'var(--border)'
+            : 'color-mix(in srgb, var(--purple) 42%, transparent)';
         }}
       >
         {hasDate ? <CalendarIcon /> : <SomedayIcon />}
