@@ -2,8 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDays, addMonths, addWeeks, addYears, format, startOfDay } from 'date-fns';
-import { Task, RecurrenceType } from '@/types/task';
+import { format, startOfDay } from 'date-fns';
+import { Task } from '@/types/task';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSettings } from '@/context/SettingsContext';
 import {
@@ -17,7 +17,8 @@ import {
   SyncDocument,
   TaskTombstone,
 } from '@/services/gistSync';
-import { formatTaskDate, normalizeTaskDate, parseTaskDate } from '@/utils/taskDate';
+import { normalizeTaskDate } from '@/utils/taskDate';
+import { getNextRecurrenceDate } from '@/utils/taskRecurrence';
 
 const DEV = process.env.NODE_ENV !== 'production';
 const LAST_SYNC_DOCUMENT_KEY = 'juice-last-sync-document';
@@ -46,22 +47,6 @@ interface TaskContextType {
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
-
-function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceType): string {
-  const date = parseTaskDate(currentDate);
-  switch (recurrenceType) {
-    case 'daily':
-      return formatTaskDate(addDays(date, 1));
-    case 'weekly':
-      return formatTaskDate(addWeeks(date, 1));
-    case 'monthly':
-      return formatTaskDate(addMonths(date, 1));
-    case 'yearly':
-      return formatTaskDate(addYears(date, 1));
-    default:
-      return normalizeTaskDate(currentDate);
-  }
-}
 
 function cleanupCompletedTasksFromPreviousDays(taskList: Task[]): Task[] {
   const today = startOfDay(new Date());

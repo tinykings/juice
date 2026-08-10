@@ -14,6 +14,7 @@ import CompletedTaskItem from '@/components/CompletedTaskItem';
 import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
 import { parseTaskDate } from '@/utils/taskDate';
+import { withRecurrencePreviews } from '@/utils/taskRecurrence';
 
 interface TaskGroup {
   label: string;
@@ -129,9 +130,16 @@ export default function HomePage() {
     };
   }, []);
 
+  // Project occurrences into months already visible from real tasks. These
+  // previews stay derived and never create new calendar months or sync data.
+  const tasksWithRecurrencePreviews = useMemo(
+    () => withRecurrencePreviews(tasks, currentDate),
+    [tasks, currentDate]
+  );
+
   // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
-    const filtered = tasks.filter(t => {
+    const filtered = tasksWithRecurrencePreviews.filter(t => {
       if (t.completed) return false;
       if (!t.dueDate) return false; // Exclude someday tasks from normal groups
       if (selectedDateFilter && !isSameDay(parseTaskDate(t.dueDate), selectedDateFilter)) return false;
@@ -140,7 +148,7 @@ export default function HomePage() {
       return t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query);
     });
     return filtered.sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
-  }, [tasks, searchQuery, selectedDateFilter]);
+  }, [tasksWithRecurrencePreviews, searchQuery, selectedDateFilter]);
 
   // Get completed tasks (filtered by search if query exists)
   const completedTasks = useMemo(() => {
@@ -646,7 +654,7 @@ export default function HomePage() {
       {(view === 'calendar' || showSplitView) && isLoaded && (
         <div className="app-scroll" style={{ flex: 1, height: (isWideScreen || showSplitView) ? '100%' : 'auto' }}>
           <CalendarView
-            tasks={tasks}
+            tasks={tasksWithRecurrencePreviews}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
           />

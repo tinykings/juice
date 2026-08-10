@@ -32,6 +32,7 @@ export default function TaskItem({
   const [isHovered, setIsHovered] = useState(false);
   const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   
+  const isRecurrencePreview = Boolean(task.isRecurrencePreview);
   const isSomeday = !task.dueDate;
   const taskDate = isSomeday ? null : parseTaskDate(task.dueDate);
   const isOverdue = isOverdueProp || (taskDate ? isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate) : false);
@@ -80,7 +81,9 @@ export default function TaskItem({
     <div style={{ position: 'relative' }}>
       <div 
         data-task-card="true"
-        onClick={onEdit}
+        data-recurrence-preview={isRecurrencePreview ? 'true' : undefined}
+        title={isRecurrencePreview ? 'Future occurrence — available after current task is completed' : undefined}
+        onClick={isRecurrencePreview ? undefined : onEdit}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         style={{
@@ -90,23 +93,23 @@ export default function TaskItem({
           justifyContent: 'flex-start',
           columnGap: 12,
           padding: '13px 14px 13px 12px',
-          border: '1px solid var(--border)',
+          border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
           borderRadius: 'var(--radius-md)',
-          opacity: isCompleting ? 0.3 : 1,
+          opacity: isCompleting ? 0.3 : (isRecurrencePreview ? 0.58 : 1),
           transform: isCompleting ? 'translateX(-6px)' : 'translateX(0)',
           transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
-          background: isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
-          boxShadow: isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
-          cursor: 'pointer',
+          background: !isRecurrencePreview && isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
+          boxShadow: !isRecurrencePreview && isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
+          cursor: isRecurrencePreview ? 'default' : 'pointer',
         }}
       >
         {/* Checkbox */}
         <button
           data-task-checkbox="true"
-          disabled={isCompleting}
+          disabled={isCompleting || isRecurrencePreview}
           onClick={(e) => {
             e.stopPropagation();
-            handleComplete();
+            if (!isRecurrencePreview) handleComplete();
           }}
           onMouseEnter={() => setIsCheckboxHovered(true)}
           onMouseLeave={() => setIsCheckboxHovered(false)}
@@ -115,14 +118,14 @@ export default function TaskItem({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            cursor: isCompleting ? 'default' : 'pointer',
+            cursor: isCompleting || isRecurrencePreview ? 'default' : 'pointer',
             background: 'none',
             border: 'none',
             padding: 4,
             marginTop: 0,
             transition: 'all 0.2s ease',
           }}
-          aria-label="Complete task"
+          aria-label={isRecurrencePreview ? 'Future occurrence preview' : 'Complete task'}
         >
           <div style={{
             width: 28,
@@ -131,7 +134,7 @@ export default function TaskItem({
             alignItems: 'center',
             justifyContent: 'center',
             background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)'),
-            border: `1px solid ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
+            border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
             borderRadius: 'var(--radius-sm)',
             transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
             boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
@@ -172,7 +175,7 @@ export default function TaskItem({
                     {titleParts.note}
                   </p>
                 )}
-              {(task.isRecurring || taskTime) && (
+              {(task.isRecurring || taskTime || isRecurrencePreview) && (
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -183,6 +186,11 @@ export default function TaskItem({
                   fontWeight: 500,
                   color: 'var(--muted)',
                 }}>
+                  {isRecurrencePreview && (
+                    <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 10 }}>
+                      Future occurrence
+                    </span>
+                  )}
                   {task.isRecurring && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -205,7 +213,7 @@ export default function TaskItem({
             </div>
             
             {/* Date indicator */}
-            {showDate && !isSomeday && (
+            {showDate && !isSomeday && !isRecurrencePreview && (
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={(e) => {

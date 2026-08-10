@@ -14,6 +14,9 @@ export interface Task {
   isRecurring: boolean;
   recurrenceType: RecurrenceType;
   tags: string[];
+  /** UI-only occurrence projected from an active recurring task. Never persisted. */
+  isRecurrencePreview?: boolean;
+  recurrenceSourceId?: string;
 }
 
 export interface TaskGroup {
