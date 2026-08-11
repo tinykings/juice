@@ -22,6 +22,7 @@ function task(overrides: Partial<Task> = {}): Task {
     createdAt: BASE_TIME,
     updatedAt: BASE_TIME,
     deletedAt: null,
+    pinned: false,
     isRecurring: false,
     recurrenceType: null,
     tags: [],
@@ -121,10 +122,24 @@ describe('sync document serialization', () => {
         notes: '',
         tags: [],
         completed: false,
+        pinned: false,
         isRecurring: false,
         recurrenceType: null,
       }),
     ]);
+  });
+
+  it('normalizes pinned tasks as undated and non-recurring', () => {
+    const document = createSyncDocument([
+      task({ pinned: true, dueDate: '2026-01-10', isRecurring: true, recurrenceType: 'daily' }),
+    ]);
+
+    expect(document.tasks[0]).toMatchObject({
+      pinned: true,
+      dueDate: '',
+      isRecurring: false,
+      recurrenceType: null,
+    });
   });
 
   it.each([

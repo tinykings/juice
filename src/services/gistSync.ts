@@ -57,17 +57,19 @@ export interface MergeResult {
 type TombstoneMap = Record<string, TaskTombstone>;
 
 function normalizeTask(task: Task): Task {
+  const pinned = Boolean(task.pinned);
   return {
     ...task,
     notes: task.notes ?? '',
     tags: task.tags ?? [],
-    dueDate: normalizeTaskDate(task.dueDate),
+    pinned,
+    dueDate: pinned ? '' : normalizeTaskDate(task.dueDate),
     completed: Boolean(task.completed),
     completedAt: task.completedAt ?? null,
     updatedAt: task.updatedAt ?? task.createdAt ?? UNKNOWN_TIMESTAMP,
     deletedAt: task.deletedAt ?? null,
-    isRecurring: Boolean(task.isRecurring),
-    recurrenceType: task.recurrenceType ?? null,
+    isRecurring: pinned ? false : Boolean(task.isRecurring),
+    recurrenceType: pinned ? null : (task.recurrenceType ?? null),
   };
 }
 
@@ -84,6 +86,7 @@ function comparableTask(task: Task) {
     updatedAt: normalized.updatedAt,
     deletedAt: normalized.deletedAt,
     conflictOf: normalized.conflictOf ?? null,
+    pinned: normalized.pinned,
     isRecurring: normalized.isRecurring,
     recurrenceType: normalized.recurrenceType,
     tags: [...normalized.tags].sort(),
@@ -133,6 +136,7 @@ function isTask(value: unknown): value is Task {
     && (value.deletedAt === undefined || value.deletedAt === null || typeof value.deletedAt === 'string')
     && (value.conflictOf === undefined || typeof value.conflictOf === 'string')
     && (value.tags === undefined || (Array.isArray(value.tags) && value.tags.every((tag) => typeof tag === 'string')))
+    && (value.pinned === undefined || typeof value.pinned === 'boolean')
     && (value.isRecurring === undefined || typeof value.isRecurring === 'boolean')
     && (value.recurrenceType === undefined || value.recurrenceType === null
       || ['daily', 'weekly', 'monthly', 'yearly'].includes(String(value.recurrenceType)));

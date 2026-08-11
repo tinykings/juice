@@ -88,7 +88,7 @@ export default function TaskItem({
         onMouseLeave={() => setIsHovered(false)}
         style={{
           display: 'grid',
-          gridTemplateColumns: '38px minmax(0, 1fr)',
+          gridTemplateColumns: task.pinned ? 'minmax(0, 1fr)' : '38px minmax(0, 1fr)',
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
           columnGap: 12,
@@ -103,49 +103,51 @@ export default function TaskItem({
           cursor: isRecurrencePreview ? 'default' : 'pointer',
         }}
       >
-        {/* Checkbox */}
-        <button
-          data-task-checkbox="true"
-          disabled={isCompleting || isRecurrencePreview}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isRecurrencePreview) handleComplete();
-          }}
-          onMouseEnter={() => setIsCheckboxHovered(true)}
-          onMouseLeave={() => setIsCheckboxHovered(false)}
-          style={{ 
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: isCompleting || isRecurrencePreview ? 'default' : 'pointer',
-            background: 'none',
-            border: 'none',
-            padding: 4,
-            marginTop: 0,
-            transition: 'all 0.2s ease',
-          }}
-          aria-label={isRecurrencePreview ? 'Future occurrence preview' : 'Complete task'}
-        >
-          <div style={{
-            width: 28,
-            height: 28,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)'),
-            border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
-            borderRadius: 'var(--radius-sm)',
-            transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-            boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
-          }}>
-            {isCompleting && (
-              <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 12l5 5L20 7" strokeDasharray="20" style={{ animation: 'checkmark 0.25s ease-out forwards' }} />
-              </svg>
-            )}
-          </div>
-        </button>
+        {/* Pinned tasks are removed only by unpinning or deleting. */}
+        {!task.pinned && (
+          <button
+            data-task-checkbox="true"
+            disabled={isCompleting || isRecurrencePreview}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isRecurrencePreview) handleComplete();
+            }}
+            onMouseEnter={() => setIsCheckboxHovered(true)}
+            onMouseLeave={() => setIsCheckboxHovered(false)}
+            style={{
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: isCompleting || isRecurrencePreview ? 'default' : 'pointer',
+              background: 'none',
+              border: 'none',
+              padding: 4,
+              marginTop: 0,
+              transition: 'all 0.2s ease',
+            }}
+            aria-label={isRecurrencePreview ? 'Future occurrence preview' : 'Complete task'}
+          >
+            <div style={{
+              width: 28,
+              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)'),
+              border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
+              borderRadius: 'var(--radius-sm)',
+              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
+              boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
+            }}>
+              {isCompleting && (
+                <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 12l5 5L20 7" strokeDasharray="20" style={{ animation: 'checkmark 0.25s ease-out forwards' }} />
+                </svg>
+              )}
+            </div>
+          </button>
+        )}
 
         {/* Content */}
         <div style={{ minWidth: 0, paddingTop: 1 }}>

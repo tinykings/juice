@@ -87,14 +87,18 @@ function createDocumentWithCompletedCleanup(
 }
 
 function normalizeTask(task: Task, fallbackTime = new Date().toISOString()): Task {
+  const pinned = Boolean(task.pinned);
   return {
     ...task,
     notes: task.notes ?? '',
     tags: task.tags ?? [],
-    dueDate: normalizeTaskDate(task.dueDate),
+    pinned,
+    dueDate: pinned ? '' : normalizeTaskDate(task.dueDate),
     completedAt: task.completedAt ?? null,
     updatedAt: task.updatedAt ?? task.createdAt ?? fallbackTime,
     deletedAt: task.deletedAt ?? null,
+    isRecurring: pinned ? false : Boolean(task.isRecurring),
+    recurrenceType: pinned ? null : (task.recurrenceType ?? null),
   };
 }
 
@@ -205,11 +209,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     hasMigratedTaskDatesRef.current = true;
 
     const currentTasks = tasksRef.current;
-    const migratedTasks = currentTasks.map((task) => ({
-      ...task,
-      dueDate: normalizeTaskDate(task.dueDate),
-    }));
-    if (migratedTasks.some((task, index) => task.dueDate !== currentTasks[index].dueDate)) {
+    const migratedTasks = currentTasks.map((task) => normalizeTask(task));
+    if (migratedTasks.some((task, index) => (
+      task.dueDate !== currentTasks[index].dueDate ||
+      task.pinned !== currentTasks[index].pinned ||
+      task.isRecurring !== currentTasks[index].isRecurring ||
+      task.recurrenceType !== currentTasks[index].recurrenceType
+    ))) {
       markLocalChange();
       updateTasksState(() => migratedTasks);
     }
@@ -548,6 +554,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
+          pinned: false,
           isRecurring: true,
           recurrenceType: task.recurrenceType,
           tags: task.tags,

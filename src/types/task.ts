@@ -11,6 +11,7 @@ export interface Task {
   updatedAt?: string;
   deletedAt?: string | null;
   conflictOf?: string;
+  pinned: boolean;
   isRecurring: boolean;
   recurrenceType: RecurrenceType;
   tags: string[];

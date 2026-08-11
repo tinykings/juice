@@ -170,9 +170,20 @@ export default function HomePage() {
 
   const hasNoTasks = tasks.length === 0;
 
-  // Someday tasks (no due date, not completed)
+  // Pinned tasks stay above every dated and someday group.
+  const pinnedTasks = useMemo(() => {
+    if (selectedDateFilter) return [];
+    const query = searchQuery.trim().toLowerCase();
+    return tasks.filter(t => (
+      t.pinned &&
+      !t.completed &&
+      (!query || t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query))
+    ));
+  }, [tasks, searchQuery, selectedDateFilter]);
+
+  // Someday tasks (no due date, not completed or pinned)
   const somedayTasks = useMemo(() => {
-    return tasks.filter(t => !t.dueDate && !t.completed);
+    return tasks.filter(t => !t.dueDate && !t.pinned && !t.completed);
   }, [tasks]);
 
   // Group tasks by day (for this week) and month (for later)
@@ -699,7 +710,7 @@ Back
         {/* Empty / All-done State */}
         {isLoaded && (
           <div>
-            {incompleteTasks.length === 0 && completedTasks.length === 0 && !isCreatingTask && (
+            {incompleteTasks.length === 0 && pinnedTasks.length === 0 && completedTasks.length === 0 && !isCreatingTask && (
               <div style={{
                 padding: showSplitView ? '80px 24px' : '60px 24px',
                 display: 'flex',
@@ -786,6 +797,40 @@ Back
                 )}
               </div>
             )}
+            {/* Pinned Section */}
+            {pinnedTasks.length > 0 && (
+              <section style={{ marginBottom: 24 }}>
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                }}>
+                  {pinnedTasks.map((task) => (
+                    editingTask?.id === task.id ? (
+                      <TaskForm
+                        key={task.id}
+                        inline
+                        isClosing={isInlineFormClosing}
+                        editTask={task}
+                        onClose={handleCloseModal}
+                        onSave={handleInlineSave}
+                      />
+                    ) : (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        onComplete={() => handleTaskComplete(task.id, true)}
+                        onEdit={() => openInlineTaskForm(null, task)}
+                        showDate={false}
+                        isOverdue={false}
+                        needsConfirmation={false}
+                      />
+                    )
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Someday Section */}
             {showSomeday && (
               <section style={{

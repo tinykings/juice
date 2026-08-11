@@ -10,6 +10,7 @@ const recurringTask: Task = {
   completed: false,
   completedAt: null,
   createdAt: '2026-03-01T12:00:00.000Z',
+  pinned: false,
   isRecurring: true,
   recurrenceType: 'weekly',
   tags: [],
