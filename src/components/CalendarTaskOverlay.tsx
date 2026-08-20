@@ -1,6 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { TaskForm } from './TaskModal';
 import { parseTaskDate } from '@/utils/taskDate';
@@ -17,6 +18,24 @@ export default function CalendarTaskOverlay({
   const dateLabel = initialDate === ''
     ? 'Someday'
     : format(initialDate ? parseTaskDate(initialDate) : new Date(), 'EEEE, MMMM d');
+  const [visualViewport, setVisualViewport] = useState<{ height: number; offsetTop: number } | null>(null);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateViewport = () => {
+      setVisualViewport({ height: viewport.height, offsetTop: viewport.offsetTop });
+    };
+
+    updateViewport();
+    viewport.addEventListener('resize', updateViewport);
+    viewport.addEventListener('scroll', updateViewport);
+    return () => {
+      viewport.removeEventListener('resize', updateViewport);
+      viewport.removeEventListener('scroll', updateViewport);
+    };
+  }, []);
 
   return createPortal(
     <div
@@ -26,12 +45,17 @@ export default function CalendarTaskOverlay({
       aria-labelledby="calendar-task-title"
       style={{
         position: 'fixed',
-        inset: 0,
+        inset: visualViewport ? undefined : 0,
+        top: visualViewport?.offsetTop,
+        right: visualViewport ? 0 : undefined,
+        left: visualViewport ? 0 : undefined,
+        height: visualViewport?.height,
+        boxSizing: 'border-box',
         zIndex: 100,
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: 16,
+        padding: 'max(8px, env(safe-area-inset-top, 0px)) 16px 16px',
         animation: isClosing ? 'fadeOut 180ms ease-in forwards' : 'fadeIn 140ms ease-out both',
       }}
     >
@@ -44,7 +68,7 @@ export default function CalendarTaskOverlay({
           inset: 0,
           width: '100%',
           height: '100%',
-          background: 'rgba(15, 14, 12, 0.68)',
+          background: 'rgba(8, 7, 6, 0.84)',
           backdropFilter: 'blur(8px)',
           cursor: 'default',
         }}
@@ -53,7 +77,7 @@ export default function CalendarTaskOverlay({
       <div style={{
         position: 'relative',
         width: 'min(100%, 560px)',
-        maxHeight: 'calc(100dvh - 32px)',
+        maxHeight: '100%',
         overflowY: 'auto',
         background: 'var(--task-surface)',
         border: '1px solid var(--accent-border)',

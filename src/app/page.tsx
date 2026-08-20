@@ -464,11 +464,10 @@ export default function HomePage() {
         const el = document.activeElement;
         if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
           e.preventDefault();
-          if (selectedDateFilter) {
-            openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
-          } else {
-            openInlineTaskForm(showSomeday ? '' : null);
-          }
+          const date = selectedDateFilter
+            ? format(selectedDateFilter, 'yyyy-MM-dd')
+            : (showSomeday ? '' : null);
+          openTaskForm(date, null, 'calendar-overlay');
         }
       }
       if (e.key === 's' && !e.metaKey && !e.ctrlKey && !isModalOpen) {
@@ -499,7 +498,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openInlineTaskForm, view]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openTaskForm, view]);
 
   if (newTaskUrlMode === 'pending' || (newTaskUrlMode !== 'off' && !isLoaded)) {
     return (
@@ -1241,11 +1240,10 @@ Back
               ? `Syncing tasks — click to add${showSomeday ? ' to Someday' : ''}`
               : showSomeday ? 'New Someday task (n)' : 'New (n)'}
             onClick={() => {
-              if (selectedDateFilter) {
-                openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
-              } else {
-                openInlineTaskForm(showSomeday ? '' : null);
-              }
+              const date = selectedDateFilter
+                ? format(selectedDateFilter, 'yyyy-MM-dd')
+                : (showSomeday ? '' : null);
+              openTaskForm(date, null, 'calendar-overlay');
             }}
             aria-label={isSyncing
               ? `Syncing tasks; add ${showSomeday ? 'Someday ' : ''}task`
