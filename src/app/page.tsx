@@ -13,6 +13,7 @@ import TaskItem from '@/components/TaskItem';
 import CompletedTaskItem from '@/components/CompletedTaskItem';
 import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
+import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
 import { parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
 
@@ -30,6 +31,7 @@ export default function HomePage() {
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [taskFormPresentation, setTaskFormPresentation] = useState<'inline' | 'calendar-overlay'>('inline');
   const [isInlineFormClosing, setIsInlineFormClosing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -299,7 +301,7 @@ export default function HomePage() {
   }, [incompleteTasks, currentDate]);
 
   const visibleGroups = useMemo(() => {
-    const isCreatingTask = isModalOpen && !editingTask;
+    const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
     const creatingDate = isCreatingTask && initialDate !== ''
       ? (initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate))
       : null;
@@ -330,9 +332,9 @@ export default function HomePage() {
         tasks: [],
       },
     ];
-  }, [groupedTasks, completedTasks.length, currentDate, editingTask, initialDate, isModalOpen]);
+  }, [groupedTasks, completedTasks.length, currentDate, editingTask, initialDate, isModalOpen, taskFormPresentation]);
 
-  const isCreatingTask = isModalOpen && !editingTask;
+  const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
   const isCreatingSomedayTask = isCreatingTask && initialDate === '';
   const shouldShowCreateFormInGroup = useCallback((group: TaskGroup) => {
     if (!isCreatingTask || isCreatingSomedayTask) return false;
@@ -342,19 +344,35 @@ export default function HomePage() {
     return !hasDatedCreateGroup && !group.date && group.label === format(creatingDate, 'MMMM yyyy');
   }, [currentDate, groupedTasks, initialDate, isCreatingSomedayTask, isCreatingTask]);
 
-  const openInlineTaskForm = useCallback((date: string | null, task: Task | null = null) => {
+  const openTaskForm = useCallback((
+    date: string | null,
+    task: Task | null,
+    presentation: 'inline' | 'calendar-overlay'
+  ) => {
     if (inlineCloseTimerRef.current !== null) {
       window.clearTimeout(inlineCloseTimerRef.current);
       inlineCloseTimerRef.current = null;
     }
-    if (view === 'calendar' && !showSplitView) {
-      setView('list');
-    }
+    setTaskFormPresentation(presentation);
     setIsInlineFormClosing(false);
     setEditingTask(task);
     setInitialDate(date);
     setIsModalOpen(true);
-  }, [showSplitView, view]);
+  }, []);
+
+  const openInlineTaskForm = useCallback((date: string | null, task: Task | null = null) => {
+    if (!task && view === 'calendar') {
+      openTaskForm(date, null, 'calendar-overlay');
+      return;
+    }
+    if (view === 'calendar' && !showSplitView) setView('list');
+    openTaskForm(date, task, 'inline');
+  }, [openTaskForm, showSplitView, view]);
+
+  const openCalendarTaskForm = useCallback((date: string) => {
+    setSelectedDateFilter(null);
+    openTaskForm(date, null, 'calendar-overlay');
+  }, [openTaskForm]);
 
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
@@ -389,6 +407,7 @@ export default function HomePage() {
       setIsInlineFormClosing(false);
       setEditingTask(null);
       setInitialDate(null);
+      setTaskFormPresentation('inline');
       setSelectedDateFilter(null);
       inlineCloseTimerRef.current = null;
       if (hadDateFilter) {
@@ -434,10 +453,9 @@ export default function HomePage() {
       setIsSearchExpanded(false);
       setSelectedDateFilter(date);
     } else {
-      setSelectedDateFilter(null);
-      openInlineTaskForm(format(date, 'yyyy-MM-dd'));
+      openCalendarTaskForm(format(date, 'yyyy-MM-dd'));
     }
-  }, [openInlineTaskForm]);
+  }, [openCalendarTaskForm]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -659,6 +677,14 @@ export default function HomePage() {
             Cancel
           </button>
         </div>
+      )}
+
+      {isModalOpen && taskFormPresentation === 'calendar-overlay' && (
+        <CalendarTaskOverlay
+          initialDate={initialDate}
+          isClosing={isInlineFormClosing}
+          onClose={handleCloseModal}
+        />
       )}
 
       {/* Calendar View - shown in calendar view OR split view */}
