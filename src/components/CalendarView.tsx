@@ -524,9 +524,9 @@ function MobileDayButton({
                 fontSize: 9,
                 fontWeight: 650,
                 lineHeight: 1.15,
-                whiteSpace: 'normal',
-                overflow: 'visible',
-                overflowWrap: 'anywhere',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
                 textAlign: 'left',
               }}
             >
@@ -595,9 +595,9 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
           fontSize: compact ? 9 : 15,
           fontWeight: 650,
           lineHeight: compact ? 1.15 : 1.3,
-          overflow: 'visible',
-          whiteSpace: 'normal',
-          overflowWrap: 'anywhere',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: 'ellipsis',
         }}>
           {displayTitle}
         </span>
