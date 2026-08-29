@@ -2,7 +2,7 @@ import { startOfDay, addDays, addMonths, startOfMonth } from 'date-fns';
 
 export interface DateWordMatch {
   word: string;
-  date: Date | null; // null means "someday" (no date)
+  date: Date;
   index: number;
 }
 
@@ -83,7 +83,7 @@ function computeDayMonth(match: RegExpMatchArray): Date {
 
 interface Entry {
   pattern: RegExp;
-  compute: (match: RegExpMatchArray) => Date | null;
+  compute: (match: RegExpMatchArray) => Date;
 }
 
 function buildEntries(): Entry[] {
@@ -96,8 +96,6 @@ function buildEntries(): Entry[] {
     { pattern: new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${monthPattern}),?\\s*(\\d{4})?\\b`, 'i'), compute: computeDayMonth },
     { pattern: /\btomorrow\b/i, compute: () => addDays(startOfDay(new Date()), 1) },
     { pattern: /\btoday\b/i, compute: () => startOfDay(new Date()) },
-    { pattern: /\bsomeday\b/i, compute: () => null },
-    { pattern: /\bfuture\b/i, compute: () => null },
   ];
 
   for (const [name, day] of Object.entries(dayNames)) {

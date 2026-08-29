@@ -58,12 +58,12 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   const [originalData] = useState(() => ({
     title: initialTitle,
     dueDate: initialDueDate,
-    pinned: editTask?.pinned || false,
+    pinned: editTask?.pinned ?? initialDate === '',
     isRecurring: editTask?.isRecurring || false,
     recurrenceType: editTask?.recurrenceType || 'daily'
   }));
 
-  const [isPinned, setIsPinned] = useState(() => editTask?.pinned ?? false);
+  const [isPinned, setIsPinned] = useState(() => editTask?.pinned ?? initialDate === '');
   const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
 
@@ -112,11 +112,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
     const match = findDateWord(title);
     if (match) {
-      if (match.date) {
-        effectiveDueDate = format(match.date, 'yyyy-MM-dd');
-      } else {
-        effectiveDueDate = '';
-      }
+      effectiveDueDate = format(match.date, 'yyyy-MM-dd');
       title = removeDateWord(title, match);
     }
 
@@ -454,7 +450,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>next month</span> — 1st of next month</div>
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>mon</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>tue</span>, … — next occurrence</div>
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>jan 15</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>15 jan</span> — specific date</div>
-            <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>someday</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>future</span> — no due date</div>
             <div style={{ marginTop: 4 }}><span style={{ color: 'var(--purple)', fontWeight: 600 }}>@9am</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@530</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@2:30pm</span> — set time</div>
             <div><span style={{ color: 'var(--muted)', fontWeight: 600 }}>.</span> text after a period becomes a note</div>
           </div>
@@ -501,7 +496,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             ?
           </button>
 
-          {editTask && (
+          {editTask && !isPinned && (
             <button
               type="button"
               onClick={handleDelete}
@@ -589,24 +584,20 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               padding: '0 20px',
               fontSize: 14,
               fontWeight: 600,
-              color: dueDate ? 'var(--background)' : 'white',
-              background: dueDate ? 'var(--accent)' : 'var(--purple)',
-              border: `1px solid ${dueDate ? 'var(--accent)' : 'var(--purple)'}`,
+              color: 'var(--background)',
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
               height: 42,
-              boxShadow: dueDate
-                ? 'none'
-                : '0 0 0 3px color-mix(in srgb, var(--purple) 16%, transparent)',
+              boxShadow: 'none',
               transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = dueDate
-                ? 'var(--accent-surface)'
-                : 'color-mix(in srgb, var(--purple) 85%, white)';
+              e.currentTarget.style.background = 'var(--accent-surface)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = dueDate ? 'var(--accent)' : 'var(--purple)';
+              e.currentTarget.style.background = 'var(--accent)';
             }}
           >
             Add
@@ -614,7 +605,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         )}
         </div>
       </div>
-      {editTask && isConfirmingDelete && (
+      {editTask && !isPinned && isConfirmingDelete && (
         <ConfirmCompleteDialog
           task={editTask}
           title="Are you sure?"

@@ -142,6 +142,17 @@ describe('sync document serialization', () => {
     });
   });
 
+  it('migrates legacy undated tasks to pinned tasks', () => {
+    const document = createSyncDocument([
+      task({ pinned: false, dueDate: '' }),
+    ]);
+
+    expect(document.tasks[0]).toMatchObject({
+      pinned: true,
+      dueDate: '',
+    });
+  });
+
   it.each([
     ['non-object JSON', 'null'],
     ['malformed tasks', JSON.stringify({ version: 1, tasks: [{ title: 'Missing ID' }] })],

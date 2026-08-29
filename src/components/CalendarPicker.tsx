@@ -17,7 +17,7 @@ import {
 } from 'date-fns';
 
 interface CalendarPickerProps {
-  value: string; // YYYY-MM-DD or empty string for "Someday"
+  value: string; // YYYY-MM-DD
   onChange: (value: string) => void;
 }
 
@@ -82,11 +82,6 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
     setOpen(false);
   }, [onChange]);
 
-  const handleSomeday = useCallback(() => {
-    onChange('');
-    setOpen(false);
-  }, [onChange]);
-
   const days = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   const monthStart = startOfMonth(viewMonth);
   const monthEnd = endOfMonth(viewMonth);
@@ -95,7 +90,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   const allDays = eachDayOfInterval({ start: calStart, end: calEnd });
   const today = new Date();
 
-  const displayText = hasDate ? format(selected, 'MMM d, yyyy') : 'Someday';
+  const displayText = format(selected, 'MMM d, yyyy');
 
   // Native picker for touch devices
   if (useNative) {
@@ -106,33 +101,29 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           alignItems: 'center',
           gap: 8,
           padding: '0 14px',
-          background: hasDate ? 'rgba(255, 255, 255, 0.035)' : 'color-mix(in srgb, var(--purple) 14%, transparent)',
-          border: '1px solid',
-          borderColor: hasDate ? 'var(--border)' : 'color-mix(in srgb, var(--purple) 42%, transparent)',
+          background: 'rgba(255, 255, 255, 0.035)',
+          border: '1px solid var(--border)',
           borderRadius: 'var(--radius-sm)',
           fontSize: 14,
           cursor: 'pointer',
           height: 42,
           transition: 'border-color 0.15s, background 0.15s',
-          color: hasDate ? 'var(--foreground)' : 'var(--purple)',
-          fontWeight: hasDate ? 400 : 600,
+          color: 'var(--foreground)',
+          fontWeight: 400,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = hasDate ? 'var(--accent)' : 'var(--purple)';
+          e.currentTarget.style.borderColor = 'var(--accent)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = hasDate
-            ? 'var(--border)'
-            : 'color-mix(in srgb, var(--purple) 42%, transparent)';
+          e.currentTarget.style.borderColor = 'var(--border)';
         }}
         >
-          {hasDate ? <CalendarIcon /> : <SomedayIcon />}
+          <CalendarIcon />
           <input
             ref={nativeRef}
             type="date"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Someday"
             style={{
               background: 'transparent',
               border: 'none',
@@ -148,7 +139,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
     );
   }
 
-  // Custom calendar for desktop — Someday button always opens the dropdown
+  // Custom calendar for desktop
   return (
     <div style={{ position: 'relative', display: 'flex', gap: 8 }}>
       <button
@@ -160,32 +151,25 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           alignItems: 'center',
           gap: 8,
           padding: '0 14px',
-          background: hasDate
-            ? 'rgba(255, 255, 255, 0.035)'
-            : 'color-mix(in srgb, var(--purple) 14%, transparent)',
-          border: '1px solid',
-          borderColor: hasDate
-            ? 'var(--border)'
-            : 'color-mix(in srgb, var(--purple) 42%, transparent)',
+          background: 'rgba(255, 255, 255, 0.035)',
+          border: '1px solid var(--border)',
           borderRadius: 'var(--radius-sm)',
           fontSize: 14,
           cursor: 'pointer',
           height: 42,
           transition: 'border-color 0.15s, background 0.15s',
-          color: hasDate ? 'var(--muted)' : 'var(--purple)',
+          color: 'var(--muted)',
           fontFamily: 'inherit',
-          fontWeight: hasDate ? 400 : 600,
+          fontWeight: 400,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = hasDate ? 'rgba(255,255,255,0.16)' : 'var(--purple)';
+          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = hasDate
-            ? 'var(--border)'
-            : 'color-mix(in srgb, var(--purple) 42%, transparent)';
+          e.currentTarget.style.borderColor = 'var(--border)';
         }}
       >
-        {hasDate ? <CalendarIcon /> : <SomedayIcon />}
+        <CalendarIcon />
         {displayText}
       </button>
 
@@ -310,27 +294,6 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
             >
               Today
             </button>
-            <button
-              type="button"
-              onClick={handleSomeday}
-              style={{
-                flex: 1,
-                padding: '6px 0',
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                color: 'var(--muted)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                letterSpacing: '0.03em',
-                transition: 'border-color 0.15s, color 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
-            >
-              Someday
-            </button>
           </div>
         </div>,
         document.body
@@ -399,15 +362,6 @@ function CalendarIcon() {
     <svg width="20" height="20" fill="none" stroke="var(--foreground)" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3" y="4" width="18" height="18" rx="2" />
       <path d="M16 2v4M8 2v4M3 10h18" />
-    </svg>
-  );
-}
-
-function SomedayIcon() {
-  return (
-    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M22 12h-6l-2 3H10l-2-3H2"/>
-      <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
     </svg>
   );
 }

@@ -15,6 +15,16 @@ APP_CONFIG = '''
   "juice": [
     "https://tinykings.github.io",
     "http://localhost:3000"
+  ],
+  "blink": [
+    "https://tinykings.github.io",
+    "http://localhost:8000"
   ]
+}
+'''
+APP_SCOPES = '''
+{
+  "juice": ["gist"],
+  "blink": ["gist", "public_repo"]
 }
 '''

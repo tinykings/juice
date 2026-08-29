@@ -33,8 +33,7 @@ export default function TaskItem({
   const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   
   const isRecurrencePreview = Boolean(task.isRecurrencePreview);
-  const isSomeday = !task.dueDate;
-  const taskDate = isSomeday ? null : parseTaskDate(task.dueDate);
+  const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
   const isOverdue = isOverdueProp || (taskDate ? isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate) : false);
 
   // Extract time from @pattern - handles @1, @1pm, @130, @530, @2:30, @5pm
@@ -103,7 +102,7 @@ export default function TaskItem({
           cursor: isRecurrencePreview ? 'default' : 'pointer',
         }}
       >
-        {/* Pinned tasks are removed only by unpinning or deleting. */}
+        {/* Pinned tasks are removed by unpinning. */}
         {!task.pinned && (
           <button
             data-task-checkbox="true"
@@ -151,7 +150,7 @@ export default function TaskItem({
 
         {/* Content */}
         <div style={{ minWidth: 0, paddingTop: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: showDate && !isSomeday ? 'minmax(0, 1fr) auto' : '1fr', alignItems: 'start', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showDate && taskDate ? 'minmax(0, 1fr) auto' : '1fr', alignItems: 'start', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ 
                   margin: 0, 
@@ -215,7 +214,7 @@ export default function TaskItem({
             </div>
             
             {/* Date indicator */}
-            {showDate && !isSomeday && !isRecurrencePreview && (
+            {showDate && taskDate && !isRecurrencePreview && (
               <div style={{ position: 'relative' }}>
                 <button
                   onClick={(e) => {

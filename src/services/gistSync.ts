@@ -57,13 +57,14 @@ export interface MergeResult {
 type TombstoneMap = Record<string, TaskTombstone>;
 
 function normalizeTask(task: Task): Task {
-  const pinned = Boolean(task.pinned);
+  const dueDate = normalizeTaskDate(task.dueDate);
+  const pinned = Boolean(task.pinned) || !dueDate;
   return {
     ...task,
     notes: task.notes ?? '',
     tags: task.tags ?? [],
     pinned,
-    dueDate: pinned ? '' : normalizeTaskDate(task.dueDate),
+    dueDate: pinned ? '' : dueDate,
     completed: Boolean(task.completed),
     completedAt: task.completedAt ?? null,
     updatedAt: task.updatedAt ?? task.createdAt ?? UNKNOWN_TIMESTAMP,

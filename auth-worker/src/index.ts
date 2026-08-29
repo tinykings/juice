@@ -3,6 +3,7 @@ interface Env {
   GITHUB_CLIENT_ID: string;
   GITHUB_CLIENT_SECRET: string;
   APP_CONFIG: string;
+  APP_SCOPES: string;
 }
 
 interface FlowRecord {
@@ -33,6 +34,18 @@ function appOrigins(env: Env, app: string): string[] {
       : [];
   } catch {
     return [];
+  }
+}
+
+function appScopes(env: Env, app: string): string[] {
+  try {
+    const config = JSON.parse(env.APP_SCOPES) as Record<string, unknown>;
+    const scopes = config[app];
+    return Array.isArray(scopes) && scopes.every((scope) => typeof scope === 'string')
+      ? scopes
+      : ['gist'];
+  } catch {
+    return ['gist'];
   }
 }
 
@@ -96,7 +109,7 @@ async function start(request: Request, env: Env): Promise<Response> {
   const authorize = new URL('https://github.com/login/oauth/authorize');
   authorize.searchParams.set('client_id', env.GITHUB_CLIENT_ID);
   authorize.searchParams.set('redirect_uri', `${url.origin}/auth/github/callback`);
-  authorize.searchParams.set('scope', 'gist');
+  authorize.searchParams.set('scope', appScopes(env, app).join(' '));
   authorize.searchParams.set('state', state);
   return Response.redirect(authorize.toString(), 302);
 }

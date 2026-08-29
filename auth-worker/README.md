@@ -17,7 +17,7 @@ One Cloudflare Worker can authorize multiple static apps through one GitHub OAut
    ```
 
 3. Put returned namespace ID in `wrangler.toml`.
-4. Update `APP_CONFIG` in `wrangler.toml`. Keys are app IDs; values are exact allowed origins. Paths are intentionally excluded because browsers report only origin during CORS and `postMessage` checks.
+4. Update `APP_CONFIG` and `APP_SCOPES` in `wrangler.toml`. Keys are app IDs. Origins must match exactly; paths are excluded because browsers report only origins during CORS and `postMessage` checks. Keep each app's OAuth scopes minimal.
 5. Add GitHub credentials as Worker secrets:
 
    ```bash
@@ -39,6 +39,12 @@ APP_CONFIG = '''
   "another-app": ["https://example.com"]
 }
 '''
+APP_SCOPES = '''
+{
+  "juice": ["gist"],
+  "another-app": ["gist", "public_repo"]
+}
+'''
 ```
 
 Client starts popup at:
@@ -54,6 +60,7 @@ Callback sends short-lived redemption code to opener using `postMessage`. Client
 - GitHub client secret exists only in Worker secrets.
 - OAuth state expires after 10 minutes; redemption grants expire after 60 seconds.
 - Allowed origins prevent arbitrary sites using broker OAuth app.
-- Tokens still reach each app and should be protected like current personal access tokens. Juice stores token in local storage.
+- Tokens still reach each app and should be protected like current personal access tokens. Clients store tokens in local storage.
+- `public_repo` grants read/write access to all public repositories owned by the authorizing user. Use it only for apps that must invoke public-repository workflows; use `repo` only when private repositories are required.
 - Cloudflare KV deletion is not atomic. For high-risk/public multi-tenant use, replace KV grants with Durable Object or D1 atomic redemption.
 - GitHub `gist` scope grants access to all account Gists. GitHub secret Gists are unlisted, not access-controlled private storage.

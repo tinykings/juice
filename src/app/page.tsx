@@ -40,19 +40,12 @@ export default function HomePage() {
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [showSomeday, setShowSomeday] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [mounted, setMounted] = useState(false);
   const [windowWidth, setWindowWidth] = useState(0);
-  const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'someday'>('pending');
+  const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'pinned'>('pending');
   const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
   const listScrollRef = useRef<HTMLElement | null>(null);
   const inlineCloseTimerRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setMounted(true), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -64,7 +57,7 @@ export default function HomePage() {
       }
 
       const value = newTaskEntry[1].toLowerCase();
-      setNewTaskUrlMode(value === 'someday' ? 'someday' : 'today');
+      setNewTaskUrlMode(value === 'pinned' ? 'pinned' : 'today');
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -98,19 +91,9 @@ export default function HomePage() {
     return () => window.clearTimeout(timer);
   }, [view, showSplitView]);
 
-  useEffect(() => {
-    if (!showSomeday) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [showSomeday]);
-
   const todayTaskCount = getTodayTasks().length;
   useAppBadge(todayTaskCount, badgeEnabled);
-  // Callback ref to focus search input immediately when mounted (preserves user gesture for mobile keyboards)
+  // Callback ref focuses search immediately while preserving mobile keyboard user gesture.
   const searchInputRef = useCallback((node: HTMLInputElement | null) => {
     if (node) {
       node.focus();
@@ -143,7 +126,7 @@ export default function HomePage() {
   const incompleteTasks = useMemo(() => {
     const filtered = tasksWithRecurrencePreviews.filter(t => {
       if (t.completed) return false;
-      if (!t.dueDate) return false; // Exclude someday tasks from normal groups
+      if (!t.dueDate) return false; // Pinned tasks are shown separately.
       if (selectedDateFilter && !isSameDay(parseTaskDate(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
@@ -172,7 +155,7 @@ export default function HomePage() {
 
   const hasNoTasks = tasks.length === 0;
 
-  // Pinned tasks stay above every dated and someday group.
+  // Pinned tasks stay above every dated group.
   const pinnedTasks = useMemo(() => {
     if (selectedDateFilter) return [];
     const query = searchQuery.trim().toLowerCase();
@@ -182,11 +165,6 @@ export default function HomePage() {
       (!query || t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query))
     ));
   }, [tasks, searchQuery, selectedDateFilter]);
-
-  // Someday tasks (no due date, not completed or pinned)
-  const somedayTasks = useMemo(() => {
-    return tasks.filter(t => !t.dueDate && !t.pinned && !t.completed);
-  }, [tasks]);
 
   // Group tasks by day (for this week) and month (for later)
   const groupedTasks = useMemo(() => {
@@ -302,7 +280,7 @@ export default function HomePage() {
 
   const visibleGroups = useMemo(() => {
     const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
-    const creatingDate = isCreatingTask && initialDate !== ''
+    const creatingDate = isCreatingTask
       ? (initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate))
       : null;
     const hasDatedCreateGroup = creatingDate
@@ -335,14 +313,13 @@ export default function HomePage() {
   }, [groupedTasks, completedTasks.length, currentDate, editingTask, initialDate, isModalOpen, taskFormPresentation]);
 
   const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
-  const isCreatingSomedayTask = isCreatingTask && initialDate === '';
   const shouldShowCreateFormInGroup = useCallback((group: TaskGroup) => {
-    if (!isCreatingTask || isCreatingSomedayTask) return false;
+    if (!isCreatingTask) return false;
     const creatingDate = initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate);
     const hasDatedCreateGroup = groupedTasks.some(g => g.date && isSameDay(g.date, creatingDate));
     if (group.date && isSameDay(group.date, creatingDate)) return true;
     return !hasDatedCreateGroup && !group.date && group.label === format(creatingDate, 'MMMM yyyy');
-  }, [currentDate, groupedTasks, initialDate, isCreatingSomedayTask, isCreatingTask]);
+  }, [currentDate, groupedTasks, initialDate, isCreatingTask]);
 
   const openTaskForm = useCallback((
     date: string | null,
@@ -466,7 +443,7 @@ export default function HomePage() {
           e.preventDefault();
           const date = selectedDateFilter
             ? format(selectedDateFilter, 'yyyy-MM-dd')
-            : (showSomeday ? '' : null);
+            : null;
           openTaskForm(date, null, 'calendar-overlay');
         }
       }
@@ -498,7 +475,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, showSomeday, openTaskForm, view]);
+  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, openTaskForm, view]);
 
   if (newTaskUrlMode === 'pending' || (newTaskUrlMode !== 'off' && !isLoaded)) {
     return (
@@ -542,7 +519,7 @@ export default function HomePage() {
                 inline
                 onClose={() => {}}
                 onSave={() => setHasAddedTaskFromUrl(true)}
-                initialDate={newTaskUrlMode === 'someday' ? '' : null}
+                initialDate={newTaskUrlMode === 'pinned' ? '' : null}
                 captureUrlMode
               />
               <button
@@ -761,7 +738,7 @@ Back
                         if (selectedDateFilter) {
                           openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
                         } else {
-                          openInlineTaskForm(showSomeday ? '' : null);
+                          openInlineTaskForm(null);
                         }
                       }}
                       style={{
@@ -852,77 +829,6 @@ Back
                       />
                     )
                   ))}
-                </div>
-              </section>
-            )}
-
-            {/* Someday Section */}
-            {showSomeday && (
-              <section style={{
-                marginBottom: 24,
-              }}>
-                <div style={{
-                  padding: '8px 12px',
-                  background: 'color-mix(in srgb, var(--purple) 14%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--purple) 42%, transparent)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: '0.03em',
-                  color: 'var(--purple)',
-                }}>
-                  SOMEDAY
-                </div>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  padding: '12px 0 0',
-                }}>
-                  {isCreatingSomedayTask && (
-                    <TaskForm
-                      key="new-someday"
-                      inline
-                      isClosing={isInlineFormClosing}
-                      onClose={handleCloseModal}
-                      onSave={handleInlineSave}
-                      initialDate=""
-                    />
-                  )}
-                  {somedayTasks.length > 0 ? (
-                    somedayTasks.map((task) => (
-                      editingTask?.id === task.id ? (
-                        <TaskForm
-                          key={task.id}
-                          inline
-                          isClosing={isInlineFormClosing}
-                          editTask={task}
-                          onClose={handleCloseModal}
-                          onSave={handleInlineSave}
-                        />
-                      ) : (
-                        <TaskItem 
-                          key={task.id} 
-                          task={task} 
-                          onComplete={() => handleTaskComplete(task.id, true)}
-                          onEdit={() => openInlineTaskForm(null, task)}
-                          showDate={true}
-                          isOverdue={false}
-                          needsConfirmation={false}
-                        />
-                      )
-                    ))
-                  ) : !isCreatingSomedayTask ? (
-                    <div style={{
-                      padding: '28px 16px',
-                      textAlign: 'center',
-                      color: 'var(--muted)',
-                      fontSize: 14,
-                      fontWeight: 600,
-                    }}>
-                      No someday tasks
-                    </div>
-                  ) : null}
                 </div>
               </section>
             )}
@@ -1128,75 +1034,6 @@ Back
             </svg>
           </button>
 
-          {/* Someday Button */}
-          {view !== 'calendar' && (
-          <button
-            title="Someday tasks"
-            onClick={() => {
-              const nextShowSomeday = !showSomeday;
-              setShowSomeday(nextShowSomeday);
-              if (nextShowSomeday) setSelectedDateFilter(null);
-            }}
-            style={{
-              position: 'relative',
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: showSomeday ? 'var(--purple)' : 'transparent',
-              border: '1px solid',
-              borderColor: showSomeday ? 'var(--purple)' : 'var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              color: showSomeday ? 'white' : 'var(--muted)',
-              boxShadow: showSomeday ? '0 0 0 3px color-mix(in srgb, var(--purple) 22%, transparent)' : 'none',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s',
-            }}
-            aria-label="Someday"
-            aria-pressed={showSomeday}
-            onMouseEnter={(e) => {
-              if (!showSomeday) {
-                e.currentTarget.style.background = 'var(--accent-subtle)';
-                e.currentTarget.style.color = 'var(--accent)';
-                e.currentTarget.style.borderColor = 'var(--accent)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!showSomeday) {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--muted)';
-                e.currentTarget.style.borderColor = 'var(--border)';
-              }
-            }}
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M22 12h-6l-2 3H10l-2-3H2"/>
-              <path d="M2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6"/>
-            </svg>
-            {mounted && somedayTasks.length > 0 && !showSomeday && (
-              <span style={{
-                position: 'absolute',
-                top: 4,
-                right: 4,
-                minWidth: 14,
-                height: 14,
-                background: 'var(--muted)',
-                color: 'var(--background)',
-                fontSize: 9,
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0 2px',
-                borderRadius: 999,
-              }}>
-                {somedayTasks.length}
-              </span>
-            )}
-          </button>
-          )}
-
           {/* Settings Button */}
           <button
             title="Settings"
@@ -1236,18 +1073,14 @@ Back
         {/* Add Task — always visible */}
         <div>
           <button
-            title={isSyncing
-              ? `Syncing tasks — click to add${showSomeday ? ' to Someday' : ''}`
-              : showSomeday ? 'New Someday task (n)' : 'New (n)'}
+            title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
             onClick={() => {
               const date = selectedDateFilter
                 ? format(selectedDateFilter, 'yyyy-MM-dd')
-                : (showSomeday ? '' : null);
+                : null;
               openTaskForm(date, null, 'calendar-overlay');
             }}
-            aria-label={isSyncing
-              ? `Syncing tasks; add ${showSomeday ? 'Someday ' : ''}task`
-              : showSomeday ? 'Add Someday task' : 'Add task'}
+            aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
             style={{
               width: 44,
               height: 44,
@@ -1255,22 +1088,18 @@ Back
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              background: showSomeday ? 'var(--purple)' : 'var(--accent)',
-              border: `1px solid ${showSomeday ? 'var(--purple)' : 'var(--accent)'}`,
+              background: 'var(--accent)',
+              border: '1px solid var(--accent)',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
-              boxShadow: showSomeday
-                ? '0 0 0 3px color-mix(in srgb, var(--purple) 22%, transparent)'
-                : 'var(--shadow-md)',
+              boxShadow: 'var(--shadow-md)',
               transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = showSomeday
-                ? 'color-mix(in srgb, var(--purple) 85%, white)'
-                : 'var(--accent-surface)';
+              e.currentTarget.style.background = 'var(--accent-surface)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = showSomeday ? 'var(--purple)' : 'var(--accent)';
+              e.currentTarget.style.background = 'var(--accent)';
             }}
           >
             <AddOrSyncIcon isSyncing={isSyncing} />

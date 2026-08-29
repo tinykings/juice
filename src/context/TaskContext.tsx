@@ -87,13 +87,14 @@ function createDocumentWithCompletedCleanup(
 }
 
 function normalizeTask(task: Task, fallbackTime = new Date().toISOString()): Task {
-  const pinned = Boolean(task.pinned);
+  const dueDate = normalizeTaskDate(task.dueDate);
+  const pinned = Boolean(task.pinned) || !dueDate;
   return {
     ...task,
     notes: task.notes ?? '',
     tags: task.tags ?? [],
     pinned,
-    dueDate: pinned ? '' : normalizeTaskDate(task.dueDate),
+    dueDate: pinned ? '' : dueDate,
     completedAt: task.completedAt ?? null,
     updatedAt: task.updatedAt ?? task.createdAt ?? fallbackTime,
     deletedAt: task.deletedAt ?? null,
@@ -135,16 +136,15 @@ function isCaptureUrl() {
 
 function createTaskFromInput(taskData: TaskInput): Task {
   const now = new Date().toISOString();
-  return {
+  return normalizeTask({
     ...taskData,
-    dueDate: normalizeTaskDate(taskData.dueDate),
     id: uuidv4(),
     createdAt: now,
     updatedAt: now,
     completed: false,
     completedAt: null,
     deletedAt: null,
-  };
+  });
 }
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
