@@ -569,7 +569,7 @@ export default function HomePage() {
           right: 0,
           zIndex: 20,
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          padding: '12px 16px',
+          padding: 'calc(12px + env(safe-area-inset-top, 0px)) 16px',
           paddingRight: showSplitView ? 196 : 72,
           borderBottom: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
@@ -678,7 +678,9 @@ export default function HomePage() {
       {(view === 'list' || showSplitView) && (
       <main ref={listScrollRef} className="app-scroll" style={{
         flex: 1, 
-        padding: isSearchExpanded ? '88px clamp(10px, 2vw, 18px) 100px' : '24px clamp(10px, 2vw, 18px) 100px',
+        padding: isSearchExpanded
+          ? 'calc(88px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) 100px'
+          : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) 100px',
         borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
