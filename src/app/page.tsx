@@ -937,10 +937,9 @@ Back
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Some standalone mobile browsers report a stale, oversized safe-area
-          // inset until the first orientation change. Keep home-indicator space
-          // without letting that bad initial value inflate the action bar.
-          padding: '12px 16px max(12px, min(34px, env(safe-area-inset-bottom, 0px)))',
+          // Standalone iOS can expose a stale bottom safe-area inset until the
+          // first rotation. PWA viewport already excludes that unusable area.
+          padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
