@@ -937,7 +937,10 @@ Back
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          padding: '12px 16px max(12px, env(safe-area-inset-bottom, 0px))',
+          // Some standalone mobile browsers report a stale, oversized safe-area
+          // inset until the first orientation change. Keep home-indicator space
+          // without letting that bad initial value inflate the action bar.
+          padding: '12px 16px max(12px, min(34px, env(safe-area-inset-bottom, 0px)))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -945,6 +948,7 @@ Back
           borderTop: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
           userSelect: 'none',
+          flexShrink: 0,
           position: showSplitView ? 'fixed' : 'relative',
           left: showSplitView ? '50%' : undefined,
           right: showSplitView ? 0 : undefined,
