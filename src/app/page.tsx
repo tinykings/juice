@@ -994,50 +994,6 @@ Back
           alignItems: 'center',
           gap: 8,
         }}>
-          {/* Toggle Calendar/List Button — mobile only */}
-          {!showSplitView && (
-          <button
-            title={view === 'list' ? 'Calendar view' : 'List view'}
-            onClick={() => setView(view === 'list' ? 'calendar' : 'list')}
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--muted)',
-              background: 'transparent',
-              border: '1px solid',
-              borderColor: 'var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
-          >
-            {view === 'list' ? (
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="0"/>
-                <path d="M16 2v4M8 2v4M3 10h18"/>
-              </svg>
-            ) : (
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-            )}
-          </button>
-          )}
-
           {/* Search Button */}
           <button
             title="Search tasks"
