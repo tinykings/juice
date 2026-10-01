@@ -42,10 +42,12 @@ export default function HomePage() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [windowWidth, setWindowWidth] = useState(0);
+  const [isMobilePwaLandscape, setIsMobilePwaLandscape] = useState(false);
   const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'pinned'>('pending');
   const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
   const listScrollRef = useRef<HTMLElement | null>(null);
   const inlineCloseTimerRef = useRef<number | null>(null);
+  const landscapeCalendarWasAutomaticRef = useRef(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -63,13 +65,43 @@ export default function HomePage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // Track window width for responsive layout
+  // Track viewport width and PWA landscape mode for responsive layout.
   useEffect(() => {
-    const updateWidth = () => setWindowWidth(window.innerWidth);
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    const updateViewport = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+
+      setWindowWidth(window.innerWidth);
+      setIsMobilePwaLandscape(
+        isStandalone &&
+        window.matchMedia('(orientation: landscape)').matches &&
+        window.innerWidth < 1000
+      );
+    };
+
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    window.addEventListener('orientationchange', updateViewport);
+    return () => {
+      window.removeEventListener('resize', updateViewport);
+      window.removeEventListener('orientationchange', updateViewport);
+    };
   }, []);
+
+  useEffect(() => {
+    if (isMobilePwaLandscape) {
+      setView(currentView => {
+        landscapeCalendarWasAutomaticRef.current = currentView !== 'calendar';
+        return 'calendar';
+      });
+      return;
+    }
+
+    if (landscapeCalendarWasAutomaticRef.current) {
+      landscapeCalendarWasAutomaticRef.current = false;
+      setView('list');
+    }
+  }, [isMobilePwaLandscape]);
 
   const showSplitView = windowWidth >= 1000;
   const isWideScreen = windowWidth > 600;
@@ -670,6 +702,7 @@ export default function HomePage() {
             tasks={tasksWithRecurrencePreviews}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
+            fullScreen={isMobilePwaLandscape}
           />
         </div>
       )}
@@ -933,7 +966,8 @@ Back
       </main>
 )}
 
-      {/* Bottom Action Bar — constrained to task pane in split view */}
+      {/* Landscape PWA calendar owns the full viewport. */}
+      {!(isMobilePwaLandscape && view === 'calendar') && (
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
@@ -1111,6 +1145,7 @@ Back
           </button>
         </div>
       </footer>
+      )}
 
       <SettingsModal
         isOpen={isSettingsOpen}

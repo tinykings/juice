@@ -19,6 +19,7 @@ interface CalendarViewProps {
   tasks: Task[];
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate?: Date | null;
+  fullScreen?: boolean;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -28,7 +29,12 @@ const DESKTOP_COMPRESSED_DAY_MIN_HEIGHT = 28;
 const MOBILE_DAY_MIN_HEIGHT = 88;
 const MOBILE_COMPRESSED_DAY_MIN_HEIGHT = 24;
 
-export default function CalendarView({ tasks, onDaySelect, selectedDate = null }: CalendarViewProps) {
+export default function CalendarView({
+  tasks,
+  onDaySelect,
+  selectedDate = null,
+  fullScreen = false,
+}: CalendarViewProps) {
   const [windowWidth, setWindowWidth] = useState(() =>
     typeof window === 'undefined' ? MOBILE_BREAKPOINT : window.innerWidth
   );
@@ -73,7 +79,9 @@ export default function CalendarView({ tasks, onDaySelect, selectedDate = null }
 
   return (
     <div style={{
-      padding: isMobileCalendar ? '18px 10px 110px' : '24px clamp(10px, 2vw, 18px) 120px',
+      padding: fullScreen
+        ? 'max(18px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))'
+        : (isMobileCalendar ? '18px 10px 110px' : '24px clamp(10px, 2vw, 18px) 120px'),
       minWidth: 0,
       width: '100%',
       maxWidth: 1120,
