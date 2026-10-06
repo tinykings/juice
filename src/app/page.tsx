@@ -971,8 +971,11 @@ Back
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Standalone iOS can expose a stale bottom safe-area inset until the
-          // first rotation. PWA viewport already excludes that unusable area.
+          // Pin footer to its natural button height. Some mobile/PWA viewports
+          // otherwise stretch it until an orientation change recalculates layout.
+          height: 69,
+          minHeight: 69,
+          maxHeight: 69,
           padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -981,7 +984,7 @@ Back
           borderTop: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
           userSelect: 'none',
-          flexShrink: 0,
+          flex: '0 0 69px',
           position: showSplitView ? 'fixed' : 'relative',
           left: showSplitView ? '50%' : undefined,
           right: showSplitView ? 0 : undefined,
