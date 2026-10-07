@@ -872,7 +872,6 @@ Back
             {visibleGroups.map((group) => {
               const groupHasCompletedTasks = group.isToday && completedTasks.length > 0;
               const groupHasTasks = group.tasks.length > 0 || groupHasCompletedTasks;
-              const showTodayCompletedSummary = group.isToday && group.tasks.length === 0 && completedTasks.length > 0 && !searchQuery.trim();
 
               return (
                 <section
@@ -912,26 +911,6 @@ Back
                         onSave={handleInlineSave}
                         initialDate={initialDate}
                       />
-                    )}
-                    {showTodayCompletedSummary && (
-                      <div style={{
-                        padding: '14px 16px',
-                        background: 'var(--task-surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--muted)',
-                        fontSize: 15,
-                        fontWeight: 600,
-                        lineHeight: 1.45,
-                      }}>
-                        <div style={{ color: 'var(--foreground)' }}>
-                          All tasks are completed.
-                        </div>
-                        <div>
-                          <span style={{ color: 'var(--accent)' }}>{tomorrowTasks.length}</span>
-                          {' '}task{tomorrowTasks.length !== 1 ? 's' : ''} coming tomorrow
-                        </div>
-                      </div>
                     )}
                     {group.tasks.map((task) => (
                       editingTask?.id === task.id ? (
