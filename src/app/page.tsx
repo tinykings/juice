@@ -40,6 +40,7 @@ export default function HomePage() {
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [windowWidth, setWindowWidth] = useState(0);
   const [isMobilePwaLandscape, setIsMobilePwaLandscape] = useState(false);
@@ -954,9 +955,74 @@ Back
                         />
                       )
                     ))}
-                    {group.isToday && completedTasks.map((task) => (
-                      <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
-                    ))}
+                    {group.isToday && completedTasks.length > 0 && (
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                      }}>
+                        <button
+                          type="button"
+                          onClick={() => setIsCompletedExpanded(expanded => !expanded)}
+                          aria-expanded={isCompletedExpanded}
+                          aria-controls="completed-tasks"
+                          style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '7px 10px',
+                            color: 'var(--muted)',
+                            background: 'transparent',
+                            border: 'none',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            letterSpacing: '0.01em',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            style={{
+                              transform: isCompletedExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.15s ease',
+                            }}
+                          >
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                          <span>Completed</span>
+                          <span style={{
+                            marginLeft: 'auto',
+                            fontSize: 12,
+                            fontWeight: 600,
+                          }}>
+                            {completedTasks.length}
+                          </span>
+                        </button>
+                        {isCompletedExpanded && (
+                          <div
+                            id="completed-tasks"
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 10,
+                            }}
+                          >
+                            {completedTasks.map((task) => (
+                              <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </section>
               );
