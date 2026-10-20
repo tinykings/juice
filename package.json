@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "next build && touch out/.nojekyll"
+    "deploy": "npm run build && touch out/.nojekyll"
   },
   "dependencies": {
     "date-fns": "^4.1.0",
