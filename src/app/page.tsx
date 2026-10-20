@@ -1016,12 +1016,11 @@ Back
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Pin footer to its natural button height. Some mobile/PWA viewports
-          // otherwise stretch it until an orientation change recalculates layout.
-          height: 69,
-          minHeight: 69,
-          maxHeight: 69,
-          padding: '12px 16px',
+          // Keep a compact bar with just enough space around the 44px buttons.
+          height: 56,
+          minHeight: 56,
+          maxHeight: 56,
+          padding: '5px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1029,7 +1028,7 @@ Back
           borderTop: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
           userSelect: 'none',
-          flex: '0 0 69px',
+          flex: '0 0 56px',
           position: showSplitView ? 'fixed' : 'relative',
           left: showSplitView ? '50%' : undefined,
           right: showSplitView ? 0 : undefined,
