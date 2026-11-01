@@ -1,5 +1,6 @@
 import { Task } from '@/types/task';
 import { normalizeTaskDate } from '@/utils/taskDate';
+import { decryptContent, encryptContent, isEncryptedContent } from '@/services/gistCrypto';
 
 const GIST_API_URL = 'https://api.github.com/gists';
 const TASKS_FILENAME = 'juice-tasks.json';
@@ -7,6 +8,8 @@ const UNKNOWN_TIMESTAMP = '1970-01-01T00:00:00.000Z';
 
 interface GistFile {
   content: string;
+  truncated?: boolean;
+  raw_url?: string;
 }
 
 interface GistResponse {
@@ -20,6 +23,8 @@ interface GistResponse {
 export interface SyncSnapshot {
   document: SyncDocument;
   etag: string | null;
+  /** Whether the Gist file was encrypted. A client with a key re-saves plaintext Gists encrypted. */
+  encrypted: boolean;
 }
 
 export class GistChangedDuringSyncError extends Error {
@@ -29,10 +34,24 @@ export class GistChangedDuringSyncError extends Error {
   }
 }
 
+export class GistNotFoundError extends Error {
+  constructor() {
+    super('The Gist was not found');
+    this.name = 'GistNotFoundError';
+  }
+}
+
 export interface GistSettings {
   gistId: string;
   githubToken: string;
   githubLogin?: string;
+  /** End-to-end encryption key from the user's password manager. See gistCrypto.ts. */
+  encryptionKey?: string;
+}
+
+async function encodeSyncDocument(document: SyncDocument, encryptionKey?: string): Promise<string> {
+  const content = JSON.stringify(createSyncDocument(document.tasks, document.tombstones, document.updatedAt), null, 2);
+  return encryptionKey ? encryptContent(content, encryptionKey) : content;
 }
 
 export interface TaskTombstone {
@@ -387,6 +406,9 @@ async function fetchGist(settings: GistSettings): Promise<{ gist: GistResponse; 
     },
   });
 
+  if (response.status === 404) {
+    throw new GistNotFoundError();
+  }
   if (!response.ok) {
     throw new Error(`Failed to load gist: ${response.status} ${response.statusText}`);
   }
@@ -405,11 +427,22 @@ export async function loadSyncSnapshotFromGist(settings: GistSettings): Promise<
   const tasksFile = gist.files[TASKS_FILENAME];
 
   if (!tasksFile) {
-    return { document: createSyncDocument([]), etag };
+    return { document: createSyncDocument([]), etag, encrypted: false };
   }
 
+  // Files over about 1 MB come back truncated; fetch the full text.
+  let content = tasksFile.content;
+  if (tasksFile.truncated && tasksFile.raw_url) {
+    const raw = await fetch(tasksFile.raw_url, { headers: { Authorization: `Bearer ${settings.githubToken}` } });
+    if (!raw.ok) throw new Error(`Failed to load gist: ${raw.status} ${raw.statusText}`);
+    content = await raw.text();
+  }
+
+  const encrypted = isEncryptedContent(content);
+  // Decryption errors (missing or wrong key) carry their own message for Settings.
+  const plaintext = encrypted ? await decryptContent(content, settings.encryptionKey) : content;
   try {
-    return { document: parseSyncDocument(tasksFile.content), etag };
+    return { document: parseSyncDocument(plaintext), etag, encrypted };
   } catch {
     throw new Error('Failed to parse tasks from gist');
   }
@@ -444,12 +477,15 @@ export async function saveSyncDocumentToGist(
     body: JSON.stringify({
       files: {
         [TASKS_FILENAME]: {
-          content: JSON.stringify(createSyncDocument(document.tasks, document.tombstones, document.updatedAt), null, 2),
+          content: await encodeSyncDocument(document, settings.encryptionKey),
         },
       },
     }),
   });
 
+  if (response.status === 404) {
+    throw new GistNotFoundError();
+  }
   if (response.status === 409 || response.status === 412) {
     throw new GistChangedDuringSyncError();
   }
@@ -489,11 +525,11 @@ export async function findJuiceGist(githubToken: string): Promise<string | null>
   return null;
 }
 
-export async function findOrCreateJuiceGist(tasks: Task[], githubToken: string): Promise<string> {
-  return (await findJuiceGist(githubToken)) ?? createNewGist(tasks, githubToken);
+export async function findOrCreateJuiceGist(tasks: Task[], githubToken: string, encryptionKey?: string): Promise<string> {
+  return (await findJuiceGist(githubToken)) ?? createNewGist(tasks, githubToken, encryptionKey);
 }
 
-export async function createNewGist(tasks: Task[], githubToken: string): Promise<string> {
+export async function createNewGist(tasks: Task[], githubToken: string, encryptionKey?: string): Promise<string> {
   if (!githubToken) {
     throw new Error('GitHub token is required');
   }
@@ -510,7 +546,7 @@ export async function createNewGist(tasks: Task[], githubToken: string): Promise
       public: false,
       files: {
         [TASKS_FILENAME]: {
-          content: JSON.stringify(createSyncDocument(tasks), null, 2),
+          content: await encodeSyncDocument(createSyncDocument(tasks), encryptionKey),
         },
       },
     }),

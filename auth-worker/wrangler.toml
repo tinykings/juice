@@ -22,6 +22,12 @@ APP_CONFIG = '''
   ]
 }
 '''
+# Native apps sign in with a custom-scheme redirect plus PKCE instead of an origin.
+APP_REDIRECTS = '''
+{
+  "juice": ["juice://oauth"]
+}
+'''
 APP_SCOPES = '''
 {
   "juice": ["gist"],

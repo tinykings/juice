@@ -7,6 +7,8 @@ import { useTasks } from '@/context/TaskContext';
 import { findOrCreateJuiceGist, loadSyncDocumentFromGist } from '@/services/gistSync';
 import { authorizeWithGitHub, isGitHubOAuthConfigured } from '@/services/githubOAuth';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
+import EncryptionSettings from '@/components/EncryptionSettings';
+import { GistEncryptionError } from '@/services/gistCrypto';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -79,11 +81,19 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
     try {
       const authorization = await authorizeWithGitHub();
-      const foundGistId = await findOrCreateJuiceGist(tasks, authorization.token);
-      const loadedDocument = await loadSyncDocumentFromGist({
-        gistId: foundGistId,
-        githubToken: authorization.token,
-      });
+      const foundGistId = await findOrCreateJuiceGist(tasks, authorization.token, gistSettings.encryptionKey);
+      let loadedCount: number | null = null;
+      try {
+        const loadedDocument = await loadSyncDocumentFromGist({
+          gistId: foundGistId,
+          githubToken: authorization.token,
+          encryptionKey: gistSettings.encryptionKey,
+        });
+        loadedCount = loadedDocument.tasks.length;
+      } catch (error) {
+        // An encrypted Gist still connects; sync waits until the key is entered below.
+        if (!(error instanceof GistEncryptionError)) throw error;
+      }
 
       setGistId(foundGistId);
       setToken(authorization.token);
@@ -94,7 +104,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       });
       setMessage({
         type: 'success',
-        text: `Connected as @${authorization.login}. Merging ${loadedDocument.tasks.length} Gist tasks with local tasks.`,
+        text: loadedCount === null
+          ? `Connected as @${authorization.login}. This Gist is encrypted: enter your key below to sync.`
+          : `Connected as @${authorization.login}. Merging ${loadedCount} Gist tasks with local tasks.`,
       });
     } catch (error) {
       setMessage({ type: 'error', text: error instanceof Error ? error.message : 'GitHub sign-in failed' });
@@ -113,7 +125,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setMessage(null);
 
     try {
-      const loadedDocument = await loadSyncDocumentFromGist({ gistId, githubToken: token });
+      const loadedDocument = await loadSyncDocumentFromGist({ gistId, githubToken: token, encryptionKey: gistSettings.encryptionKey });
       const settingsChanged = gistId !== gistSettings.gistId || token !== gistSettings.githubToken;
       updateGistSettings({ gistId, githubToken: token });
       // Changed credentials trigger TaskProvider's normal three-way sync. If
@@ -560,6 +572,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </>
             )}
           </div>
+
+          <EncryptionSettings />
 
           <div style={{
             marginTop: 14,

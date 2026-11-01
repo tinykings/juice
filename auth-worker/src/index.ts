@@ -4,11 +4,17 @@ interface Env {
   GITHUB_CLIENT_SECRET: string;
   APP_CONFIG: string;
   APP_SCOPES: string;
+  /** Native apps: app ID -> exact custom-scheme redirect URIs, e.g. {"juice": ["juice://oauth"]}. */
+  APP_REDIRECTS?: string;
 }
 
 interface FlowRecord {
   app: string;
   origin: string;
+  /** Set for native apps, which receive the grant by redirect instead of postMessage. */
+  redirect?: string;
+  /** PKCE S256 challenge; native grants can only be redeemed with the matching verifier. */
+  challenge?: string;
 }
 
 interface GrantRecord extends FlowRecord {
@@ -47,6 +53,39 @@ function appScopes(env: Env, app: string): string[] {
   } catch {
     return ['gist'];
   }
+}
+
+function allowedRedirect(env: Env, app: string, redirect: string): boolean {
+  try {
+    const config = JSON.parse(env.APP_REDIRECTS ?? '{}') as Record<string, unknown>;
+    const redirects = config[app];
+    // Only custom schemes: web apps use the origin/postMessage flow.
+    return Array.isArray(redirects)
+      && redirects.includes(redirect)
+      && !/^https?:/i.test(redirect);
+  } catch {
+    return false;
+  }
+}
+
+function base64Url(bytes: ArrayBuffer): string {
+  let binary = '';
+  for (const byte of new Uint8Array(bytes)) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function pkceMatches(verifier: string, challenge: string): Promise<boolean> {
+  if (!/^[A-Za-z0-9._~-]{43,128}$/.test(verifier)) return false;
+  return base64Url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))) === challenge;
+}
+
+function nativeRedirect(redirect: string, params: Record<string, string>): Response {
+  const target = new URL(redirect);
+  for (const [key, value] of Object.entries(params)) target.searchParams.set(key, value);
+  return new Response(null, {
+    status: 302,
+    headers: { Location: target.toString(), 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' },
+  });
 }
 
 function allowedOrigin(env: Env, app: string, origin: string): boolean {
@@ -99,10 +138,24 @@ async function start(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const app = url.searchParams.get('app') ?? '';
   const origin = url.searchParams.get('origin') ?? '';
-  if (!allowedOrigin(env, app, origin)) return new Response('Unknown app or origin', { status: 400 });
+  const redirect = url.searchParams.get('redirect_uri') ?? '';
+  let flow: FlowRecord;
+
+  if (redirect) {
+    // Native app flow: requires an allowlisted custom-scheme redirect and a PKCE challenge.
+    const challenge = url.searchParams.get('code_challenge') ?? '';
+    if (!allowedRedirect(env, app, redirect)) return new Response('Unknown app or redirect', { status: 400 });
+    if (url.searchParams.get('code_challenge_method') !== 'S256' || !/^[A-Za-z0-9_-]{43}$/.test(challenge)) {
+      return new Response('PKCE S256 code_challenge required', { status: 400 });
+    }
+    flow = { app, origin: '', redirect, challenge };
+  } else {
+    if (!allowedOrigin(env, app, origin)) return new Response('Unknown app or origin', { status: 400 });
+    flow = { app, origin };
+  }
 
   const state = crypto.randomUUID() + crypto.randomUUID();
-  await env.AUTH_FLOW.put(`state:${state}`, JSON.stringify({ app, origin } satisfies FlowRecord), {
+  await env.AUTH_FLOW.put(`state:${state}`, JSON.stringify(flow satisfies FlowRecord), {
     expirationTtl: 600,
   });
 
@@ -119,14 +172,21 @@ async function callback(request: Request, env: Env): Promise<Response> {
   const state = url.searchParams.get('state') ?? '';
   const stateKey = `state:${state}`;
   const flow = await env.AUTH_FLOW.get<FlowRecord>(stateKey, 'json');
-  if (!flow || !allowedOrigin(env, flow.app, flow.origin)) {
+  const flowAllowed = flow && (flow.redirect
+    ? allowedRedirect(env, flow.app, flow.redirect)
+    : allowedOrigin(env, flow.app, flow.origin));
+  if (!flow || !flowAllowed) {
     return new Response('Invalid or expired OAuth state', { status: 400 });
   }
   await env.AUTH_FLOW.delete(stateKey);
 
+  const finish = (message: { code?: string; error?: string }) => flow.redirect
+    ? nativeRedirect(flow.redirect, message.code ? { code: message.code } : { error: message.error ?? 'Sign-in failed' })
+    : callbackPage(flow.origin, message);
+
   const denied = url.searchParams.get('error');
   const code = url.searchParams.get('code');
-  if (denied || !code) return callbackPage(flow.origin, { error: 'GitHub authorization was cancelled' });
+  if (denied || !code) return finish({ error: 'GitHub authorization was cancelled' });
 
   const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
     method: 'POST',
@@ -140,7 +200,7 @@ async function callback(request: Request, env: Env): Promise<Response> {
   });
   const tokenResult = await tokenResponse.json() as { access_token?: string; error_description?: string };
   if (!tokenResponse.ok || !tokenResult.access_token) {
-    return callbackPage(flow.origin, { error: tokenResult.error_description ?? 'GitHub token exchange failed' });
+    return finish({ error: tokenResult.error_description ?? 'GitHub token exchange failed' });
   }
 
   const userResponse = await fetch('https://api.github.com/user', {
@@ -152,7 +212,7 @@ async function callback(request: Request, env: Env): Promise<Response> {
   });
   const user = await userResponse.json() as { login?: string };
   if (!userResponse.ok || !user.login) {
-    return callbackPage(flow.origin, { error: 'Could not load GitHub account' });
+    return finish({ error: 'Could not load GitHub account' });
   }
 
   const grant = crypto.randomUUID() + crypto.randomUUID();
@@ -162,21 +222,31 @@ async function callback(request: Request, env: Env): Promise<Response> {
     login: user.login,
   } satisfies GrantRecord), { expirationTtl: 60 });
 
-  return callbackPage(flow.origin, { code: grant });
+  return finish({ code: grant });
 }
 
 async function redeem(request: Request, env: Env): Promise<Response> {
   const origin = request.headers.get('Origin') ?? '';
   let code = '';
+  let verifier = '';
   try {
-    const body = await request.json() as { code?: unknown };
+    const body = await request.json() as { code?: unknown; code_verifier?: unknown };
     if (typeof body.code === 'string') code = body.code;
+    if (typeof body.code_verifier === 'string') verifier = body.code_verifier;
   } catch {
     return json({ error: 'Invalid request' }, 400, cors(env, origin));
   }
 
   const key = `grant:${code}`;
   const grant = await env.AUTH_FLOW.get<GrantRecord>(key, 'json');
+  if (grant?.redirect) {
+    // Native grant: no browser origin; the PKCE verifier proves this is the app that started sign-in.
+    if (!grant.challenge || !allowedRedirect(env, grant.app, grant.redirect) || !(await pkceMatches(verifier, grant.challenge))) {
+      return json({ error: 'Invalid or expired sign-in code' }, 400);
+    }
+    await env.AUTH_FLOW.delete(key);
+    return json({ token: grant.token, login: grant.login }, 200, { 'Cache-Control': 'no-store' });
+  }
   if (!grant || origin !== grant.origin || !allowedOrigin(env, grant.app, origin)) {
     return json({ error: 'Invalid or expired sign-in code' }, 400, cors(env, origin));
   }

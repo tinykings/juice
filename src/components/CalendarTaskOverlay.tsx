@@ -5,15 +5,22 @@ import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { TaskForm } from './TaskModal';
 import { parseTaskDate } from '@/utils/taskDate';
+import { Task } from '@/types/task';
 
 export default function CalendarTaskOverlay({
   initialDate,
   isClosing,
   onClose,
+  dayTasks = [],
+  onShowDay,
 }: {
   initialDate: string | null;
   isClosing: boolean;
   onClose: () => void;
+  /** What's already on this day, listed above the form. */
+  dayTasks?: Task[];
+  /** Opens the day in the list, where its tasks can be edited and checked off. */
+  onShowDay?: () => void;
 }) {
   const dateLabel = initialDate === ''
     ? 'Pinned'
@@ -121,6 +128,37 @@ export default function CalendarTaskOverlay({
             ×
           </button>
         </div>
+        {dayTasks.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 16px 0' }}>
+            {dayTasks.map((task) => (
+              <button
+                key={task.id}
+                type="button"
+                onClick={onShowDay}
+                title="Show this day in the list"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  padding: '8px 10px',
+                  border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'transparent',
+                  color: 'var(--foreground)',
+                  opacity: task.isRecurrencePreview ? 0.6 : 1,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textAlign: 'left',
+                  cursor: onShowDay ? 'pointer' : 'default',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {task.title}
+              </button>
+            ))}
+          </div>
+        )}
         <TaskForm initialDate={initialDate} onClose={onClose} />
       </div>
     </div>,

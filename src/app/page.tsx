@@ -43,7 +43,8 @@ export default function HomePage() {
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [windowWidth, setWindowWidth] = useState(0);
-  const [isMobilePwaLandscape, setIsMobilePwaLandscape] = useState(false);
+  // Phone held sideways: the calendar takes the whole screen, like the iOS app.
+  const [isLandscapePhone, setIsLandscapePhone] = useState(false);
   const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'pinned'>('pending');
   const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
   const listScrollRef = useRef<HTMLElement | null>(null);
@@ -71,10 +72,12 @@ export default function HomePage() {
     const updateViewport = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
         Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
+      // Phones and small tablets, installed or in the browser; not a narrow desktop window.
+      const isTouch = window.matchMedia('(pointer: coarse)').matches;
 
       setWindowWidth(window.innerWidth);
-      setIsMobilePwaLandscape(
-        isStandalone &&
+      setIsLandscapePhone(
+        (isStandalone || isTouch) &&
         window.matchMedia('(orientation: landscape)').matches &&
         window.innerWidth < 1000
       );
@@ -90,7 +93,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (isMobilePwaLandscape) {
+    if (isLandscapePhone) {
       setView(currentView => {
         landscapeCalendarWasAutomaticRef.current = currentView !== 'calendar';
         return 'calendar';
@@ -102,7 +105,7 @@ export default function HomePage() {
       landscapeCalendarWasAutomaticRef.current = false;
       setView('list');
     }
-  }, [isMobilePwaLandscape]);
+  }, [isLandscapePhone]);
 
   const showSplitView = windowWidth >= 1000;
   const isWideScreen = windowWidth > 600;
@@ -456,16 +459,32 @@ export default function HomePage() {
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [handleCloseModal, isModalOpen]);
 
-  const handleDaySelect = useCallback((date: Date, dayTasks: Task[]) => {
-    if (dayTasks.length > 0) {
-      setView('list');
-      setSearchQuery('');
-      setIsSearchExpanded(false);
-      setSelectedDateFilter(date);
-    } else {
-      openCalendarTaskForm(format(date, 'yyyy-MM-dd'));
-    }
+  // Tapping a day adds to it, like the iOS app. The overlay lists the day's tasks and events, and
+  // tapping a listed task opens that day in the list.
+  const handleDaySelect = useCallback((date: Date) => {
+    openCalendarTaskForm(format(date, 'yyyy-MM-dd'));
   }, [openCalendarTaskForm]);
+
+  const showDayInList = useCallback((day: string) => {
+    if (inlineCloseTimerRef.current !== null) {
+      window.clearTimeout(inlineCloseTimerRef.current);
+      inlineCloseTimerRef.current = null;
+    }
+    setIsModalOpen(false);
+    setIsInlineFormClosing(false);
+    setInitialDate(null);
+    setTaskFormPresentation('inline');
+    setView('list');
+    setSearchQuery('');
+    setIsSearchExpanded(false);
+    setSelectedDateFilter(parseTaskDate(day));
+  }, []);
+
+  const overlayDayTasks = useMemo(() => (
+    initialDate
+      ? tasksWithRecurrencePreviews.filter(t => !t.completed && t.dueDate === initialDate)
+      : []
+  ), [initialDate, tasksWithRecurrencePreviews]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -693,6 +712,8 @@ export default function HomePage() {
           initialDate={initialDate}
           isClosing={isInlineFormClosing}
           onClose={handleCloseModal}
+          dayTasks={overlayDayTasks}
+          onShowDay={initialDate ? () => showDayInList(initialDate) : undefined}
         />
       )}
 
@@ -703,7 +724,7 @@ export default function HomePage() {
             tasks={tasksWithRecurrencePreviews}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
-            fullScreen={isMobilePwaLandscape}
+            fullScreen={isLandscapePhone}
           />
         </div>
       )}
@@ -1012,7 +1033,7 @@ Back
 )}
 
       {/* Landscape PWA calendar owns the full viewport. */}
-      {!(isMobilePwaLandscape && view === 'calendar') && (
+      {!(isLandscapePhone && view === 'calendar') && (
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',

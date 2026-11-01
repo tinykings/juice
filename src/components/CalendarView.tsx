@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  addMonths,
   format,
   startOfMonth,
   endOfMonth,
@@ -77,11 +78,19 @@ export default function CalendarView({
     return map;
   }, [tasks]);
 
+  if (fullScreen) {
+    return (
+      <FullScreenMonth
+        tasksByDate={tasksByDate}
+        onDaySelect={onDaySelect}
+        selectedDate={selectedDate}
+      />
+    );
+  }
+
   return (
     <div style={{
-      padding: fullScreen
-        ? 'max(18px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left))'
-        : (isMobileCalendar ? '18px 10px 110px' : '24px clamp(10px, 2vw, 18px) 120px'),
+      padding: isMobileCalendar ? '18px 10px 110px' : '24px clamp(10px, 2vw, 18px) 120px',
       minWidth: 0,
       width: '100%',
       maxWidth: 1120,
@@ -91,14 +100,14 @@ export default function CalendarView({
         <MobileCalendar
           months={monthsWithTasks}
           tasksByDate={tasksByDate}
-          onDaySelect={onDaySelect}
+            onDaySelect={onDaySelect}
           selectedDate={selectedDate}
         />
       ) : (
         <ContinuousCalendar
           months={monthsWithTasks}
           tasksByDate={tasksByDate}
-          onDaySelect={onDaySelect}
+            onDaySelect={onDaySelect}
           selectedDate={selectedDate}
         />
       )}
@@ -342,7 +351,7 @@ function MobileCalendar({
           month={month}
           today={today}
           tasksByDate={tasksByDate}
-          onDaySelect={onDaySelect}
+            onDaySelect={onDaySelect}
           selectedDate={selectedDate}
         />
       ))}
@@ -442,7 +451,7 @@ function MobileMonth({
                 day={day}
                 dayKey={key}
                 dayTasks={dayTasks}
-                inMonth={inMonth}
+                    inMonth={inMonth}
                 isActive={isActive}
                 onDaySelect={onDaySelect}
                 isCompressedWeek={compressedWeekRows.has(weekRow)}
@@ -626,6 +635,186 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
           </span>
         )}
       </span>
+    </div>
+  );
+}
+
+
+const FULL_SCREEN_LABEL_HEIGHT = 16;
+const FULL_SCREEN_DAY_NUMBER_HEIGHT = 22;
+
+/**
+ * Landscape phone layout: one month that fills the screen edge to edge, as many labels per day as
+ * fit, and a swipe or the arrows to change month. Matches the iOS app's sideways calendar.
+ */
+function FullScreenMonth({
+  tasksByDate,
+  onDaySelect,
+  selectedDate,
+}: {
+  tasksByDate: Record<string, Task[]>;
+  onDaySelect: (date: Date, tasks: Task[]) => void;
+  selectedDate: Date | null;
+}) {
+  const [month, setMonth] = useState(() => startOfMonth(new Date()));
+  const [cellHeight, setCellHeight] = useState(0);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const today = new Date();
+
+  const days = useMemo(() => eachDayOfInterval({
+    start: startOfWeek(startOfMonth(month)),
+    end: endOfWeek(endOfMonth(month)),
+  }), [month]);
+  const rows = days.length / 7;
+
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setCellHeight((entry.contentRect.height - (rows - 1) * 2) / rows);
+    });
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [rows]);
+
+  const fit = Math.max(Math.floor((cellHeight - FULL_SCREEN_DAY_NUMBER_HEIGHT) / FULL_SCREEN_LABEL_HEIGHT), 0);
+  const isCurrentMonth = isSameMonth(month, today);
+
+  const navButton: React.CSSProperties = {
+    width: 32,
+    height: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)',
+    background: 'transparent',
+    color: 'var(--foreground)',
+    cursor: 'pointer',
+    fontSize: 15,
+    fontWeight: 650,
+  };
+
+  return (
+    <div
+      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => {
+        if (touchStartX.current === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX.current;
+        touchStartX.current = null;
+        if (Math.abs(dx) > 50) setMonth((m) => addMonths(m, dx < 0 ? 1 : -1));
+      }}
+      style={{
+        height: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        // The grid runs to the bottom edge, like the iOS landscape calendar.
+        padding: 'max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left))',
+        boxSizing: 'border-box',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px 4px' }}>
+        <h3 style={{ flex: 1, margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--foreground)' }}>
+          {format(month, 'MMMM yyyy')}
+        </h3>
+        {!isCurrentMonth && (
+          <button type="button" style={{ ...navButton, width: 'auto', padding: '0 10px', fontSize: 13 }} onClick={() => setMonth(startOfMonth(new Date()))}>
+            Today
+          </button>
+        )}
+        <button type="button" aria-label="Previous month" style={navButton} onClick={() => setMonth((m) => addMonths(m, -1))}>‹</button>
+        <button type="button" aria-label="Next month" style={navButton} onClick={() => setMonth((m) => addMonths(m, 1))}>›</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 2, paddingBottom: 3 }}>
+        {WEEKDAYS.map(day => (
+          <div key={day} style={{ color: 'var(--muted)', fontSize: 10, fontWeight: 700, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {day.slice(0, 3)}
+          </div>
+        ))}
+      </div>
+
+      <div
+        ref={gridRef}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
+          gap: 2,
+        }}
+      >
+        {days.map((day) => {
+          const key = format(day, 'yyyy-MM-dd');
+          const dayTasks = tasksByDate[key] ?? [];
+          const total = dayTasks.length;
+          // Keep a line for "+n" when not everything fits.
+          const shown = total <= fit ? total : Math.max(fit - 1, 0);
+          const shownTasks = dayTasks.slice(0, shown);
+          const inMonth = isSameMonth(day, month);
+          const isTodayCell = isSameDay(day, today);
+          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
+
+          return (
+            <button
+              key={key}
+              type="button"
+              data-date={key}
+              onClick={() => onDaySelect(day, dayTasks)}
+              style={{
+                minHeight: 0,
+                minWidth: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                justifyContent: 'flex-start',
+                gap: 2,
+                padding: 3,
+                border: `1px solid ${isTodayCell ? 'var(--accent-border)' : (isSelected ? 'var(--muted)' : 'var(--border)')}`,
+                borderRadius: 'var(--radius-xs)',
+                // Days outside the month keep a faint fill so the grid reaches the screen edges.
+                background: isTodayCell ? 'var(--accent-subtle)' : (inMonth ? 'var(--task-surface)' : 'transparent'),
+                color: isTodayCell ? 'var(--accent)' : 'var(--foreground)',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: isTodayCell ? 800 : 650, lineHeight: '14px', opacity: inMonth ? 1 : 0.4 }}>
+                {day.getDate()}
+              </span>
+              {shownTasks.map(task => (
+                <span
+                  key={task.id}
+                  style={{
+                    display: 'block',
+                    padding: '0 3px',
+                    border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--accent-border)`,
+                    borderRadius: 4,
+                    color: 'var(--accent)',
+                    opacity: task.isRecurrencePreview ? 0.6 : 1,
+                    fontSize: 10,
+                    fontWeight: 650,
+                    lineHeight: '12px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {getCalendarTaskTitle(task)}
+                </span>
+              ))}
+              {total > shown && (
+                <span style={{ fontSize: 9, fontWeight: 650, color: 'var(--muted)', lineHeight: '11px' }}>
+                  +{total - shown}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

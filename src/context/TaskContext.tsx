@@ -8,7 +8,9 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSettings } from '@/context/SettingsContext';
 import {
   createSyncDocument,
+  findOrCreateJuiceGist,
   GistChangedDuringSyncError,
+  GistNotFoundError,
   loadSyncSnapshotFromGist,
   mergeSyncDocuments,
   saveSyncDocumentToGist,
@@ -155,7 +157,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [syncError, setSyncError] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
-  const { gistSettings, isGistConfigured } = useSettings();
+  const { gistSettings, isGistConfigured, updateGistSettings } = useSettings();
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const baseSyncDocumentRef = useRef<SyncDocument | null>(null);
   const isSyncingRef = useRef(false);
@@ -285,7 +287,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       const baseDocument = baseSyncDocumentRef.current ?? loadLastSyncDocument();
       const merged = mergeSyncDocuments(localDocument, remoteDocument, baseDocument);
       const mergedDocument = createSyncDocument(merged.tasks, merged.tombstones, remoteDocument.updatedAt);
-      const shouldSave = !syncDocumentContentEquals(mergedDocument, remoteDocument);
+      // With a key set, a plaintext Gist is re-saved encrypted even if nothing else changed.
+      const needsEncrypting = Boolean(gistSettings.encryptionKey) && !remoteSnapshot.encrypted;
+      const shouldSave = needsEncrypting || !syncDocumentContentEquals(mergedDocument, remoteDocument);
       const syncedDocument = shouldSave
         ? createSyncDocument(merged.tasks, merged.tombstones)
         : remoteDocument;
@@ -339,6 +343,20 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       if (error instanceof GistChangedDuringSyncError && syncContentionRetriesRef.current < 3) {
         syncContentionRetriesRef.current += 1;
         shouldRunAgain = true;
+      } else if (error instanceof GistNotFoundError && syncContentionRetriesRef.current < 3) {
+        // The Gist was deleted on GitHub (for example, to purge unencrypted history). Find the
+        // newest Juice Gist, or create one from local tasks, and sync with that instead.
+        syncContentionRetriesRef.current += 1;
+        const nextGistId = await findOrCreateJuiceGist(
+          buildLocalDocument().tasks,
+          gistSettings.githubToken,
+          gistSettings.encryptionKey
+        );
+        baseSyncDocumentRef.current = null;
+        lastSyncedContentKeyRef.current = null;
+        window.localStorage.removeItem(LAST_SYNC_DOCUMENT_KEY);
+        // Changing settings re-runs the startup sync effect against the new Gist.
+        updateGistSettings({ gistId: nextGistId });
       } else {
         syncContentionRetriesRef.current = 0;
         const message = error instanceof Error ? error.message : 'Failed to sync tasks';
@@ -367,7 +385,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         }, 50);
       }
     }
-  }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured, recordSyncedDocument, replaceLocalDocument]);
+  }, [applySyncedDocument, buildLocalDocument, gistSettings, isGistConfigured, recordSyncedDocument, replaceLocalDocument, updateGistSettings]);
 
   const syncFromGist = useCallback(async () => {
     syncFailureRetriesRef.current = 0;
@@ -406,7 +424,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // Always merge on startup. A previous sync may have failed before a reload,
     // leaving local changes that are newer than the last successful sync base.
     void performSyncRef.current();
-  }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken]);
+  }, [isGistConfigured, gistSettings.gistId, gistSettings.githubToken, gistSettings.encryptionKey]);
 
   useEffect(() => {
     if (!isLoaded || !isGistConfigured || isApplyingSyncRef.current) return;

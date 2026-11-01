@@ -16,7 +16,9 @@ Tasks are stored in your browser's local storage. Connect a GitHub Gist for opti
 - **Calendar view** — month grid showing tasks by date
 - **Search** — filter tasks by title or notes
 - **Completed tasks** — view completions from today
-- **GitHub Gist sync** — two-way sync across devices using a private Gist
+- **GitHub Gist sync** — two-way sync across devices using a private Gist, shared with the Juice iOS app
+- **Encrypted sync** — optional key you keep in a password manager; the Gist holds only ciphertext
+- **Landscape calendar** — on a phone held sideways, a full-screen month grid
 - **Dark / light theme** — follows system preference, manually overridable
 - **PWA** — installable on mobile and desktop, works offline
 - **App badge** — shows pending task count on the app icon
@@ -40,6 +42,11 @@ App syncs automatically 1 second after changes and whenever tab regains focus. S
 
 Completed tasks from previous days are deleted automatically once a new day starts.
 
+### Encryption
+
+Because a secret Gist is only unlisted, sync can encrypt the Gist with AES-256-GCM. Under **Settings → Encryption**, generate a key (or paste the one from another device) and save it in your password manager. The web app and the iOS app use the same format, so one key opens the same Gist on both. Without the key the Gist can't be read, and a lost key can't be recovered.
+
+
 ## Getting Started
 
 ```bash
@@ -51,6 +58,12 @@ npm run build     # static export → /out
 ## Deployment
 
 The app deploys automatically to GitHub Pages on push to `main` via GitHub Actions. It is configured for the repository URL at `https://tinykings.github.io/juice/`.
+
+Sync needs the repository variable `GIST_AUTH_URL` (Settings → Secrets and variables → Actions → Variables) to point at the worker. After changing the worker (such as the iOS `APP_REDIRECTS`), redeploy it:
+
+```bash
+cd auth-worker && npm run deploy
+```
 
 ## Keyboard Shortcuts
 
