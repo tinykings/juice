@@ -1037,11 +1037,11 @@ Back
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Keep a compact bar with just enough space around the 44px buttons.
-          height: 56,
-          minHeight: 56,
-          maxHeight: 56,
-          padding: '5px 16px',
+          // Hug the 44px buttons: 4px above/below + 1px top border.
+          height: 53,
+          minHeight: 53,
+          maxHeight: 53,
+          padding: '4px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1049,7 +1049,7 @@ Back
           borderTop: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
           userSelect: 'none',
-          flex: '0 0 56px',
+          flex: '0 0 53px',
           position: showSplitView ? 'fixed' : 'relative',
           left: showSplitView ? '50%' : undefined,
           right: showSplitView ? 0 : undefined,
