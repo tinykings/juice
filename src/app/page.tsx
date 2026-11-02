@@ -1037,11 +1037,12 @@ Back
       <footer
         style={{
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Hug the 44px buttons: 4px above/below + 1px top border.
-          height: 53,
-          minHeight: 53,
-          maxHeight: 53,
-          padding: '4px 16px',
+          // Hug the 44px buttons: 4px above/below + 1px top border, plus only
+          // enough of the home-indicator inset to keep buttons clear of it.
+          height: 'calc(53px + var(--footer-safe-bottom))',
+          minHeight: 'calc(53px + var(--footer-safe-bottom))',
+          maxHeight: 'calc(53px + var(--footer-safe-bottom))',
+          padding: '4px 16px calc(4px + var(--footer-safe-bottom))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -1049,7 +1050,7 @@ Back
           borderTop: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
           userSelect: 'none',
-          flex: '0 0 53px',
+          flex: '0 0 auto',
           position: showSplitView ? 'fixed' : 'relative',
           left: showSplitView ? '50%' : undefined,
           right: showSplitView ? 0 : undefined,
