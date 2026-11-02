@@ -171,6 +171,16 @@ body:has(.app-shell) {
   --footer-safe-bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 16px));
 }
 
+/* iOS standalone PWAs draw from the top of the screen (under the status bar)
+   but size the viewport as if the status bar weren't covered, leaving a blank
+   strip of that height under the footer. Add the top inset back. */
+@media (display-mode: standalone) {
+  .app-shell {
+    bottom: auto;
+    height: calc(100% + env(safe-area-inset-top, 0px));
+  }
+}
+
 .app-scroll {
   min-width: 0;
   min-height: 0;
