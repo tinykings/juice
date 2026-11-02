@@ -8,6 +8,7 @@ import { findOrCreateJuiceGist, loadSyncDocumentFromGist } from '@/services/gist
 import { authorizeWithGitHub, isGitHubOAuthConfigured } from '@/services/githubOAuth';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 import EncryptionSettings from '@/components/EncryptionSettings';
+import CalendarSubscriptionSettings from '@/components/CalendarSubscriptionSettings';
 import { GistEncryptionError } from '@/services/gistCrypto';
 
 interface SettingsModalProps {
@@ -574,6 +575,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
 
           <EncryptionSettings />
+
+          <CalendarSubscriptionSettings />
 
           <div style={{
             marginTop: 14,

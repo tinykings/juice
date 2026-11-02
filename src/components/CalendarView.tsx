@@ -74,7 +74,12 @@ export default function CalendarView({
       map[key].push(task);
     });
 
-    Object.values(map).forEach(arr => arr.sort((a, b) => a.title.localeCompare(b.title)));
+    // Tasks first (alphabetical), then subscribed-calendar events by start time.
+    Object.values(map).forEach(arr => arr.sort((a, b) =>
+      Number(Boolean(a.isCalendarEvent)) - Number(Boolean(b.isCalendarEvent))
+      || (a.isCalendarEvent ? (a.eventStart ?? 0) - (b.eventStart ?? 0) : 0)
+      || a.title.localeCompare(b.title)
+    ));
     return map;
   }, [tasks]);
 
@@ -534,8 +539,9 @@ function MobileDayButton({
                 minWidth: 0,
                 padding: '2px 3px',
                 border: task.isRecurrencePreview ? '1px dashed var(--border)' : '1px solid transparent',
+                boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
                 borderRadius: 5,
-                background: task.isRecurrencePreview ? 'transparent' : 'rgba(255, 255, 255, 0.035)',
+                background: task.isRecurrencePreview || task.isCalendarEvent ? 'transparent' : 'rgba(255, 255, 255, 0.035)',
                 color: isActive ? 'var(--foreground)' : 'var(--muted)',
                 opacity: task.isRecurrencePreview ? 0.58 : 1,
                 fontSize: 9,
@@ -594,10 +600,11 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
         minWidth: 0,
         width: '100%',
         color: compact ? 'var(--muted)' : 'var(--foreground)',
-        background: task.isRecurrencePreview
+        background: task.isRecurrencePreview || task.isCalendarEvent
           ? 'transparent'
           : (compact ? 'rgba(255, 255, 255, 0.035)' : 'var(--task-surface)'),
         border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
+        boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
         borderRadius: 'var(--radius-sm)',
         opacity: task.isRecurrencePreview ? 0.58 : 1,
         padding: compact ? '2px 3px' : '9px 10px',
@@ -618,7 +625,7 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
         }}>
           {displayTitle}
         </span>
-        {!compact && (taskTime || task.isRecurring) && (
+        {!compact && (taskTime || task.isRecurring || task.eventTime) && (
           <span style={{
             display: 'flex',
             alignItems: 'center',
@@ -631,6 +638,7 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
             lineHeight: 1.2,
           }}>
             {taskTime && <span>{taskTime}</span>}
+            {task.eventTime && <span>{task.eventTime}</span>}
             {task.isRecurring && <span>{task.recurrenceType}</span>}
           </span>
         )}
@@ -791,9 +799,9 @@ function FullScreenMonth({
                   style={{
                     display: 'block',
                     padding: '0 3px',
-                    border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--accent-border)`,
+                    border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} ${task.isCalendarEvent ? 'var(--event)' : 'var(--accent-border)'}`,
                     borderRadius: 4,
-                    color: 'var(--accent)',
+                    color: task.isCalendarEvent ? 'var(--event)' : 'var(--accent)',
                     opacity: task.isRecurrencePreview ? 0.6 : 1,
                     fontSize: 10,
                     fontWeight: 650,

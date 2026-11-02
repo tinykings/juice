@@ -65,6 +65,8 @@
   --calendar-bg: #0f0e0c;
   --calendar-text: #F3F0EA;
   --calendar-event-border: rgba(216, 168, 77, 0.42);
+  /* Subscribed (.ics) calendar events. */
+  --event: #7fa7d9;
 }
 
 [data-theme="light"] {
@@ -119,6 +121,7 @@
   --calendar-bg: #F2F0EB;
   --calendar-text: #1A1A18;
   --calendar-event-border: rgba(183, 121, 31, 0.42);
+  --event: #3b6ea8;
 }
 
 * {

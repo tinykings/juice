@@ -4,6 +4,7 @@ import "./globals.css";
 import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
+import { CalendarFeedProvider } from "@/context/CalendarFeedContext";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -55,7 +56,9 @@ export default function RootLayout({
         <ThemeProvider>
           <SettingsProvider>
             <TaskProvider>
-              {children}
+              <CalendarFeedProvider>
+                {children}
+              </CalendarFeedProvider>
             </TaskProvider>
           </SettingsProvider>
         </ThemeProvider>

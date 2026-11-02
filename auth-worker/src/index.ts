@@ -259,6 +259,52 @@ async function redeem(request: Request, env: Env): Promise<Response> {
   );
 }
 
+const MAX_ICS_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Fetches a public/secret-link .ics calendar for an allowed app origin. Many
+ * calendar hosts (Google, iCloud, Outlook) don't send CORS headers, so the
+ * static app can't read the feed directly from the browser.
+ */
+async function icsProxy(request: Request, env: Env): Promise<Response> {
+  const origin = request.headers.get('Origin') ?? '';
+  if (!knownOrigin(env, origin)) return new Response('Forbidden', { status: 403 });
+  const headers = { ...cors(env, origin), 'Cache-Control': 'no-store' };
+
+  const raw = new URL(request.url).searchParams.get('url') ?? '';
+  let target: URL;
+  try {
+    target = new URL(raw.replace(/^webcals?:\/\//i, 'https://'));
+  } catch {
+    return new Response('Invalid calendar URL.', { status: 400, headers });
+  }
+  if (target.protocol !== 'https:' && target.protocol !== 'http:') {
+    return new Response('Calendar URL must use http or https.', { status: 400, headers });
+  }
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(target.toString(), {
+      headers: { Accept: 'text/calendar, */*;q=0.5', 'User-Agent': 'Juice calendar fetch' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    return new Response("Couldn't reach the calendar server.", { status: 502, headers });
+  }
+  if (!upstream.ok) {
+    return new Response(`The calendar server responded with ${upstream.status}.`, { status: 502, headers });
+  }
+  const declared = Number(upstream.headers.get('Content-Length') ?? 0);
+  if (declared > MAX_ICS_BYTES) return new Response('Calendar is too large.', { status: 413, headers });
+  const body = await upstream.arrayBuffer();
+  if (body.byteLength > MAX_ICS_BYTES) return new Response('Calendar is too large.', { status: 413, headers });
+
+  return new Response(body, {
+    headers: { ...headers, 'Content-Type': 'text/calendar; charset=utf-8' },
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -277,6 +323,7 @@ export default {
     if (request.method === 'GET' && url.pathname === '/auth/github/start') return start(request, env);
     if (request.method === 'GET' && url.pathname === '/auth/github/callback') return callback(request, env);
     if (request.method === 'POST' && url.pathname === '/auth/redeem') return redeem(request, env);
+    if (request.method === 'GET' && url.pathname === '/ics') return icsProxy(request, env);
     if (request.method === 'GET' && url.pathname === '/health') return json({ ok: true });
     return new Response('Not found', { status: 404 });
   },

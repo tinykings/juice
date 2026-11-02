@@ -141,6 +141,7 @@ export default function CalendarTaskOverlay({
                   width: '100%',
                   padding: '8px 10px',
                   border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
+                  boxShadow: task.isCalendarEvent ? 'inset 3px 0 0 var(--event)' : undefined,
                   borderRadius: 'var(--radius-sm)',
                   background: 'transparent',
                   color: 'var(--foreground)',
@@ -155,6 +156,11 @@ export default function CalendarTaskOverlay({
                 }}
               >
                 {task.title}
+                {task.isCalendarEvent && (
+                  <span style={{ color: 'var(--muted)', fontWeight: 500 }}>
+                    {' · '}{task.eventTime ?? 'All day'}
+                  </span>
+                )}
               </button>
             ))}
           </div>

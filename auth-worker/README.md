@@ -64,3 +64,12 @@ Callback sends short-lived redemption code to opener using `postMessage`. Client
 - `public_repo` grants read/write access to all public repositories owned by the authorizing user. Use it only for apps that must invoke public-repository workflows; use `repo` only when private repositories are required.
 - Cloudflare KV deletion is not atomic. For high-risk/public multi-tenant use, replace KV grants with Durable Object or D1 atomic redemption.
 - GitHub `gist` scope grants access to all account Gists. GitHub secret Gists are unlisted, not access-controlled private storage.
+
+## Calendar feed proxy
+
+`GET /ics?url=<calendar link>` fetches an `.ics` calendar for Juice's
+"Calendar Subscription" setting. Many calendar hosts (Google, iCloud, Outlook)
+don't send CORS headers, so the static app falls back to this route when it
+can't read a feed directly. Only origins listed in `APP_CONFIG` may call it;
+it accepts http(s)/webcal links, never stores the feed, and caps responses at
+5 MB. Redeploy the worker (`npm run deploy`) after updating it.

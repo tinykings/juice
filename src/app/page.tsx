@@ -4,12 +4,14 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useCalendarFeed } from '@/context/CalendarFeedContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { Task } from '@/types/task';
 import { TaskForm } from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
 import TaskItem from '@/components/TaskItem';
+import CalendarEventItem from '@/components/CalendarEventItem';
 import CompletedTaskItem from '@/components/CompletedTaskItem';
 import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
@@ -158,18 +160,52 @@ export default function HomePage() {
     [tasks, currentDate]
   );
 
+  // Read-only events from this device's subscribed calendar, shaped like
+  // tasks so the list and calendar can place them by day.
+  const { events: calendarEvents } = useCalendarFeed();
+  const calendarEventTasks = useMemo<Task[]>(() => calendarEvents.map(event => ({
+    id: `ics:${event.id}`,
+    title: event.title,
+    notes: '',
+    dueDate: event.date,
+    completed: false,
+    completedAt: null,
+    createdAt: '',
+    pinned: false,
+    isRecurring: false,
+    recurrenceType: null,
+    tags: [],
+    isCalendarEvent: true,
+    eventTime: event.allDay ? undefined : format(new Date(event.start), 'h:mm a'),
+    eventStart: event.start,
+  })), [calendarEvents]);
+
+  // Everything shown on calendar days: tasks, recurrence previews and events.
+  const displayTasks = useMemo(
+    () => (calendarEventTasks.length ? [...tasksWithRecurrencePreviews, ...calendarEventTasks] : tasksWithRecurrencePreviews),
+    [tasksWithRecurrencePreviews, calendarEventTasks]
+  );
+
   // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
-    const filtered = tasksWithRecurrencePreviews.filter(t => {
+    const today = startOfDay(currentDate);
+    const lastEventDay = endOfDay(addDays(today, 7));
+    const filtered = displayTasks.filter(t => {
       if (t.completed) return false;
       if (!t.dueDate) return false; // Pinned tasks are shown separately.
+      if (t.isCalendarEvent) {
+        // The list shows upcoming events for this week; the calendar shows the rest.
+        const eventDay = parseTaskDate(t.dueDate);
+        if (isBefore(eventDay, today)) return false;
+        if (!selectedDateFilter && isAfter(eventDay, lastEventDay)) return false;
+      }
       if (selectedDateFilter && !isSameDay(parseTaskDate(t.dueDate), selectedDateFilter)) return false;
       if (!searchQuery.trim()) return true;
       const query = searchQuery.toLowerCase();
       return t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query);
     });
     return filtered.sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
-  }, [tasksWithRecurrencePreviews, searchQuery, selectedDateFilter]);
+  }, [displayTasks, searchQuery, selectedDateFilter, currentDate]);
 
   // Get completed tasks (filtered by search if query exists)
   const completedTasks = useMemo(() => {
@@ -186,7 +222,7 @@ export default function HomePage() {
   const tomorrowTasks = useMemo(() => {
     if (selectedDateFilter) return [];
     const tomorrow = addDays(startOfDay(currentDate), 1);
-    return incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), tomorrow));
+    return incompleteTasks.filter(t => !t.isCalendarEvent && isSameDay(parseTaskDate(t.dueDate), tomorrow));
   }, [incompleteTasks, selectedDateFilter, currentDate]);
 
   const hasNoTasks = tasks.length === 0;
@@ -280,7 +316,7 @@ export default function HomePage() {
       }
       return a.title.localeCompare(b.title);
     };
-    const sortedTodayTasks = [...todayTasks].sort(sortByTime);
+    const sortedTodayTasks = withEventsLast(todayTasks, sortByTime);
     groups.push({ label: `Today (${format(today, 'M/d')})`, tasks: sortedTodayTasks, isToday: true, date: today });
 
     // Next 7 days (by day of week)
@@ -288,9 +324,7 @@ export default function HomePage() {
       const date = addDays(today, i);
       const dayTasks = incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), date));
       // Sort alphabetically by title
-      const sortedDayTasks = [...dayTasks].sort((a, b) => 
-        a.title.localeCompare(b.title)
-      );
+      const sortedDayTasks = withEventsLast(dayTasks, (a, b) => a.title.localeCompare(b.title));
       const label = format(date, 'EEEE (M/d)');
       groups.push({ label, tasks: sortedDayTasks, date });
     }
@@ -482,9 +516,12 @@ export default function HomePage() {
 
   const overlayDayTasks = useMemo(() => (
     initialDate
-      ? tasksWithRecurrencePreviews.filter(t => !t.completed && t.dueDate === initialDate)
+      ? withEventsLast(
+        displayTasks.filter(t => !t.completed && t.dueDate === initialDate),
+        (a, b) => a.title.localeCompare(b.title)
+      )
       : []
-  ), [initialDate, tasksWithRecurrencePreviews]);
+  ), [initialDate, displayTasks]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -725,7 +762,7 @@ export default function HomePage() {
           paddingTop: (isLandscapePhone || showSplitView) ? undefined : 'var(--app-header-height)',
         }}>
           <CalendarView
-            tasks={tasksWithRecurrencePreviews}
+            tasks={displayTasks}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
             fullScreen={isLandscapePhone}
@@ -938,7 +975,9 @@ Back
                       />
                     )}
                     {group.tasks.map((task) => (
-                      editingTask?.id === task.id ? (
+                      task.isCalendarEvent ? (
+                        <CalendarEventItem key={task.id} task={task} />
+                      ) : editingTask?.id === task.id ? (
                         <TaskForm
                           key={task.id}
                           inline
@@ -1130,4 +1169,13 @@ function AddOrSyncIcon({ isSyncing }: { isSyncing: boolean }) {
       <path d="M12 5v14M5 12h14" />
     </svg>
   );
+}
+
+/** Real tasks first (in the given order), then calendar events by start time. */
+function withEventsLast(items: Task[], compareTasks: (a: Task, b: Task) => number): Task[] {
+  const tasks = items.filter(t => !t.isCalendarEvent).sort(compareTasks);
+  const events = items
+    .filter(t => t.isCalendarEvent)
+    .sort((a, b) => (a.eventStart ?? 0) - (b.eventStart ?? 0) || a.title.localeCompare(b.title));
+  return [...tasks, ...events];
 }
