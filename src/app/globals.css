@@ -171,15 +171,6 @@ body:has(.app-shell) {
   --footer-safe-bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 16px));
 }
 
-/* iOS standalone PWAs can launch with a stale viewport, leaving a blank strip
-   under the footer until rotation. Size the shell to the full screen there. */
-@media (display-mode: standalone) {
-  .app-shell {
-    bottom: auto;
-    height: 100lvh;
-  }
-}
-
 .app-scroll {
   min-width: 0;
   min-height: 0;
