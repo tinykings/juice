@@ -719,7 +719,11 @@ export default function HomePage() {
 
       {/* Calendar View - shown in calendar view OR split view */}
       {(view === 'calendar' || showSplitView) && isLoaded && (
-        <div className="app-scroll" style={{ flex: 1, height: (isWideScreen || showSplitView) ? '100%' : 'auto' }}>
+        <div className="app-scroll" style={{
+          flex: 1,
+          height: (isWideScreen || showSplitView) ? '100%' : 'auto',
+          paddingTop: (isLandscapePhone || showSplitView) ? undefined : 'var(--app-header-height)',
+        }}>
           <CalendarView
             tasks={tasksWithRecurrencePreviews}
             onDaySelect={handleDaySelect}
@@ -735,7 +739,7 @@ export default function HomePage() {
         flex: 1, 
         padding: isSearchExpanded
           ? 'calc(88px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) 100px'
-          : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) 100px',
+          : 'calc(var(--app-header-height) + 4px) clamp(10px, 2vw, 18px) 100px',
         borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
@@ -1034,142 +1038,65 @@ Back
 
       {/* Landscape PWA calendar owns the full viewport. */}
       {!(isLandscapePhone && view === 'calendar') && (
-      <footer
+      <>
+      {/* Thin top bar: search + settings in the top-right corner. */}
+      <header
         style={{
-          background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Hug the 44px buttons: 4px above/below + 1px top border, plus only
-          // enough of the home-indicator inset to keep buttons clear of it.
-          height: 'calc(53px + var(--footer-safe-bottom))',
-          minHeight: 'calc(53px + var(--footer-safe-bottom))',
-          maxHeight: 'calc(53px + var(--footer-safe-bottom))',
-          padding: '4px 16px calc(4px + var(--footer-safe-bottom))',
+          position: 'absolute',
+          top: 0,
+          left: showSplitView ? '50%' : 0,
+          right: 0,
+          zIndex: 15,
+          height: 'var(--app-header-height)',
+          padding: 'env(safe-area-inset-top, 0px) 12px 0',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          borderTop: '1px solid var(--border)',
+          justifyContent: 'flex-end',
+          gap: 6,
+          background: 'color-mix(in srgb, var(--background) 92%, transparent)',
           backdropFilter: 'blur(16px)',
           userSelect: 'none',
-          flex: '0 0 auto',
-          position: showSplitView ? 'fixed' : 'relative',
-          left: showSplitView ? '50%' : undefined,
-          right: showSplitView ? 0 : undefined,
-          bottom: showSplitView ? 0 : undefined,
-          zIndex: showSplitView ? 25 : undefined,
         }}
       >
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          {/* Search Button */}
-          <button
-            title="Search tasks"
-            onClick={handleSearchClick}
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
-            aria-label="Search"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-          </button>
+        <button
+          title="Search tasks"
+          aria-label="Search"
+          onClick={handleSearchClick}
+          className="header-icon-button"
+        >
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+        </button>
+        <button
+          title="Settings"
+          aria-label="Settings"
+          onClick={() => setIsSettingsOpen(true)}
+          className="header-icon-button"
+        >
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+      </header>
 
-          {/* Settings Button */}
-          <button
-            title="Settings"
-            onClick={() => setIsSettingsOpen(true)}
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
-            aria-label="Settings"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Add Task — always visible */}
-        <div>
-          <button
-            title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
-            onClick={() => {
-              const date = selectedDateFilter
-                ? format(selectedDateFilter, 'yyyy-MM-dd')
-                : null;
-              openTaskForm(date, null, 'calendar-overlay');
-            }}
-            aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-md)',
-              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
-            }}
-          >
-            <AddOrSyncIcon isSyncing={isSyncing} />
-          </button>
-        </div>
-      </footer>
+      {/* Floating add button — no footer, so content runs to the bottom edge. */}
+      <button
+        title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
+        onClick={() => {
+          const date = selectedDateFilter
+            ? format(selectedDateFilter, 'yyyy-MM-dd')
+            : null;
+          openTaskForm(date, null, 'calendar-overlay');
+        }}
+        aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
+        className="fab-add-button"
+      >
+        <AddOrSyncIcon isSyncing={isSyncing} />
+      </button>
+      </>
       )}
 
       <SettingsModal
