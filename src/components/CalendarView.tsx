@@ -269,11 +269,11 @@ function DayCell({
           ? 'var(--accent-subtle)'
           : (isHovered
             ? 'var(--task-surface-hover)'
-            : (inVisibleMonth ? 'var(--task-surface)' : 'rgba(255, 255, 255, 0.018)')),
+            : (inVisibleMonth ? 'var(--task-surface)' : 'var(--surface-faint)')),
         color: inVisibleMonth ? 'var(--foreground)' : 'var(--muted)',
         border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border)'}`,
         borderRadius: 'var(--radius-md)',
-        boxShadow: isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
+        boxShadow: isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
         cursor: 'pointer',
         textAlign: 'left',
         overflow: 'visible',
@@ -541,7 +541,7 @@ function MobileDayButton({
                 border: task.isRecurrencePreview ? '1px dashed var(--border)' : '1px solid transparent',
                 boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
                 borderRadius: 5,
-                background: task.isRecurrencePreview || task.isCalendarEvent ? 'transparent' : 'rgba(255, 255, 255, 0.035)',
+                background: task.isRecurrencePreview || task.isCalendarEvent ? 'transparent' : 'var(--surface-inset)',
                 color: isActive ? 'var(--foreground)' : 'var(--muted)',
                 opacity: task.isRecurrencePreview ? 0.58 : 1,
                 fontSize: 9,
@@ -602,7 +602,7 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
         color: compact ? 'var(--muted)' : 'var(--foreground)',
         background: task.isRecurrencePreview || task.isCalendarEvent
           ? 'transparent'
-          : (compact ? 'rgba(255, 255, 255, 0.035)' : 'var(--task-surface)'),
+          : (compact ? 'var(--surface-inset)' : 'var(--task-surface)'),
         border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
         boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
         borderRadius: 'var(--radius-sm)',

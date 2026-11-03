@@ -4,6 +4,7 @@ import {
   createSyncDocument,
   mergeSyncDocuments,
   parseSyncDocument,
+  pruneTombstones,
   syncDocumentContentEquals,
   type TaskTombstone,
 } from './gistSync';
@@ -160,5 +161,15 @@ describe('sync document serialization', () => {
     ['unsupported version', JSON.stringify({ version: 2, tasks: [] })],
   ])('rejects %s', (_name, content) => {
     expect(() => parseSyncDocument(content)).toThrow();
+  });
+});
+
+describe('pruneTombstones', () => {
+  it('drops tombstones older than the retention window', () => {
+    const now = new Date('2026-06-01T00:00:00.000Z');
+    const recent = { id: 'a', deletedAt: '2026-05-01T00:00:00.000Z', updatedAt: '2026-05-01T00:00:00.000Z' };
+    const old = { id: 'b', deletedAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' };
+
+    expect(pruneTombstones([recent, old], now).map((t) => t.id)).toEqual(['a']);
   });
 });

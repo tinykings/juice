@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { Task } from '@/types/task';
-import { getNextRecurrenceDate, withRecurrencePreviews } from './taskRecurrence';
+import {
+  findSpawnedRecurrence,
+  getNextRecurrenceDate,
+  getNextRecurrenceDateAfterCompletion,
+  withRecurrencePreviews,
+} from './taskRecurrence';
 
 const recurringTask: Task = {
   id: 'task-1',
@@ -72,5 +77,37 @@ describe('recurrence previews', () => {
     ];
 
     expect(withRecurrencePreviews(variants, new Date(2026, 2, 1))).toEqual(variants);
+  });
+});
+
+describe('completing recurring tasks', () => {
+  const now = new Date(2026, 2, 15, 9, 0);
+
+  it('rolls an overdue task forward past today', () => {
+    expect(getNextRecurrenceDateAfterCompletion('2026-03-10', 'daily', now)).toBe('2026-03-16');
+    expect(getNextRecurrenceDateAfterCompletion('2026-03-01', 'weekly', now)).toBe('2026-03-22');
+  });
+
+  it('advances a task due today or later by one step', () => {
+    expect(getNextRecurrenceDateAfterCompletion('2026-03-15', 'daily', now)).toBe('2026-03-16');
+    expect(getNextRecurrenceDateAfterCompletion('2026-03-20', 'weekly', now)).toBe('2026-03-27');
+  });
+
+  it('finds the untouched occurrence spawned by a completion', () => {
+    const completedAt = '2026-03-15T09:00:00.000Z';
+    const completed: Task = { ...recurringTask, completed: true, completedAt };
+    const spawned: Task = {
+      ...recurringTask,
+      id: 'task-2',
+      dueDate: '2026-03-17',
+      createdAt: completedAt,
+      updatedAt: completedAt,
+    };
+
+    expect(findSpawnedRecurrence([completed, spawned], completed)?.id).toBe('task-2');
+    expect(findSpawnedRecurrence(
+      [completed, { ...spawned, updatedAt: '2026-03-15T10:00:00.000Z' }],
+      completed
+    )).toBeUndefined();
   });
 });

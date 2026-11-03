@@ -6,7 +6,7 @@ import { Task, RecurrenceType } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import CalendarPicker from './CalendarPicker';
 import ConfirmCompleteDialog from './ConfirmCompleteDialog';
-import { findDateWord, removeDateWord, DateWordMatch } from '@/utils/dateWords';
+import { findDateWordInTitle, removeDateWord, DateWordMatch } from '@/utils/dateWords';
 import { normalizeTaskDate } from '@/utils/taskDate';
 
 export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false, captureUrlMode = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean, captureUrlMode?: boolean }) {
@@ -23,10 +23,21 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     ? `${editTask.title}${editTask.title.trim().endsWith('.') ? '' : '.'} ${editTask.notes}`
     : editTask?.title || '';
   const [titleValue, setTitleValue] = useState(initialTitle);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // A date word already in an edited title is just part of its wording; only a
+  // newly typed one should move the task.
+  const [originalDateWord] = useState(() => (editTask ? findDateWordInTitle(initialTitle)?.word.toLowerCase() ?? null : null));
+  const findNewDateWord = useCallback((value: string): DateWordMatch | null => {
+    const match = findDateWordInTitle(value);
+    if (!match || match.word.toLowerCase() === originalDateWord) return null;
+    return match;
+  }, [originalDateWord]);
 
   const dateWordMatch = useMemo<DateWordMatch | null>(
-    () => findDateWord(titleValue),
-    [titleValue]
+    () => findNewDateWord(titleValue),
+    [findNewDateWord, titleValue]
   );
 
   const highlights = useMemo(() => {
@@ -106,11 +117,11 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     
     let title = titleValue.trim();
     
-    if (!title) return;
+    if (!title || isSaving) return;
 
     let effectiveDueDate = dueDate;
 
-    const match = findDateWord(title);
+    const match = findNewDateWord(title);
     if (match) {
       effectiveDueDate = format(match.date, 'yyyy-MM-dd');
       title = removeDateWord(title, match);
@@ -118,8 +129,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
     if (isPinned) effectiveDueDate = '';
 
-    if (effectiveDueDate) {
-      const taskData = {
+    const taskData = effectiveDueDate
+      ? {
         title,
         notes: '',
         dueDate: normalizeTaskDate(effectiveDueDate),
@@ -127,17 +138,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         isRecurring,
         recurrenceType: isRecurring ? recurrenceType : null,
         tags: [],
-      };
-
-      if (editTask) {
-        updateTask(editTask.id, taskData);
-      } else if (captureUrlMode) {
-        await addTaskFromCaptureUrl(taskData);
-      } else {
-        addTask(taskData);
       }
-    } else {
-      const taskData = {
+      : {
         title,
         notes: '',
         dueDate: '',
@@ -147,23 +149,32 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         tags: [],
       };
 
-      if (editTask) {
-        updateTask(editTask.id, taskData);
-      } else if (captureUrlMode) {
+    if (editTask) {
+      updateTask(editTask.id, taskData);
+    } else if (captureUrlMode) {
+      setIsSaving(true);
+      setSaveError(null);
+      try {
         await addTaskFromCaptureUrl(taskData);
-      } else {
-        addTask(taskData);
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : 'Could not save the task.');
+        return;
+      } finally {
+        setIsSaving(false);
       }
+    } else {
+      addTask(taskData);
     }
 
     onClose();
     if (onSave) onSave();
-  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, isPinned, isRecurring, onClose, onSave, recurrenceType, updateTask, titleValue]);
+  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, findNewDateWord, isPinned, isRecurring, isSaving, onClose, onSave, recurrenceType, updateTask, titleValue]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isConfirmingDelete) return;
       if (e.key === 'Escape') onClose();
-      if (e.key === 'Enter' && editTask && hasChanges) {
+      if (e.key === 'Enter' && editTask && hasChanges && !(e.target instanceof HTMLTextAreaElement)) {
         e.preventDefault();
         handleSubmit(e as unknown as React.FormEvent);
       }
@@ -178,7 +189,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         document.body.style.overflow = '';
       }
     };
-  }, [editTask, handleSubmit, hasChanges, inline, onClose]);
+  }, [editTask, handleSubmit, hasChanges, inline, isConfirmingDelete, onClose]);
 
   const handleDelete = () => {
     setIsConfirmingDelete(true);
@@ -195,7 +206,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     if (!editTask) return;
 
     let title = titleValue.trim() || editTask.title;
-    const match = findDateWord(title);
+    const match = findNewDateWord(title);
     if (match) title = removeDateWord(title, match);
 
     updateTask(editTask.id, {
@@ -273,7 +284,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
                 width: '100%',
                 fontSize: 19,
                 fontWeight: 600,
-                background: 'rgba(255, 255, 255, 0.035)',
+                background: 'var(--surface-inset)',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)',
                 outline: 'none',
@@ -288,11 +299,11 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = 'var(--accent-border)';
-                e.target.style.background = 'rgba(255, 255, 255, 0.045)';
+                e.target.style.background = 'var(--surface-hover)';
               }}
               onBlur={(e) => {
                 e.target.style.borderColor = 'var(--border)';
-                e.target.style.background = 'rgba(255, 255, 255, 0.035)';
+                e.target.style.background = 'var(--surface-inset)';
               }}
             />
             <div aria-hidden="true" style={{
@@ -365,7 +376,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             alignItems: 'center',
             gap: 8,
             padding: '0 14px',
-            background: isRecurring ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
+            background: isRecurring ? 'var(--accent-surface)' : 'var(--surface-inset)',
             color: isRecurring ? 'var(--accent)' : 'var(--muted)',
             border: isRecurring ? '1px solid var(--accent-border)' : '1px solid var(--border)',
             borderRadius: 'var(--radius-sm)',
@@ -483,7 +494,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               fontSize: 14,
               fontWeight: 700,
               color: showHelp ? 'var(--accent)' : 'var(--muted)',
-              background: showHelp ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
+              background: showHelp ? 'var(--accent-surface)' : 'var(--surface-inset)',
               border: showHelp ? '1px solid var(--accent-border)' : '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
@@ -496,7 +507,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             ?
           </button>
 
-          {editTask && !isPinned && (
+          {editTask && (
             <button
               type="button"
               onClick={handleDelete}
@@ -534,7 +545,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               alignItems: 'center',
               gap: 8,
               padding: '0 14px',
-              background: isPinned ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
+              background: isPinned ? 'var(--accent-surface)' : 'var(--surface-inset)',
               color: isPinned ? 'var(--accent)' : 'var(--muted)',
               border: isPinned ? '1px solid var(--accent-border)' : '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
@@ -553,26 +564,14 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           {editTask ? (
           <button
             type="button"
+            className="btn-accent"
             onClick={handleSubmit}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
             style={{
               padding: '0 20px',
               fontSize: 14,
               fontWeight: 600,
-              color: 'var(--background)',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
               borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
               height: 42,
-              transition: 'background 0.15s, border-color 0.15s',
             }}
           >
             Save
@@ -580,32 +579,34 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         ) : (
           <button
             type="submit"
+            className="btn-accent"
+            disabled={isSaving}
+            aria-busy={isSaving}
             style={{
               padding: '0 20px',
               fontSize: 14,
               fontWeight: 600,
-              color: 'var(--background)',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
               borderRadius: 'var(--radius-sm)',
-              cursor: 'pointer',
               height: 42,
-              boxShadow: 'none',
-              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
             }}
           >
-            Add
+            {isSaving ? 'Adding…' : 'Add'}
           </button>
         )}
         </div>
       </div>
-      {editTask && !isPinned && isConfirmingDelete && (
+      {saveError && (
+        <div role="alert" style={{
+          padding: '10px 16px 12px',
+          background: 'var(--card)',
+          color: 'var(--red)',
+          fontSize: 14,
+          lineHeight: 1.45,
+        }}>
+          Couldn&apos;t save the task: {saveError}
+        </div>
+      )}
+      {editTask && isConfirmingDelete && (
         <ConfirmCompleteDialog
           task={editTask}
           title="Are you sure?"

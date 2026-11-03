@@ -18,6 +18,8 @@ import CalendarView from '@/components/CalendarView';
 import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
 import { parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
+import { parseTaskTimeMinutes } from '@/utils/taskTime';
+import { splitTaskTitle } from '@/utils/taskTitle';
 
 interface TaskGroup {
   label: string;
@@ -49,6 +51,8 @@ export default function HomePage() {
   const [isLandscapePhone, setIsLandscapePhone] = useState(false);
   const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'pinned'>('pending');
   const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
+  const [undoTask, setUndoTask] = useState<Task | null>(null);
+  const undoTimerRef = useRef<number | null>(null);
   const listScrollRef = useRef<HTMLElement | null>(null);
   const inlineCloseTimerRef = useRef<number | null>(null);
   const landscapeCalendarWasAutomaticRef = useRef(false);
@@ -264,56 +268,13 @@ export default function HomePage() {
       const d = parseTaskDate(t.dueDate);
       return isSameDay(d, today);
     });
-    // Sort: timed tasks first (by time), then alphabetically
-    // Handle AM/PM: times without AM/PM default to PM (like standard 12-hour clock convention for times like @12 meaning 12pm)
-    const currentHour = new Date().getHours();
+    // Timed tasks first (by time), then alphabetically.
     const sortByTime = (a: Task, b: Task) => {
-      const timeA = a.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
-      const timeB = b.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
-      if (timeA && !timeB) return -1;
-      if (!timeA && timeB) return 1;
-      if (timeA && timeB) {
-        const parseTime = (t: string): number => {
-          const clean = t.replace('@', '').toLowerCase();
-          const hasAmPm = clean.includes('am') || clean.includes('pm');
-          let hours: number;
-          let minutes = 0;
-          
-          if (clean.includes(':')) {
-            const [h, m] = clean.split(':').map(Number);
-            hours = h;
-            minutes = m || 0;
-          } else {
-            const num = parseInt(clean.replace(/\D/g, ''), 10) || 0;
-            if (num >= 100) {
-              hours = Math.floor(num / 100);
-              minutes = num % 100;
-            } else {
-              hours = num;
-              minutes = 0;
-            }
-          }
-          
-          // Convert to 24-hour format
-          if (hasAmPm) {
-            if (clean.includes('pm') && hours < 12) hours += 12;
-            if (clean.includes('am') && hours === 12) hours = 0;
-          } else {
-            // No AM/PM specified - assume PM if time < current hour (after current time has passed for AM)
-            // This handles @12 as 12pm, @530 as 5:30am (since 530 < current hour which is 11)
-            // Actually user wants @12 (12pm) before @530 (5:30pm), so assume PM for times that could be PM
-            if (hours < 12 && (hours * 60 + minutes) < (currentHour * 60)) {
-              hours += 12; // Convert to PM (e.g., 5:30 becomes 17:30)
-            }
-          }
-          
-          return hours * 60 + minutes;
-        };
-        
-        const normalizedA = parseTime(timeA[1]);
-        const normalizedB = parseTime(timeB[1]);
-        return normalizedA - normalizedB;
-      }
+      const timeA = parseTaskTimeMinutes(a.title);
+      const timeB = parseTaskTimeMinutes(b.title);
+      if (timeA !== null && timeB === null) return -1;
+      if (timeA === null && timeB !== null) return 1;
+      if (timeA !== null && timeB !== null && timeA !== timeB) return timeA - timeB;
       return a.title.localeCompare(b.title);
     };
     const sortedTodayTasks = withEventsLast(todayTasks, sortByTime);
@@ -421,11 +382,34 @@ export default function HomePage() {
     openTaskForm(date, null, 'calendar-overlay');
   }, [openTaskForm]);
 
+  const showUndo = useCallback((task: Task) => {
+    if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+    setUndoTask(task);
+    undoTimerRef.current = window.setTimeout(() => {
+      setUndoTask(null);
+      undoTimerRef.current = null;
+    }, 5000);
+  }, []);
+
+  const handleUndoComplete = useCallback(() => {
+    if (!undoTask) return;
+    uncompleteTask(undoTask.id);
+    if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = null;
+    setUndoTask(null);
+  }, [undoTask, uncompleteTask]);
+
+  useEffect(() => () => {
+    if (undoTimerRef.current !== null) window.clearTimeout(undoTimerRef.current);
+  }, []);
+
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
     if (isTodayOrOverdue) {
       // No confirmation needed for Today or Overdue tasks
       completeTask(taskId);
+      const task = tasks.find(t => t.id === taskId);
+      if (task) showUndo(task);
     } else {
       // Show confirmation for future tasks
       const task = tasks.find(t => t.id === taskId);
@@ -433,15 +417,16 @@ export default function HomePage() {
         setConfirmCompleteTask(task);
       }
     }
-  }, [tasks, completeTask]);
+  }, [tasks, completeTask, showUndo]);
 
   // Confirm completion
   const handleConfirmComplete = useCallback(() => {
     if (confirmCompleteTask) {
       completeTask(confirmCompleteTask.id);
+      showUndo(confirmCompleteTask);
       setConfirmCompleteTask(null);
     }
-  }, [confirmCompleteTask, completeTask, setConfirmCompleteTask]);
+  }, [confirmCompleteTask, completeTask, showUndo]);
 
   const handleCloseModal = useCallback(() => {
     if (!isModalOpen || isInlineFormClosing) return;
@@ -526,24 +511,22 @@ export default function HomePage() {
   // Keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !isModalOpen) {
-        const el = document.activeElement;
-        if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          const date = selectedDateFilter
-            ? format(selectedDateFilter, 'yyyy-MM-dd')
-            : null;
-          openTaskForm(date, null, 'calendar-overlay');
-        }
+      const el = document.activeElement as HTMLElement | null;
+      const isTyping = el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.tagName === 'SELECT' || el?.isContentEditable;
+      const canUseShortcut = !e.metaKey && !e.ctrlKey && !e.altKey && !isModalOpen && !isSettingsOpen && !confirmCompleteTask && !isTyping;
+
+      if (e.key === 'n' && canUseShortcut) {
+        e.preventDefault();
+        const date = selectedDateFilter
+          ? format(selectedDateFilter, 'yyyy-MM-dd')
+          : null;
+        openTaskForm(date, null, 'calendar-overlay');
       }
-      if (e.key === 's' && !e.metaKey && !e.ctrlKey && !isModalOpen) {
-        const el = document.activeElement;
-        if (el?.tagName !== 'INPUT' && el?.tagName !== 'TEXTAREA') {
-          e.preventDefault();
-          if (view === 'calendar') setView('list');
-          setSelectedDateFilter(null);
-          setIsSearchExpanded(true);
-        }
+      if (e.key === 's' && canUseShortcut) {
+        e.preventDefault();
+        if (view === 'calendar') setView('list');
+        setSelectedDateFilter(null);
+        setIsSearchExpanded(true);
       }
       // Escape to close confirmation dialog or clear search
       if (e.key === 'Escape') {
@@ -564,7 +547,7 @@ export default function HomePage() {
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, openTaskForm, view]);
+  }, [isModalOpen, isSettingsOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, openTaskForm, view]);
 
   if (newTaskUrlMode === 'pending' || (newTaskUrlMode !== 'off' && !isLoaded)) {
     return (
@@ -714,6 +697,7 @@ export default function HomePage() {
             </svg>
           </div>
           <button
+            className="btn-soft"
             onClick={() => {
               setSearchQuery('');
               setIsSearchExpanded(false);
@@ -721,22 +705,9 @@ export default function HomePage() {
             style={{
               fontSize: 15,
               fontWeight: 600,
-              color: 'var(--foreground)',
-              background: 'var(--accent-surface)',
-              border: '1px solid var(--border)',
               borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
               padding: '0 16px',
               height: 44,
-              transition: 'background 0.15s, color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--background)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
-              e.currentTarget.style.color = 'var(--foreground)';
             }}
           >
             Cancel
@@ -945,7 +916,7 @@ Back
                   {!group.isToday && (
                     <div style={{
                       padding: '8px 12px',
-                      background: group.isOverdue ? 'rgba(255, 107, 107, 0.1)' : 'rgba(255, 255, 255, 0.035)',
+                      background: group.isOverdue ? 'rgba(255, 107, 107, 0.1)' : 'var(--surface-inset)',
                       border: `1px solid ${group.isOverdue ? 'rgba(255, 107, 107, 0.24)' : 'var(--border)'}`,
                       borderRadius: 'var(--radius-sm)',
                       fontSize: 13,
@@ -1110,31 +1081,10 @@ Back
           {/* Search Button */}
           <button
             title="Search tasks"
+            className="icon-btn"
             onClick={handleSearchClick}
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
+            style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)' }}
             aria-label="Search"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
           >
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8"/>
@@ -1145,31 +1095,10 @@ Back
           {/* Settings Button */}
           <button
             title="Settings"
+            className="icon-btn"
             onClick={() => setIsSettingsOpen(true)}
-            style={{
-              width: 44,
-              height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              color: 'var(--muted)',
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-            }}
+            style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)' }}
             aria-label="Settings"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-subtle)';
-              e.currentTarget.style.color = 'var(--accent)';
-              e.currentTarget.style.borderColor = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--muted)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-            }}
           >
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>
@@ -1189,31 +1118,70 @@ Back
               openTaskForm(date, null, 'calendar-overlay');
             }}
             aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
+            className="btn-accent"
             style={{
               width: 44,
               height: 44,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: 'white',
-              background: 'var(--accent)',
-              border: '1px solid var(--accent)',
               borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
               boxShadow: 'var(--shadow-md)',
-              transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--accent-surface)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--accent)';
             }}
           >
             <AddOrSyncIcon isSyncing={isSyncing} />
           </button>
         </div>
       </footer>
+      )}
+
+      {undoTask && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            left: showSplitView ? '75%' : '50%',
+            bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+            transform: 'translateX(-50%)',
+            zIndex: 30,
+            width: 'min(420px, calc(100% - 32px))',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 10px 10px 16px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-lg)',
+            animation: 'slideUp 180ms cubic-bezier(0.16, 1, 0.3, 1) both',
+          }}
+        >
+          <span style={{
+            flex: 1,
+            minWidth: 0,
+            fontSize: 14,
+            color: 'var(--foreground)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            Completed <strong style={{ fontWeight: 650 }}>{splitTaskTitle(undoTask.title).title}</strong>
+          </span>
+          <button
+            type="button"
+            className="btn-soft"
+            onClick={handleUndoComplete}
+            style={{
+              flexShrink: 0,
+              height: 36,
+              padding: '0 14px',
+              fontSize: 14,
+              fontWeight: 600,
+              borderRadius: 'var(--radius-sm)',
+            }}
+          >
+            Undo
+          </button>
+        </div>
       )}
 
       <SettingsModal

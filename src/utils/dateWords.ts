@@ -6,15 +6,19 @@ export interface DateWordMatch {
   index: number;
 }
 
+// "sun" and "sat" are left out: they are everyday words ("sun cream", "sat down").
 const dayNames: Record<string, number> = {
-  sunday: 0, sun: 0,
+  sunday: 0,
   monday: 1, mon: 1,
-  tuesday: 2, tue: 2,
+  tuesday: 2, tues: 2, tue: 2,
   wednesday: 3, wed: 3,
-  thursday: 4, thur: 4,
+  thursday: 4, thurs: 4, thur: 4, thu: 4,
   friday: 5, fri: 5,
-  saturday: 6, sat: 6,
+  saturday: 6,
 };
+
+// Like a trailing \b, but also rejects apostrophes so "tomorrow's" is not a date.
+const END = "(?![\\w'’])";
 
 const monthNames: Record<string, number> = {
   january: 0, jan: 0,
@@ -90,21 +94,21 @@ function buildEntries(): Entry[] {
   const monthPattern = Object.keys(monthNames).join('|');
 
   const entries: Entry[] = [
-    { pattern: /\bnext week\b/i, compute: computeNextWeekMonday },
-    { pattern: /\bnext month\b/i, compute: computeNextMonthFirst },
-    { pattern: new RegExp(`\\b(${monthPattern})\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s*(\\d{4})?\\b`, 'i'), compute: computeMonthDay },
-    { pattern: new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${monthPattern}),?\\s*(\\d{4})?\\b`, 'i'), compute: computeDayMonth },
-    { pattern: /\btomorrow\b/i, compute: () => addDays(startOfDay(new Date()), 1) },
-    { pattern: /\btoday\b/i, compute: () => startOfDay(new Date()) },
+    { pattern: new RegExp(`\\bnext week${END}`, 'i'), compute: computeNextWeekMonday },
+    { pattern: new RegExp(`\\bnext month${END}`, 'i'), compute: computeNextMonthFirst },
+    { pattern: new RegExp(`\\b(${monthPattern})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s*(\\d{4}))?${END}`, 'i'), compute: computeMonthDay },
+    { pattern: new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(${monthPattern})(?:,?\\s*(\\d{4}))?${END}`, 'i'), compute: computeDayMonth },
+    { pattern: new RegExp(`\\btomorrow${END}`, 'i'), compute: () => addDays(startOfDay(new Date()), 1) },
+    { pattern: new RegExp(`\\btoday${END}`, 'i'), compute: () => startOfDay(new Date()) },
   ];
 
   for (const [name, day] of Object.entries(dayNames)) {
     entries.push({
-      pattern: new RegExp(`\\bnext ${name}\\b`, 'i'),
+      pattern: new RegExp(`\\bnext ${name}${END}`, 'i'),
       compute: () => getNextWeekday(day, false),
     });
     entries.push({
-      pattern: new RegExp(`\\b${name}\\b`, 'i'),
+      pattern: new RegExp(`\\b${name}${END}`, 'i'),
       compute: () => getNextWeekday(day, true),
     });
   }
@@ -131,6 +135,12 @@ export function findDateWord(title: string): DateWordMatch | null {
   }
 
   return earliest;
+}
+
+/** Like findDateWord, but ignores the note (text after the first period). */
+export function findDateWordInTitle(value: string): DateWordMatch | null {
+  const separatorIndex = value.indexOf('.');
+  return findDateWord(separatorIndex === -1 ? value : value.slice(0, separatorIndex));
 }
 
 export function removeDateWord(title: string, match: DateWordMatch): string {

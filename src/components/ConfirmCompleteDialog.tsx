@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
@@ -24,17 +24,45 @@ export default function ConfirmCompleteDialog({
   confirmLabel?: string;
   confirmTone?: 'primary' | 'danger';
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+
+  // Move focus into the dialog (Cancel for destructive actions) and give it
+  // back to whatever had it when the dialog closes.
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    (confirmTone === 'danger' ? cancelRef : confirmRef).current?.focus();
+    return () => previouslyFocused?.focus?.();
+  }, [confirmTone]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         onCancel();
+        return;
+      }
+      // Keep Tab cycling between the dialog's buttons.
+      if (e.key === 'Tab' && panelRef.current) {
+        const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>('button:not(:disabled)'));
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || !panelRef.current.contains(active))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (active === last || !panelRef.current.contains(active))) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
-    document.addEventListener('keydown', handleEscape, { capture: true });
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', handleEscape, { capture: true });
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
       document.body.style.overflow = '';
     };
   }, [onCancel]);
@@ -60,7 +88,7 @@ export default function ConfirmCompleteDialog({
         }}
       />
 
-      <div style={{
+      <div ref={panelRef} style={{
         position: 'absolute',
         left: 16,
         right: 16,
@@ -138,6 +166,7 @@ export default function ConfirmCompleteDialog({
           borderTop: '1px solid var(--border)'
         }}>
           <button
+            ref={cancelRef}
             type="button"
             onClick={onCancel}
             style={{
@@ -146,7 +175,7 @@ export default function ConfirmCompleteDialog({
               fontSize: 14,
               fontWeight: 600,
               color: 'var(--muted)',
-              background: 'rgba(255, 255, 255, 0.035)',
+              background: 'var(--surface-inset)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
@@ -159,7 +188,7 @@ export default function ConfirmCompleteDialog({
               e.currentTarget.style.color = 'var(--foreground)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+              e.currentTarget.style.background = 'var(--surface-inset)';
               e.currentTarget.style.borderColor = 'var(--border)';
               e.currentTarget.style.color = 'var(--muted)';
             }}
@@ -167,6 +196,7 @@ export default function ConfirmCompleteDialog({
             Cancel
           </button>
           <button
+            ref={confirmRef}
             type="button"
             onClick={onConfirm}
             style={{

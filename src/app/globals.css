@@ -29,6 +29,8 @@
   --surface-raised: #191713;
   --surface-inset: rgba(255, 255, 255, 0.035);
   --surface-hover: rgba(255, 255, 255, 0.045);
+  --surface-faint: rgba(255, 255, 255, 0.018);
+  --hover-ring: rgba(255, 255, 255, 0.025);
   --task-surface: #1f1c18;
   --task-surface-hover: #24211d;
   --calendar-month-start: #211e19;
@@ -91,6 +93,8 @@
   --surface-raised: #FFFCF5;
   --surface-inset: #ECE6DA;
   --surface-hover: #F8F1E3;
+  --surface-faint: #EFEAE0;
+  --hover-ring: rgba(77, 54, 28, 0.06);
   --task-surface: #FFFCF5;
   --task-surface-hover: #F8F1E3;
   --calendar-month-start: #E8DFCF;
@@ -216,13 +220,21 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Hide scrollbars */
-html, body {
-  scrollbar-width: none;
+/* Hide scrollbars in the installed app and on touch devices so it feels native;
+   desktop browsers keep a thin scrollbar as a scroll affordance. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
-::-webkit-scrollbar {
-  display: none;
+@media (display-mode: standalone), (pointer: coarse) {
+  * {
+    scrollbar-width: none;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 input, textarea, button {
@@ -320,6 +332,98 @@ input, textarea, button {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Hover lives in CSS behind (hover: hover) so taps on touch screens don't leave
+   buttons stuck in their hover state. */
+.btn-accent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--background);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.btn-accent:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn-soft {
+  color: var(--foreground);
+  background: var(--accent-surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.reschedule-btn {
+  color: var(--muted);
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.reschedule-btn[data-overdue="true"] {
+  color: var(--red);
+}
+
+.menu-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--foreground);
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.menu-option:focus-visible {
+  background: var(--surface-hover);
+}
+
+@media (hover: hover) {
+  .btn-accent:not(:disabled):hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+
+  .icon-btn:hover,
+  .reschedule-btn:hover {
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+  }
+
+  .menu-option:hover {
+    background: var(--surface-hover);
+  }
+
+  .btn-soft:hover {
+    color: var(--background);
+    background: var(--accent);
   }
 }
 

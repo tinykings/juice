@@ -82,7 +82,7 @@ export default function CalendarSubscriptionSettings() {
           fontSize: 15,
           border: '1px solid var(--border)',
           borderRadius: 'var(--radius-sm)',
-          background: 'rgba(255, 255, 255, 0.035)',
+          background: 'var(--surface-inset)',
           color: 'var(--foreground)',
           boxSizing: 'border-box',
         }}

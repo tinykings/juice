@@ -13,6 +13,7 @@ import {
   GistNotFoundError,
   loadSyncSnapshotFromGist,
   mergeSyncDocuments,
+  pruneTombstones,
   saveSyncDocumentToGist,
   syncDocumentContentKey,
   syncDocumentContentEquals,
@@ -21,7 +22,7 @@ import {
 } from '@/services/gistSync';
 import { GistEncryptionError } from '@/services/gistCrypto';
 import { normalizeTaskDate } from '@/utils/taskDate';
-import { getNextRecurrenceDate } from '@/utils/taskRecurrence';
+import { findSpawnedRecurrence, getNextRecurrenceDateAfterCompletion } from '@/utils/taskRecurrence';
 
 const DEV = process.env.NODE_ENV !== 'production';
 const LAST_SYNC_DOCUMENT_KEY = 'juice-last-sync-document';
@@ -293,7 +294,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       const needsEncrypting = Boolean(gistSettings.encryptionKey) && !remoteSnapshot.encrypted;
       const shouldSave = needsEncrypting || !syncDocumentContentEquals(mergedDocument, remoteDocument);
       const syncedDocument = shouldSave
-        ? createSyncDocument(merged.tasks, merged.tombstones)
+        ? createSyncDocument(merged.tasks, pruneTombstones(merged.tombstones))
         : remoteDocument;
 
       if (shouldSave) {
@@ -350,16 +351,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         // The Gist was deleted on GitHub (for example, to purge unencrypted history). Find the
         // newest Juice Gist, or create one from local tasks, and sync with that instead.
         syncContentionRetriesRef.current += 1;
-        const nextGistId = await findOrCreateJuiceGist(
-          buildLocalDocument().tasks,
-          gistSettings.githubToken,
-          gistSettings.encryptionKey
-        );
-        baseSyncDocumentRef.current = null;
-        lastSyncedContentKeyRef.current = null;
-        window.localStorage.removeItem(LAST_SYNC_DOCUMENT_KEY);
-        // Changing settings re-runs the startup sync effect against the new Gist.
-        updateGistSettings({ gistId: nextGistId });
+        try {
+          const nextGistId = await findOrCreateJuiceGist(
+            buildLocalDocument().tasks,
+            gistSettings.githubToken,
+            gistSettings.encryptionKey
+          );
+          baseSyncDocumentRef.current = null;
+          lastSyncedContentKeyRef.current = null;
+          window.localStorage.removeItem(LAST_SYNC_DOCUMENT_KEY);
+          setSyncStatus('idle');
+          // Changing settings re-runs the startup sync effect against the new Gist.
+          updateGistSettings({ gistId: nextGistId });
+        } catch (recoveryError) {
+          console.error('Failed to recover missing Gist:', recoveryError);
+          setSyncStatus('error');
+          setSyncError(recoveryError instanceof Error ? recoveryError.message : 'Failed to find or create a Gist');
+        }
       } else {
         syncContentionRetriesRef.current = 0;
         const message = error instanceof Error ? error.message : 'Failed to sync tasks';
@@ -572,7 +580,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           id: uuidv4(),
           title: task.title,
           notes: '',
-          dueDate: getNextRecurrenceDate(task.dueDate, task.recurrenceType),
+          dueDate: getNextRecurrenceDateAfterCompletion(task.dueDate, task.recurrenceType),
           completed: false,
           completedAt: null,
           createdAt: now,
@@ -592,14 +600,25 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const uncompleteTask = useCallback((id: string) => {
     markLocalChange();
     const now = new Date().toISOString();
+    const task = tasksRef.current.find((item) => item.id === id);
+    const spawned = task?.completed ? findSpawnedRecurrence(tasksRef.current, task) : undefined;
+
+    if (spawned) {
+      updateTombstonesState((prev) => ({
+        ...prev,
+        [spawned.id]: { id: spawned.id, deletedAt: now, updatedAt: now },
+      }));
+    }
     updateTasksState((prev) =>
-      prev.map((task) =>
-        task.id === id
-          ? normalizeTask({ ...task, completed: false, completedAt: null, updatedAt: now })
-          : task
-      )
+      prev
+        .filter((item) => item.id !== spawned?.id)
+        .map((item) =>
+          item.id === id
+            ? normalizeTask({ ...item, completed: false, completedAt: null, updatedAt: now })
+            : item
+        )
     );
-  }, [markLocalChange, updateTasksState]);
+  }, [markLocalChange, updateTasksState, updateTombstonesState]);
 
   const getTodayTasks = useCallback(() => {
     const today = startOfDay(new Date());

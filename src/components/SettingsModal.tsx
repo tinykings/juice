@@ -193,7 +193,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             onClick={onClose}
             aria-label="Close settings"
             style={{
-              background: 'rgba(255, 255, 255, 0.035)',
+              background: 'var(--surface-inset)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
@@ -212,7 +212,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               e.currentTarget.style.borderColor = 'var(--border)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+              e.currentTarget.style.background = 'var(--surface-inset)';
               e.currentTarget.style.color = 'var(--muted)';
               e.currentTarget.style.borderColor = 'var(--border)';
             }}
@@ -236,7 +236,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 fontWeight: 600,
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255, 255, 255, 0.035)',
+                background: 'var(--surface-inset)',
                 color: 'var(--foreground)',
                 cursor: 'pointer',
                 height: 42,
@@ -251,7 +251,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 e.currentTarget.style.color = 'var(--accent)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+                e.currentTarget.style.background = 'var(--surface-inset)';
                 e.currentTarget.style.color = 'var(--foreground)';
               }}
             >
@@ -289,7 +289,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     border: '1px solid',
                     borderRadius: 'var(--radius-sm)',
                     borderColor: badgeEnabled ? 'var(--accent-border)' : 'var(--border)',
-                    background: badgeEnabled ? 'var(--accent-surface)' : 'rgba(255, 255, 255, 0.035)',
+                    background: badgeEnabled ? 'var(--accent-surface)' : 'var(--surface-inset)',
                     color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
                     cursor: 'pointer',
                     height: 42,
@@ -307,7 +307,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   }}
                   onMouseLeave={(e) => {
                     if (!badgeEnabled) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.035)';
+                      e.currentTarget.style.background = 'var(--surface-inset)';
                       e.currentTarget.style.color = 'var(--foreground)';
                     }
                   }}
@@ -423,7 +423,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   fontSize: 15,
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255, 255, 255, 0.035)',
+                  background: 'var(--surface-inset)',
                   color: 'var(--foreground)',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -432,12 +432,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = 'var(--accent-border)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.045)';
+                  e.target.style.background = 'var(--surface-hover)';
                   e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'var(--border)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.035)';
+                  e.target.style.background = 'var(--surface-inset)';
                   e.target.style.boxShadow = 'none';
                 }}
               />
@@ -470,7 +470,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   fontSize: 15,
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255, 255, 255, 0.035)',
+                  background: 'var(--surface-inset)',
                   color: 'var(--foreground)',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -479,12 +479,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = 'var(--accent-border)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.045)';
+                  e.target.style.background = 'var(--surface-hover)';
                   e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'var(--border)';
-                  e.target.style.background = 'rgba(255, 255, 255, 0.035)';
+                  e.target.style.background = 'var(--surface-inset)';
                   e.target.style.boxShadow = 'none';
                 }}
               />

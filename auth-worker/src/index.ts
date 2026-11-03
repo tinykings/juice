@@ -261,6 +261,11 @@ async function redeem(request: Request, env: Env): Promise<Response> {
 
 const MAX_ICS_BYTES = 5 * 1024 * 1024;
 
+function looksLikeICalendar(body: ArrayBuffer): boolean {
+  const head = new TextDecoder().decode(body.slice(0, 64)).replace(/^\uFEFF/, '').trimStart();
+  return /^BEGIN:VCALENDAR/i.test(head);
+}
+
 /**
  * Fetches a public/secret-link .ics calendar for an allowed app origin. Many
  * calendar hosts (Google, iCloud, Outlook) don't send CORS headers, so the
@@ -299,6 +304,11 @@ async function icsProxy(request: Request, env: Env): Promise<Response> {
   if (declared > MAX_ICS_BYTES) return new Response('Calendar is too large.', { status: 413, headers });
   const body = await upstream.arrayBuffer();
   if (body.byteLength > MAX_ICS_BYTES) return new Response('Calendar is too large.', { status: 413, headers });
+  // Only relay real iCalendar data so the Origin check (which non-browser
+  // clients can fake) isn't all that stops this being a general fetch proxy.
+  if (!looksLikeICalendar(body)) {
+    return new Response("That URL didn't return a calendar (.ics) feed.", { status: 415, headers });
+  }
 
   return new Response(body, {
     headers: { ...headers, 'Content-Type': 'text/calendar; charset=utf-8' },

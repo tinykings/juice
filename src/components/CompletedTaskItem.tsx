@@ -32,7 +32,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
         opacity: isUncompleting ? 0.3 : 0.58,
         transform: isUncompleting ? 'translateX(6px)' : 'translateX(0)',
         transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
-        boxShadow: isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
+        boxShadow: isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
       }}
     >
       <button
@@ -63,7 +63,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-          boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
+          boxShadow: isCheckboxHovered ? '0 0 0 3px var(--hover-ring)' : 'none',
         }}>
           {!isUncompleting && (
             <svg width="16" height="16" fill="none" stroke={isCheckboxHovered ? 'var(--accent)' : 'var(--muted)'} strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">

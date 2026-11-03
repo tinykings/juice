@@ -38,7 +38,7 @@ const keyStyle: React.CSSProperties = {
   marginBottom: 10,
   border: '1px solid var(--border)',
   borderRadius: 'var(--radius-sm)',
-  background: 'rgba(255, 255, 255, 0.035)',
+  background: 'var(--surface-inset)',
   color: 'var(--foreground)',
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
   fontSize: 14,

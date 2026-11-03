@@ -218,6 +218,26 @@ export function createSyncDocument(
   };
 }
 
+export const TOMBSTONE_RETENTION_DAYS = 90;
+
+/**
+ * Drops tombstones older than the retention window so the Gist doesn't grow
+ * forever. Only apply this to a document that is being written anyway: pruning
+ * on every sync would rewrite the Gist each time another client re-sends the
+ * old tombstones.
+ */
+export function pruneTombstones(
+  tombstones: TaskTombstone[],
+  now = new Date(),
+  retentionDays = TOMBSTONE_RETENTION_DAYS
+): TaskTombstone[] {
+  const cutoff = now.getTime() - retentionDays * 24 * 60 * 60 * 1000;
+  return tombstones.filter((tombstone) => {
+    const time = new Date(tombstone.updatedAt).getTime();
+    return Number.isNaN(time) || time >= cutoff;
+  });
+}
+
 export function syncDocumentContentKey(document: SyncDocument): string {
   return JSON.stringify({
     tasks: document.tasks

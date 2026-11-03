@@ -5,6 +5,7 @@ import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { SettingsProvider } from "@/context/SettingsContext";
 import { CalendarFeedProvider } from "@/context/CalendarFeedContext";
+import { THEME_COLORS, themeBootScript } from "@/utils/theme";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -37,8 +38,8 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F2F0EB" },
-    { media: "(prefers-color-scheme: dark)", color: "#1C1C1C" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
 };
 
@@ -50,6 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={plusJakarta.variable}>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>

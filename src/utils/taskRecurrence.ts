@@ -20,6 +20,46 @@ export function getNextRecurrenceDate(currentDate: string, recurrenceType: Recur
 }
 
 /**
+ * Date for the occurrence that replaces a completed recurring task. Overdue
+ * tasks skip missed occurrences so the new one is not already overdue.
+ */
+export function getNextRecurrenceDateAfterCompletion(
+  currentDate: string,
+  recurrenceType: RecurrenceType,
+  now = new Date()
+): string {
+  const today = formatTaskDate(now);
+  let nextDate = getNextRecurrenceDate(currentDate, recurrenceType);
+
+  for (let step = 0; step < 100_000 && nextDate <= today; step += 1) {
+    const following = getNextRecurrenceDate(nextDate, recurrenceType);
+    if (following <= nextDate) break;
+    nextDate = following;
+  }
+
+  return nextDate;
+}
+
+/**
+ * The untouched occurrence created when `task` was completed, if any. It
+ * shares the completion timestamp as its creation time.
+ */
+export function findSpawnedRecurrence(tasks: Task[], task: Task): Task | undefined {
+  if (!task.isRecurring || !task.recurrenceType || !task.completedAt) return undefined;
+
+  return tasks.find((candidate) => (
+    candidate.id !== task.id &&
+    !candidate.completed &&
+    !candidate.deletedAt &&
+    candidate.isRecurring &&
+    candidate.recurrenceType === task.recurrenceType &&
+    candidate.title === task.title &&
+    candidate.createdAt === task.completedAt &&
+    (candidate.updatedAt ?? candidate.createdAt) === candidate.createdAt
+  ));
+}
+
+/**
  * Add read-only recurring previews only within months already visible from
  * real tasks (plus current month). Previews never make blank future months
  * appear, persist, or sync.

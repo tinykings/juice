@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { format, isBefore, isToday, startOfDay, addDays } from 'date-fns';
+import { format, isBefore, isToday, startOfDay, startOfWeek, addDays } from 'date-fns';
 import { Task } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import { splitTaskTitle } from '@/utils/taskTitle';
@@ -87,7 +87,7 @@ export default function TaskItem({
         onMouseLeave={() => setIsHovered(false)}
         style={{
           display: 'grid',
-          gridTemplateColumns: task.pinned ? 'minmax(0, 1fr)' : '38px minmax(0, 1fr)',
+          gridTemplateColumns: '38px minmax(0, 1fr)',
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
           columnGap: 12,
@@ -98,13 +98,11 @@ export default function TaskItem({
           transform: isCompleting ? 'translateX(-6px)' : 'translateX(0)',
           transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
           background: !isRecurrencePreview && isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
-          boxShadow: !isRecurrencePreview && isHovered ? '0 0 0 1px rgba(255, 255, 255, 0.02)' : 'none',
+          boxShadow: !isRecurrencePreview && isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
           cursor: isRecurrencePreview ? 'default' : 'pointer',
         }}
       >
-        {/* Pinned tasks are removed by unpinning. */}
-        {!task.pinned && (
-          <button
+        <button
             data-task-checkbox="true"
             disabled={isCompleting || isRecurrencePreview}
             onClick={(e) => {
@@ -137,7 +135,7 @@ export default function TaskItem({
               border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
               borderRadius: 'var(--radius-sm)',
               transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-              boxShadow: isCheckboxHovered ? '0 0 0 3px rgba(255, 255, 255, 0.025)' : 'none',
+              boxShadow: isCheckboxHovered ? '0 0 0 3px var(--hover-ring)' : 'none',
             }}>
               {isCompleting && (
                 <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
@@ -146,7 +144,6 @@ export default function TaskItem({
               )}
             </div>
           </button>
-        )}
 
         {/* Content */}
         <div style={{ minWidth: 0, paddingTop: 1 }}>
@@ -217,35 +214,26 @@ export default function TaskItem({
             {showDate && taskDate && !isRecurrencePreview && (
               <div style={{ position: 'relative' }}>
                 <button
+                  className="reschedule-btn"
+                  data-overdue={isOverdue ? 'true' : undefined}
+                  aria-haspopup="menu"
+                  aria-expanded={showReschedule}
                   onClick={(e) => {
                     e.stopPropagation();
                     setAnchorEl(e.currentTarget);
                     setShowReschedule(!showReschedule);
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--accent)';
-                    e.currentTarget.style.backgroundColor = 'var(--accent-subtle)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = isOverdue ? 'var(--red)' : 'var(--muted)';
-                    e.currentTarget.style.backgroundColor = 'var(--surface-inset)';
-                  }}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.035)',
-                    border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
                     width: 32,
                     height: 32,
                     padding: 0,
-                    cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 5,
-                    color: isOverdue ? 'var(--red)' : 'var(--muted)',
                     fontSize: 'var(--text-meta)',
                     fontWeight: 500,
-                    transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                     whiteSpace: 'nowrap',
                   }}
                   aria-label={`Reschedule ${taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}`}
@@ -281,9 +269,51 @@ function RescheduleMenu({
   onClose: () => void; 
   onSelect: (date: Date) => void; 
 }) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Open below the button, flipping above it when there isn't room (e.g. near the footer).
+  useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (!menu) return;
+    const triggerRect = anchorEl.getBoundingClientRect();
+    const menuHeight = menu.offsetHeight;
+    const gap = 8;
+    const fitsBelow = triggerRect.bottom + gap + menuHeight <= window.innerHeight - gap;
+    const top = fitsBelow
+      ? triggerRect.bottom + gap
+      : Math.max(gap, triggerRect.top - gap - menuHeight);
+    menu.style.top = `${top}px`;
+    menu.style.left = `${Math.min(window.innerWidth - 180, Math.max(16, triggerRect.left - 80))}px`;
+    menu.style.visibility = 'visible';
+  }, [anchorEl]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [onClose]);
+
   if (typeof document === 'undefined') return null;
 
-  const triggerRect = anchorEl.getBoundingClientRect();
+  const today = startOfDay(new Date());
+  const nextMonday = addDays(startOfWeek(today, { weekStartsOn: 1 }), 7);
+
+  const openDatePicker = () => {
+    const input = dateInputRef.current;
+    if (!input) return;
+    try {
+      input.showPicker();
+    } catch {
+      input.focus();
+      input.click();
+    }
+  };
 
   return createPortal(
     <>
@@ -294,22 +324,28 @@ function RescheduleMenu({
           onClose();
         }}
       />
-      <div style={{
-        position: 'fixed',
-        top: triggerRect.bottom + 8,
-        left: Math.min(window.innerWidth - 180, Math.max(16, triggerRect.left - 80)),
-        width: 160,
-        background: 'var(--card)',
-        boxShadow: 'var(--shadow-lg)',
-        padding: 6,
-        zIndex: 9999,
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius-md)',
-      }}>
-        <RescheduleOption label="Today" date={startOfDay(new Date())} onClick={onSelect} />
-        <RescheduleOption label="Tomorrow" date={addDays(startOfDay(new Date()), 1)} onClick={onSelect} />
+      <div
+        ref={menuRef}
+        role="menu"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          visibility: 'hidden',
+          width: 160,
+          background: 'var(--card)',
+          boxShadow: 'var(--shadow-lg)',
+          padding: 6,
+          zIndex: 9999,
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+        }}
+      >
+        <RescheduleOption label="Today" date={today} onClick={onSelect} />
+        <RescheduleOption label="Tomorrow" date={addDays(today, 1)} onClick={onSelect} />
         {[2, 3, 4, 5].map(daysToAdd => {
-          const date = addDays(startOfDay(new Date()), daysToAdd);
+          const date = addDays(today, daysToAdd);
           return (
             <RescheduleOption 
               key={daysToAdd}
@@ -319,6 +355,40 @@ function RescheduleMenu({
             />
           );
         })}
+        <RescheduleOption label="Next week" date={nextMonday} onClick={onSelect} />
+        <div style={{ position: 'relative' }}>
+          <button
+            role="menuitem"
+            className="menu-option"
+            onClick={(e) => {
+              e.stopPropagation();
+              openDatePicker();
+            }}
+          >
+            <span style={{ fontWeight: 500 }}>Pick a date…</span>
+          </button>
+          <input
+            ref={dateInputRef}
+            type="date"
+            tabIndex={-1}
+            aria-hidden="true"
+            min={formatTaskDate(today)}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              if (e.target.value) onSelect(parseTaskDate(e.target.value));
+            }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0,
+              pointerEvents: 'none',
+              border: 'none',
+              padding: 0,
+            }}
+          />
+        </div>
       </div>
     </>,
     document.body
@@ -326,30 +396,13 @@ function RescheduleMenu({
 }
 
 function RescheduleOption({ label, date, onClick }: { label: string; date: Date; onClick: (d: Date) => void }) {
-  const [isHovered, setIsHovered] = useState(false);
-  
   return (
     <button
+      role="menuitem"
+      className="menu-option"
       onClick={(e) => {
         e.stopPropagation();
         onClick(date);
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: '10px 12px',
-        border: 'none',
-        borderRadius: 'var(--radius-sm)',
-        background: isHovered ? 'var(--surface-hover)' : 'transparent',
-        cursor: 'pointer',
-        fontSize: 14,
-        color: 'var(--foreground)',
-        textAlign: 'left',
-        transition: 'background 0.15s',
       }}
     >
       <span style={{ fontWeight: 500 }}>{label}</span>
