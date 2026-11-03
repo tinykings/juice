@@ -68,7 +68,7 @@ export default function ConfirmCompleteDialog({
   }, [onCancel]);
 
   const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
-  const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'Pinned';
+  const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'No date';
   const titleParts = splitTaskTitle(task.title);
 
   return createPortal(

@@ -21,7 +21,7 @@ import { withRecurrencePreviews } from '@/utils/taskRecurrence';
 import { parseTaskTimeMinutes } from '@/utils/taskTime';
 import { splitTaskTitle } from '@/utils/taskTitle';
 
-// Width of the task list beside the calendar on wide screens; the calendar takes the rest.
+// Width of the task list on the left of wide screens; the calendar takes the rest on the right.
 const SPLIT_LIST_WIDTH = 'clamp(420px, 42vw, 560px)';
 
 interface TaskGroup {
@@ -54,7 +54,7 @@ export default function HomePage() {
   const [windowWidth, setWindowWidth] = useState(0);
   // Phone held sideways: the calendar takes the whole screen, like the iOS app.
   const [isLandscapePhone, setIsLandscapePhone] = useState(false);
-  const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today' | 'pinned'>('pending');
+  const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today'>('pending');
   const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
   const [undoTask, setUndoTask] = useState<Task | null>(null);
   const undoTimerRef = useRef<number | null>(null);
@@ -71,8 +71,7 @@ export default function HomePage() {
         return;
       }
 
-      const value = newTaskEntry[1].toLowerCase();
-      setNewTaskUrlMode(value === 'pinned' ? 'pinned' : 'today');
+      setNewTaskUrlMode('today');
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -201,7 +200,7 @@ export default function HomePage() {
     const lastEventDay = endOfDay(addDays(today, 7));
     const filtered = displayTasks.filter(t => {
       if (t.completed) return false;
-      if (!t.dueDate) return false; // Pinned tasks are shown separately.
+      if (!t.dueDate) return false; // Undated tasks are added to Overdue separately.
       if (t.isCalendarEvent) {
         // The list shows upcoming events for this week; the calendar shows the rest.
         const eventDay = parseTaskDate(t.dueDate);
@@ -236,12 +235,13 @@ export default function HomePage() {
 
   const hasNoTasks = tasks.length === 0;
 
-  // Pinned tasks stay above every dated group.
-  const pinnedTasks = useMemo(() => {
+  // Tasks without a date (e.g. older pinned tasks, or ones made in the iOS app)
+  // wait under Overdue until they're given a date or done.
+  const undatedTasks = useMemo(() => {
     if (selectedDateFilter) return [];
     const query = searchQuery.trim().toLowerCase();
     return tasks.filter(t => (
-      t.pinned &&
+      !t.dueDate &&
       !t.completed &&
       (!query || t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query))
     ));
@@ -259,12 +259,13 @@ export default function HomePage() {
       const d = startOfDay(parseTaskDate(t.dueDate));
       return isBefore(d, today) && !isToday(d);
     });
-    if (overdueTasks.length > 0) {
+    if (overdueTasks.length > 0 || undatedTasks.length > 0) {
       const yesterday = addDays(today, -1);
-      // Sort alphabetically by title
-      const sortedOverdueTasks = [...overdueTasks].sort((a, b) => 
-        a.title.localeCompare(b.title)
-      );
+      // Sort alphabetically by title; undated tasks follow the ones that were due.
+      const sortedOverdueTasks = [
+        ...[...overdueTasks].sort((a, b) => a.title.localeCompare(b.title)),
+        ...[...undatedTasks].sort((a, b) => a.title.localeCompare(b.title)),
+      ];
       groups.push({ label: 'Overdue', tasks: sortedOverdueTasks, isOverdue: true, date: yesterday });
     }
     
@@ -312,7 +313,7 @@ export default function HomePage() {
     });
 
     return groups;
-  }, [incompleteTasks, currentDate]);
+  }, [incompleteTasks, undatedTasks, currentDate]);
 
   const visibleGroups = useMemo(() => {
     const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
@@ -596,7 +597,6 @@ export default function HomePage() {
                 inline
                 onClose={() => {}}
                 onSave={() => setHasAddedTaskFromUrl(true)}
-                initialDate={newTaskUrlMode === 'pinned' ? '' : null}
                 captureUrlMode
               />
               <button
@@ -727,6 +727,7 @@ export default function HomePage() {
       {(view === 'calendar' || showSplitView) && isLoaded && (
         <div className="app-scroll" style={{
           flex: 1,
+          order: showSplitView ? 2 : undefined,
           height: (isWideScreen || showSplitView) ? '100%' : 'auto',
           paddingBottom: showSplitView ? 0 : 'calc(65px + env(safe-area-inset-bottom, 0px))',
         }}>
@@ -746,7 +747,7 @@ export default function HomePage() {
         padding: isSearchExpanded
           ? 'calc(88px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))'
           : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))',
-        borderLeft: showSplitView ? '1px solid var(--border)' : 'none',
+        borderRight: showSplitView ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
@@ -779,7 +780,7 @@ Back
         {/* Empty / All-done State */}
         {isLoaded && (
           <div>
-            {incompleteTasks.length === 0 && pinnedTasks.length === 0 && completedTasks.length === 0 && !isCreatingTask && (
+            {incompleteTasks.length === 0 && undatedTasks.length === 0 && completedTasks.length === 0 && !isCreatingTask && (
               <div style={{
                 padding: showSplitView ? '80px 24px' : '60px 24px',
                 display: 'flex',
@@ -859,42 +860,6 @@ Back
                 )}
               </div>
             )}
-            {/* Pinned Section */}
-            {pinnedTasks.length > 0 && (
-              <section style={{ marginBottom: 24 }}>
-                <GroupHeader label="Pinned" tone="default" />
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                  paddingTop: 8,
-                }}>
-                  {pinnedTasks.map((task) => (
-                    editingTask?.id === task.id ? (
-                      <TaskForm
-                        key={task.id}
-                        inline
-                        isClosing={isInlineFormClosing}
-                        editTask={task}
-                        onClose={handleCloseModal}
-                        onSave={handleInlineSave}
-                      />
-                    ) : (
-                      <TaskItem
-                        key={task.id}
-                        task={task}
-                        onComplete={() => handleTaskComplete(task.id, true)}
-                        onEdit={() => openInlineTaskForm(null, task)}
-                        showDate={false}
-                        isOverdue={false}
-                        needsConfirmation={false}
-                      />
-                    )
-                  ))}
-                </div>
-              </section>
-            )}
-
             {visibleGroups.map((group) => {
               const groupHasCompletedTasks = group.isToday && completedTasks.length > 0;
               const groupHasTasks = group.tasks.length > 0 || groupHasCompletedTasks;
@@ -1063,8 +1028,8 @@ Back
           userSelect: 'none',
           // Overlay the scroll area so content blurs through as it scrolls.
           position: showSplitView ? 'fixed' : 'absolute',
-          left: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH})` : 0,
-          right: 0,
+          left: 0,
+          right: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH})` : 0,
           bottom: 0,
           zIndex: 25,
         }}
@@ -1135,7 +1100,7 @@ Back
           aria-live="polite"
           style={{
             position: 'fixed',
-            left: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH} / 2)` : '50%',
+            left: showSplitView ? `calc(${SPLIT_LIST_WIDTH} / 2)` : '50%',
             bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
             transform: 'translateX(-50%)',
             zIndex: 30,

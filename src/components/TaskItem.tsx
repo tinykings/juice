@@ -135,7 +135,7 @@ export default function TaskItem({
 
         {/* Content */}
         <div style={{ minWidth: 0, paddingTop: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: showDate && taskDate ? 'minmax(0, 1fr) auto' : '1fr', alignItems: 'start', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: showDate ? 'minmax(0, 1fr) auto' : '1fr', alignItems: 'start', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ 
                   margin: 0, 
@@ -199,7 +199,7 @@ export default function TaskItem({
             </div>
             
             {/* Date indicator */}
-            {showDate && taskDate && !isRecurrencePreview && (
+            {showDate && !isRecurrencePreview && (
               <div style={{ position: 'relative' }}>
                 <button
                   className="reschedule-btn"
@@ -224,7 +224,7 @@ export default function TaskItem({
                     fontWeight: 500,
                     whiteSpace: 'nowrap',
                   }}
-                  aria-label={`Reschedule ${taskDate && isToday(taskDate) ? 'Today' : format(taskDate!, 'MMM d')}`}
+                  aria-label={taskDate ? `Reschedule ${isToday(taskDate) ? 'Today' : format(taskDate, 'MMM d')}` : 'Pick a date'}
                   title="Reschedule"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" aria-hidden="true">

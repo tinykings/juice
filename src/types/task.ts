@@ -4,13 +4,14 @@ export interface Task {
   id: string;
   title: string;
   notes: string;
-  dueDate: string; // YYYY-MM-DD local calendar date, or empty when pinned
+  dueDate: string; // YYYY-MM-DD local calendar date, or empty when undated
   completed: boolean;
   completedAt: string | null;
   createdAt: string;
   updatedAt?: string;
   deletedAt?: string | null;
   conflictOf?: string;
+  /** Sync-format field: true for undated tasks. The web app no longer offers pinning. */
   pinned: boolean;
   isRecurring: boolean;
   recurrenceType: RecurrenceType;

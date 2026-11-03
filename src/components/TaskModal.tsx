@@ -16,7 +16,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
   const initialDueDate = editTask
     ? normalizeTaskDate(editTask.dueDate)
-    : (initialDate ?? format(new Date(), 'yyyy-MM-dd'));
+    : (initialDate || format(new Date(), 'yyyy-MM-dd'));
   
   const [dueDate, setDueDate] = useState(initialDueDate);
   const initialTitle = editTask?.notes
@@ -69,22 +69,19 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   const [originalData] = useState(() => ({
     title: initialTitle,
     dueDate: initialDueDate,
-    pinned: editTask?.pinned ?? initialDate === '',
     isRecurring: editTask?.isRecurring || false,
     recurrenceType: editTask?.recurrenceType || 'daily'
   }));
 
-  const [isPinned, setIsPinned] = useState(() => editTask?.pinned ?? initialDate === '');
   const [isRecurring, setIsRecurring] = useState(() => editTask?.isRecurring ?? false);
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceType>(() => editTask?.recurrenceType || 'daily');
 
   const hasChanges = useMemo(() => (
     titleValue !== originalData.title ||
     dueDate !== originalData.dueDate ||
-    isPinned !== originalData.pinned ||
     isRecurring !== originalData.isRecurring ||
     (isRecurring && recurrenceType !== originalData.recurrenceType)
-  ), [dueDate, isPinned, isRecurring, originalData, recurrenceType, titleValue]);
+  ), [dueDate, isRecurring, originalData, recurrenceType, titleValue]);
 
   const focusTitle = useCallback(() => {
     const input = titleRef.current;
@@ -127,27 +124,18 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       title = removeDateWord(title, match);
     }
 
-    if (isPinned) effectiveDueDate = '';
-
-    const taskData = effectiveDueDate
-      ? {
-        title,
-        notes: '',
-        dueDate: normalizeTaskDate(effectiveDueDate),
-        pinned: false,
-        isRecurring,
-        recurrenceType: isRecurring ? recurrenceType : null,
-        tags: [],
-      }
-      : {
-        title,
-        notes: '',
-        dueDate: '',
-        pinned: isPinned,
-        isRecurring: isPinned ? false : isRecurring,
-        recurrenceType: isPinned ? null : (isRecurring ? recurrenceType : null),
-        tags: [],
-      };
+    // Tasks always get a date; an undated one (e.g. made in the iOS app) keeps
+    // no date until one is picked, and shows under Overdue meanwhile.
+    const normalizedDueDate = effectiveDueDate ? normalizeTaskDate(effectiveDueDate) : '';
+    const taskData = {
+      title,
+      notes: '',
+      dueDate: normalizedDueDate,
+      pinned: false,
+      isRecurring: normalizedDueDate ? isRecurring : false,
+      recurrenceType: normalizedDueDate && isRecurring ? recurrenceType : null,
+      tags: [],
+    };
 
     if (editTask) {
       updateTask(editTask.id, taskData);
@@ -168,7 +156,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
     onClose();
     if (onSave) onSave();
-  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, findNewDateWord, isPinned, isRecurring, isSaving, onClose, onSave, recurrenceType, updateTask, titleValue]);
+  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, findNewDateWord, isRecurring, isSaving, onClose, onSave, recurrenceType, updateTask, titleValue]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -193,33 +181,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
 
   const handleDelete = () => {
     setIsConfirmingDelete(true);
-  };
-
-  const handlePinToggle = () => {
-    const nextPinned = !isPinned;
-    const nextDueDate = nextPinned ? '' : format(new Date(), 'yyyy-MM-dd');
-
-    setIsPinned(nextPinned);
-    setDueDate(nextDueDate);
-    if (nextPinned) setIsRecurring(false);
-
-    if (!editTask) return;
-
-    let title = titleValue.trim() || editTask.title;
-    const match = findNewDateWord(title);
-    if (match) title = removeDateWord(title, match);
-
-    updateTask(editTask.id, {
-      title,
-      notes: '',
-      dueDate: nextDueDate,
-      pinned: nextPinned,
-      isRecurring: false,
-      recurrenceType: null,
-      tags: [],
-    });
-    onClose();
-    onSave?.();
   };
 
   const handleConfirmDelete = () => {
@@ -349,7 +310,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       </div>
 
       {/* Options */}
-      {!isPinned && (
       <div style={{ padding: '0 16px 14px', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         <CalendarPicker value={dueDate} onChange={setDueDate} />
 
@@ -383,7 +343,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           Repeat
         </button>
       </div>
-      )}
 
       {/* Recurrence options */}
       {isRecurring && (
@@ -504,31 +463,6 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            type="button"
-            aria-pressed={isPinned}
-            onClick={handlePinToggle}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '0 14px',
-              background: isPinned ? 'var(--accent-surface)' : 'var(--surface-inset)',
-              color: isPinned ? 'var(--accent)' : 'var(--muted)',
-              border: isPinned ? '1px solid var(--accent-border)' : '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: 14,
-              cursor: 'pointer',
-              height: 42,
-              fontWeight: 500,
-              transition: 'background 0.15s, border-color 0.15s, color 0.15s'
-            }}
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 17v5M5 3h14l-3 6v5l3 3H5l3-3V9L5 3z"/>
-            </svg>
-            {isPinned ? 'Unpin' : 'Pin'}
-          </button>
           {editTask ? (
           <button
             type="button"

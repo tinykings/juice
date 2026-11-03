@@ -23,7 +23,7 @@ export default function CalendarTaskOverlay({
   onShowDay?: () => void;
 }) {
   const dateLabel = initialDate === ''
-    ? 'Pinned'
+    ? 'No date'
     : format(initialDate ? parseTaskDate(initialDate) : new Date(), 'EEEE, MMMM d');
   const [visualViewport, setVisualViewport] = useState<{ height: number; offsetTop: number } | null>(null);
 

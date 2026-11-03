@@ -79,13 +79,14 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 ## 4. Layout
 
 - **Phone:** single list column, 10–18px side padding, a translucent blurred footer (search, settings, gold `+`) that extends through the home-indicator inset.
-- **Wide (≥1000px):** calendar on the left takes the remaining width; the list is a fixed column (`clamp(420px, 42vw, 560px)`) on the right with a 1px left divider. The footer and undo toast align to that column.
+- **Wide (≥1000px):** the list is a fixed column (`clamp(420px, 42vw, 560px)`) on the left with a 1px right divider; the calendar takes the remaining width on the right. The footer and undo toast align to that column.
 - **Installed PWA:** zoom disabled and scrollbars hidden so it feels native; desktop browsers keep thin scrollbars.
 
 ## 5. Components
 
 ### Task list
-- **Group headers** are plain text, not boxes: Pinned, Overdue (red), Today, Tomorrow, weekday names for the rest of the week, then month names. Tapping a day header opens the add form for that day (a small `+` marks it). With two or more overdue tasks, Overdue offers "Move all to today".
+- **Group headers** are plain text, not boxes: Overdue (red), Today, Tomorrow, weekday names for the rest of the week, then month names. Tapping a day header opens the add form for that day (a small `+` marks it). With two or more overdue tasks, Overdue offers "Move all to today".
+- **No pinning.** Every new task gets a date. Undated tasks (older pinned ones, or any made in the iOS app) wait under Overdue, after the ones that were due, until they get a date or are done. The `pinned` field stays in the sync format for the iOS app.
 - **Task cards:** `--task-surface`, 1px border, `--radius-md`, 11px padding, 8px apart. Title, optional muted note (text after the first period), then a meta row.
 - **Checkbox:** 24px outlined circle (`--checkbox-border`); hover tints to accent; completing fills it with the accent (red if overdue) and draws a check, then the card fades and slides left.
 - **Times** display as `2 pm` / `9:30 am`, read the same way they sort (bare 1–6 is afternoon, 7–11 morning).
