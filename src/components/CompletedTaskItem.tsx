@@ -54,11 +54,12 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
         aria-label="Mark task incomplete"
       >
         <div style={{
-          width: 28,
-          height: 28,
-          background: isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-sm)',
+          width: 24,
+          height: 24,
+          marginTop: 1,
+          background: isCheckboxHovered ? 'var(--accent-subtle)' : 'var(--surface-inset)',
+          border: `1.5px solid ${isCheckboxHovered ? 'var(--accent)' : 'var(--checkbox-border)'}`,
+          borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -66,7 +67,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           boxShadow: isCheckboxHovered ? '0 0 0 3px var(--hover-ring)' : 'none',
         }}>
           {!isUncompleting && (
-            <svg width="16" height="16" fill="none" stroke={isCheckboxHovered ? 'var(--accent)' : 'var(--muted)'} strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+            <svg width="13" height="13" fill="none" stroke={isCheckboxHovered ? 'var(--accent)' : 'var(--muted)'} strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12l5 5L20 7" />
             </svg>
           )}

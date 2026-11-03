@@ -21,8 +21,13 @@ import { withRecurrencePreviews } from '@/utils/taskRecurrence';
 import { parseTaskTimeMinutes } from '@/utils/taskTime';
 import { splitTaskTitle } from '@/utils/taskTitle';
 
+// Width of the task list beside the calendar on wide screens; the calendar takes the rest.
+const SPLIT_LIST_WIDTH = 'clamp(420px, 42vw, 560px)';
+
 interface TaskGroup {
   label: string;
+  /** Short date shown beside the label, e.g. "Nov 4". */
+  detail?: string;
   tasks: Task[];
   isToday?: boolean;
   isOverdue?: boolean;
@@ -278,7 +283,7 @@ export default function HomePage() {
       return a.title.localeCompare(b.title);
     };
     const sortedTodayTasks = withEventsLast(todayTasks, sortByTime);
-    groups.push({ label: `Today (${format(today, 'M/d')})`, tasks: sortedTodayTasks, isToday: true, date: today });
+    groups.push({ label: 'Today', detail: format(today, 'EEE, MMM d'), tasks: sortedTodayTasks, isToday: true, date: today });
 
     // Next 7 days (by day of week)
     for (let i = 1; i <= 7; i++) {
@@ -286,8 +291,8 @@ export default function HomePage() {
       const dayTasks = incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), date));
       // Sort alphabetically by title
       const sortedDayTasks = withEventsLast(dayTasks, (a, b) => a.title.localeCompare(b.title));
-      const label = format(date, 'EEEE (M/d)');
-      groups.push({ label, tasks: sortedDayTasks, date });
+      const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
+      groups.push({ label, detail: format(date, i === 1 ? 'EEE, MMM d' : 'MMM d'), tasks: sortedDayTasks, date });
     }
 
     // Beyond this week - group by month
@@ -744,11 +749,11 @@ export default function HomePage() {
       {/* Main Content - List View - shown in list view OR split view */}
       {(view === 'list' || showSplitView) && (
       <main ref={listScrollRef} className="app-scroll" style={{
-        flex: 1, 
+        flex: showSplitView ? `0 0 ${SPLIT_LIST_WIDTH}` : 1,
         padding: isSearchExpanded
           ? 'calc(88px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))'
           : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))',
-        borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
+        borderLeft: showSplitView ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
         {selectedDateFilter && (
@@ -871,10 +876,12 @@ Back
             {/* Pinned Section */}
             {pinnedTasks.length > 0 && (
               <section style={{ marginBottom: 24 }}>
+                <GroupHeader label="Pinned" tone="default" />
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 10,
+                  paddingTop: 10,
                 }}>
                   {pinnedTasks.map((task) => (
                     editingTask?.id === task.id ? (
@@ -913,25 +920,12 @@ Back
                     marginBottom: 24,
                   }}
                 >
-                  {!group.isToday && (
-                    <div style={{
-                      padding: '8px 12px',
-                      background: group.isOverdue ? 'rgba(255, 107, 107, 0.1)' : 'var(--surface-inset)',
-                      border: `1px solid ${group.isOverdue ? 'rgba(255, 107, 107, 0.24)' : 'var(--border)'}`,
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      letterSpacing: '0.01em',
-                      color: group.isOverdue ? 'var(--red)' : 'var(--muted)',
-                    }}>
-                      {group.label}
-                    </div>
-                  )}
+                  <GroupHeader label={group.label} detail={group.detail} tone={group.isOverdue ? 'overdue' : group.isToday ? 'today' : 'default'} />
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
-                    padding: group.isToday ? 0 : '12px 0 0',
+                    padding: '10px 0 0',
                     justifyContent: groupHasTasks ? 'flex-start' : 'center',
                     alignItems: groupHasTasks ? 'stretch' : 'center'
                   }}>
@@ -1067,7 +1061,7 @@ Back
           userSelect: 'none',
           // Overlay the scroll area so content blurs through as it scrolls.
           position: showSplitView ? 'fixed' : 'absolute',
-          left: showSplitView ? '50%' : 0,
+          left: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH})` : 0,
           right: 0,
           bottom: 0,
           zIndex: 25,
@@ -1139,7 +1133,7 @@ Back
           aria-live="polite"
           style={{
             position: 'fixed',
-            left: showSplitView ? '75%' : '50%',
+            left: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH} / 2)` : '50%',
             bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
             transform: 'translateX(-50%)',
             zIndex: 30,
@@ -1224,4 +1218,25 @@ function withEventsLast(items: Task[], compareTasks: (a: Task, b: Task) => numbe
     .filter(t => t.isCalendarEvent)
     .sort((a, b) => (a.eventStart ?? 0) - (b.eventStart ?? 0) || a.title.localeCompare(b.title));
   return [...tasks, ...events];
+}
+
+function GroupHeader({ label, detail, tone }: { label: string; detail?: string; tone: 'today' | 'overdue' | 'default' }) {
+  return (
+    <h2 style={{
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: 8,
+      margin: 0,
+      padding: '0 4px',
+      fontSize: tone === 'today' ? 15 : 13,
+      fontWeight: 700,
+      letterSpacing: '0.01em',
+      color: tone === 'overdue' ? 'var(--red)' : tone === 'today' ? 'var(--foreground)' : 'var(--muted)',
+    }}>
+      {label}
+      {detail && (
+        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>{detail}</span>
+      )}
+    </h2>
+  );
 }

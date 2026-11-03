@@ -32,3 +32,22 @@ export function parseTaskTimeMinutes(title: string): number | null {
 
   return hours * 60 + minutes;
 }
+
+/** Display label for a task's @time, e.g. "2 pm" or "9:30 am", read the same way it sorts. */
+export function formatTaskTime(title: string): string | null {
+  const minutes = parseTaskTimeMinutes(title);
+  if (minutes === null) return null;
+
+  const hours24 = Math.floor(minutes / 60) % 24;
+  const mins = minutes % 60;
+  if (Math.floor(minutes / 60) > 23 || mins > 59) return null;
+
+  const suffix = hours24 >= 12 ? 'pm' : 'am';
+  const hours12 = hours24 % 12 || 12;
+  return mins ? `${hours12}:${String(mins).padStart(2, '0')} ${suffix}` : `${hours12} ${suffix}`;
+}
+
+/** Title with any @time tokens removed. */
+export function stripTaskTime(title: string): string {
+  return title.replace(new RegExp(TASK_TIME_PATTERN.source, 'gi'), '').replace(/\s{2,}/g, ' ').trim();
+}

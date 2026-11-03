@@ -7,6 +7,7 @@ import { Task } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
 import { splitTaskTitle } from '@/utils/taskTitle';
 import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
+import { formatTaskTime, stripTaskTime } from '@/utils/taskTime';
 
 interface TaskItemProps {
   task: Task;
@@ -36,28 +37,8 @@ export default function TaskItem({
   const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
   const isOverdue = isOverdueProp || (taskDate ? isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate) : false);
 
-  // Extract time from @pattern - handles @1, @1pm, @130, @530, @2:30, @5pm
-  const timeMatch = task.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
-  const rawTime = timeMatch ? timeMatch[0].replace('@', '').trim() : null;
-  
-  // Format time display
-  let taskTime: string | null = null;
-  if (rawTime) {
-    if (rawTime.includes(':')) {
-      taskTime = rawTime.toLowerCase();
-    } else if (rawTime.includes('pm') || rawTime.includes('am')) {
-      taskTime = rawTime.toLowerCase();
-    } else {
-      const num = parseInt(rawTime, 10);
-      if (num >= 100) {
-        taskTime = `${Math.floor(num / 100)}:${(num % 100).toString().padStart(2, '0')}`;
-      } else if (num > 0 && num <= 12) {
-        taskTime = `${num}:00`;
-      }
-    }
-  }
-  
-  const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
+  const taskTime = formatTaskTime(task.title);
+  const displayTitle = stripTaskTime(task.title);
   const titleParts = splitTaskTitle(displayTitle || task.title);
 
   const handleComplete = () => {
@@ -126,19 +107,26 @@ export default function TaskItem({
             aria-label={isRecurrencePreview ? 'Future occurrence preview' : 'Complete task'}
           >
             <div style={{
-              width: 28,
-              height: 28,
+              width: 24,
+              height: 24,
+              marginTop: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: isCompleting ? (isOverdue ? 'var(--red)' : 'var(--accent)') : (isCheckboxHovered ? 'var(--surface-hover)' : 'var(--surface-inset)'),
-              border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} ${isOverdue ? 'var(--red)' : 'var(--border)'}`,
-              borderRadius: 'var(--radius-sm)',
+              background: isCompleting
+                ? (isOverdue ? 'var(--red)' : 'var(--accent)')
+                : (isCheckboxHovered ? 'var(--accent-subtle)' : 'transparent'),
+              border: `1.5px ${isRecurrencePreview ? 'dashed' : 'solid'} ${
+                isCompleting
+                  ? (isOverdue ? 'var(--red)' : 'var(--accent)')
+                  : isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent)' : 'var(--checkbox-border)')
+              }`,
+              borderRadius: '50%',
               transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
               boxShadow: isCheckboxHovered ? '0 0 0 3px var(--hover-ring)' : 'none',
             }}>
               {isCompleting && (
-                <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <svg width="13" height="13" fill="none" stroke="var(--background)" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M5 12l5 5L20 7" strokeDasharray="20" style={{ animation: 'checkmark 0.25s ease-out forwards' }} />
                 </svg>
               )}
@@ -152,7 +140,7 @@ export default function TaskItem({
                 <p style={{ 
                   margin: 0, 
                   fontSize: 'var(--text-task-title)', 
-                  fontWeight: 650,
+                  fontWeight: 600,
                   lineHeight: 1.35,
                   color: isOverdue ? 'var(--red)' : 'var(--foreground)',
                   transition: 'color 0.2s',

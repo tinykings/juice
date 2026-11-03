@@ -11,10 +11,13 @@ import {
   eachDayOfInterval,
   isSameMonth,
   isSameDay,
+  isBefore,
+  startOfDay,
 } from 'date-fns';
 import { Task } from '@/types/task';
 import { splitTaskTitle } from '@/utils/taskTitle';
 import { parseTaskDate } from '@/utils/taskDate';
+import { formatTaskTime, stripTaskTime } from '@/utils/taskTime';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -271,7 +274,7 @@ function DayCell({
             ? 'var(--task-surface-hover)'
             : (inVisibleMonth ? 'var(--task-surface)' : 'var(--surface-faint)')),
         color: inVisibleMonth ? 'var(--foreground)' : 'var(--muted)',
-        border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border)'}`,
+        border: `1px solid ${isActive ? 'var(--accent-border)' : 'transparent'}`,
         borderRadius: 'var(--radius-md)',
         boxShadow: isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
         cursor: 'pointer',
@@ -327,7 +330,7 @@ function DayCell({
             width: '100%',
           }}>
             {dayTasks.map(task => (
-              <CalendarTaskChip key={task.id} task={task} compact />
+              <CalendarTaskChip key={task.id} task={task} compact isOverdue={!task.isCalendarEvent && isBefore(day, startOfDay(today))} />
             ))}
           </div>
         )}
@@ -500,7 +503,7 @@ function MobileDayButton({
         position: 'relative',
         minHeight: isCompressedWeek ? MOBILE_COMPRESSED_DAY_MIN_HEIGHT : MOBILE_DAY_MIN_HEIGHT,
         padding: isCompressedWeek ? '3px 2px' : '6px 4px',
-        border: `1px solid ${isActive ? 'var(--accent-border)' : 'var(--border)'}`,
+        border: `1px solid ${isActive ? 'var(--accent-border)' : 'transparent'}`,
         borderRadius: 'var(--radius-sm)',
         background: isActive ? 'var(--accent-subtle)' : (isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)'),
         color: isActive ? 'var(--accent)' : (inMonth ? 'var(--foreground)' : 'var(--muted)'),
@@ -530,32 +533,37 @@ function MobileDayButton({
           minWidth: 0,
           marginTop: 6,
         }}>
-          {dayTasks.map(task => (
+          {dayTasks.map(task => {
+            const isOverdueChip = !task.isCalendarEvent && !task.completed && isBefore(day, startOfDay(new Date()));
+            return (
             <span
               key={task.id}
+              title={getCalendarTaskTitle(task)}
               style={{
-                display: 'block',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
                 width: '100%',
                 minWidth: 0,
-                padding: '2px 3px',
+                padding: '2px 4px',
                 border: task.isRecurrencePreview ? '1px dashed var(--border)' : '1px solid transparent',
                 boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
                 borderRadius: 5,
                 background: task.isRecurrencePreview || task.isCalendarEvent ? 'transparent' : 'var(--surface-inset)',
-                color: isActive ? 'var(--foreground)' : 'var(--muted)',
+                color: isOverdueChip ? 'var(--red)' : (isActive ? 'var(--foreground)' : 'var(--muted)'),
                 opacity: task.isRecurrencePreview ? 0.58 : 1,
-                fontSize: 9,
-                fontWeight: 650,
-                lineHeight: 1.15,
-                whiteSpace: 'nowrap',
+                fontSize: 10,
+                fontWeight: 600,
+                lineHeight: 1.2,
                 overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                overflowWrap: 'anywhere',
                 textAlign: 'left',
               }}
             >
               {getCalendarTaskTitle(task)}
             </span>
-          ))}
+            );
+          })}
         </span>
       )}
     </button>
@@ -563,8 +571,7 @@ function MobileDayButton({
 }
 
 function getCalendarTaskTitle(task: Task) {
-  const displayTitle = task.title.replace(/@(\d+(?::\d{2})?(?:pm|am)?)/gi, '').trim();
-  return splitTaskTitle(displayTitle || task.title).title;
+  return splitTaskTitle(stripTaskTime(task.title) || task.title).title;
 }
 
 function getEmptyPastWeekRows(days: Date[], tasksByDate: Record<string, Task[]>, currentWeekStart: number) {
@@ -588,10 +595,9 @@ function getEmptyPastWeekRows(days: Date[], tasksByDate: Record<string, Task[]>,
   return rows;
 }
 
-function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boolean }) {
+function CalendarTaskChip({ task, compact = false, isOverdue = false }: { task: Task; compact?: boolean; isOverdue?: boolean }) {
   const displayTitle = getCalendarTaskTitle(task);
-  const timeMatch = task.title.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
-  const taskTime = timeMatch ? timeMatch[1].toLowerCase() : null;
+  const taskTime = formatTaskTime(task.title);
 
   return (
     <div
@@ -599,13 +605,13 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
         display: 'block',
         minWidth: 0,
         width: '100%',
-        color: compact ? 'var(--muted)' : 'var(--foreground)',
+        color: isOverdue ? 'var(--red)' : (compact ? 'var(--muted)' : 'var(--foreground)'),
         background: task.isRecurrencePreview || task.isCalendarEvent
           ? 'transparent'
           : (compact ? 'var(--surface-inset)' : 'var(--task-surface)'),
-        border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
+        border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} ${compact && !task.isRecurrencePreview ? 'transparent' : 'var(--border)'}`,
         boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
-        borderRadius: 'var(--radius-sm)',
+        borderRadius: compact ? 5 : 'var(--radius-sm)',
         opacity: task.isRecurrencePreview ? 0.58 : 1,
         padding: compact ? '2px 3px' : '9px 10px',
         lineHeight: 1.25,
@@ -614,13 +620,16 @@ function CalendarTaskChip({ task, compact = false }: { task: Task; compact?: boo
     >
       <span style={{ minWidth: 0 }}>
         <span style={{
-          display: 'block',
-          color: compact ? 'var(--muted)' : 'var(--foreground)',
-          fontSize: compact ? 9 : 15,
-          fontWeight: 650,
-          lineHeight: compact ? 1.15 : 1.3,
+          display: compact ? '-webkit-box' : 'block',
+          WebkitLineClamp: compact ? 2 : undefined,
+          WebkitBoxOrient: compact ? 'vertical' : undefined,
+          color: isOverdue ? 'var(--red)' : (compact ? 'var(--muted)' : 'var(--foreground)'),
+          fontSize: compact ? 10 : 15,
+          fontWeight: compact ? 600 : 650,
+          lineHeight: compact ? 1.2 : 1.3,
           overflow: 'hidden',
-          whiteSpace: 'nowrap',
+          whiteSpace: compact ? 'normal' : 'nowrap',
+          overflowWrap: compact ? 'anywhere' : undefined,
           textOverflow: 'ellipsis',
         }}>
           {displayTitle}

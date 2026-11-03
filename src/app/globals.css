@@ -31,6 +31,7 @@
   --surface-hover: rgba(255, 255, 255, 0.045);
   --surface-faint: rgba(255, 255, 255, 0.018);
   --hover-ring: rgba(255, 255, 255, 0.025);
+  --checkbox-border: rgba(243, 240, 234, 0.32);
   --task-surface: #1f1c18;
   --task-surface-hover: #24211d;
   --calendar-month-start: #211e19;
@@ -59,7 +60,7 @@
   --space-6: 24px;
 
   /* Typography */
-  --text-task-title: 18px;
+  --text-task-title: 17px;
   --text-body: 15px;
   --text-meta: 13px;
 
@@ -95,6 +96,7 @@
   --surface-hover: #F8F1E3;
   --surface-faint: #EFEAE0;
   --hover-ring: rgba(77, 54, 28, 0.06);
+  --checkbox-border: #B9AE9C;
   --task-surface: #FFFCF5;
   --task-surface-hover: #F8F1E3;
   --calendar-month-start: #E8DFCF;
@@ -374,10 +376,28 @@ input, textarea, button {
 
 .reschedule-btn {
   color: var(--muted);
-  background: var(--surface-inset);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+}
+
+.reschedule-btn[aria-expanded="true"] {
+  color: var(--accent);
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+/* With a mouse, only show the reschedule control on the task being pointed at
+   (overdue tasks keep theirs as a nudge). Touch screens always show it. */
+@media (hover: hover) {
+  [data-task-card] .reschedule-btn:not([data-overdue="true"]):not([aria-expanded="true"]):not(:focus-visible) {
+    opacity: 0;
+  }
+
+  [data-task-card]:hover .reschedule-btn {
+    opacity: 1 !important;
+  }
 }
 
 .reschedule-btn[data-overdue="true"] {
