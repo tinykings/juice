@@ -169,12 +169,6 @@ body:has(.app-shell) {
   overflow: hidden;
 }
 
-:root {
-  /* Full home-indicator inset (~34px) makes the footer look oversized in the
-     iOS PWA; keep just enough to lift the buttons clear of the indicator. */
-  --footer-safe-bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 16px));
-}
-
 /* iOS standalone PWAs draw from the top of the screen (under the status bar)
    but size the viewport as if the status bar weren't covered, leaving a blank
    strip of that height under the footer. Add the top inset back. */

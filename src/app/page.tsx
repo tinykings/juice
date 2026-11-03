@@ -756,7 +756,11 @@ export default function HomePage() {
 
       {/* Calendar View - shown in calendar view OR split view */}
       {(view === 'calendar' || showSplitView) && isLoaded && (
-        <div className="app-scroll" style={{ flex: 1, height: (isWideScreen || showSplitView) ? '100%' : 'auto' }}>
+        <div className="app-scroll" style={{
+          flex: 1,
+          height: (isWideScreen || showSplitView) ? '100%' : 'auto',
+          paddingBottom: showSplitView ? 0 : 'calc(53px + env(safe-area-inset-bottom, 0px))',
+        }}>
           <CalendarView
             tasks={displayTasks}
             onDaySelect={handleDaySelect}
@@ -771,8 +775,8 @@ export default function HomePage() {
       <main ref={listScrollRef} className="app-scroll" style={{
         flex: 1, 
         padding: isSearchExpanded
-          ? 'calc(88px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) 100px'
-          : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) 100px',
+          ? 'calc(88px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))'
+          : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))',
         borderRight: (isWideScreen || showSplitView) ? '1px solid var(--border)' : 'none',
       }}>
         {/* Back to Calendar button (shown when date filter is active) */}
@@ -1075,26 +1079,27 @@ Back
       {!(isLandscapePhone && view === 'calendar') && (
       <footer
         style={{
-          background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          // Hug the 44px buttons: 4px above/below + 1px top border, plus only
-          // enough of the home-indicator inset to keep buttons clear of it.
-          height: 'calc(53px + var(--footer-safe-bottom))',
-          minHeight: 'calc(53px + var(--footer-safe-bottom))',
-          maxHeight: 'calc(53px + var(--footer-safe-bottom))',
-          padding: '4px 16px calc(4px + var(--footer-safe-bottom))',
+          background: 'color-mix(in srgb, var(--background) 65%, transparent)',
+          // Hug the 44px buttons: 4px above/below + 1px top border, then extend
+          // through the home-indicator inset so no blank band shows below.
+          height: 'calc(53px + env(safe-area-inset-bottom, 0px))',
+          minHeight: 'calc(53px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: 'calc(53px + env(safe-area-inset-bottom, 0px))',
+          padding: '4px 16px calc(4px + env(safe-area-inset-bottom, 0px))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 8,
           borderTop: '1px solid var(--border)',
-          backdropFilter: 'blur(16px)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           userSelect: 'none',
-          flex: '0 0 auto',
-          position: showSplitView ? 'fixed' : 'relative',
-          left: showSplitView ? '50%' : undefined,
-          right: showSplitView ? 0 : undefined,
-          bottom: showSplitView ? 0 : undefined,
-          zIndex: showSplitView ? 25 : undefined,
+          // Overlay the scroll area so content blurs through as it scrolls.
+          position: showSplitView ? 'fixed' : 'absolute',
+          left: showSplitView ? '50%' : 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 25,
         }}
       >
         <div style={{
