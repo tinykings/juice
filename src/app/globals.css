@@ -132,6 +132,7 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  background: var(--background);
 }
 
 body {
@@ -181,6 +182,9 @@ body:has(.app-shell) {
   .app-shell {
     bottom: auto;
     height: calc(100% + env(safe-area-inset-top, 0px));
+    /* Paint the band behind the home indicator in the page color without
+       growing the footer; a shadow isn't clipped by the shell's overflow. */
+    box-shadow: 0 120px 0 0 var(--background);
   }
 }
 
