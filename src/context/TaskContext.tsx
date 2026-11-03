@@ -19,6 +19,7 @@ import {
   SyncDocument,
   TaskTombstone,
 } from '@/services/gistSync';
+import { GistEncryptionError } from '@/services/gistCrypto';
 import { normalizeTaskDate } from '@/utils/taskDate';
 import { getNextRecurrenceDate } from '@/utils/taskRecurrence';
 
@@ -172,6 +173,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const syncContentionRetriesRef = useRef(0);
   const syncFailureRetriesRef = useRef(0);
   const syncRetryTimeoutRef = useRef<number | null>(null);
+  const isBlockedOnEncryptionRef = useRef(false);
   const hasMigratedTaskDatesRef = useRef(false);
 
   useEffect(() => {
@@ -331,6 +333,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
       syncContentionRetriesRef.current = 0;
       syncFailureRetriesRef.current = 0;
+      isBlockedOnEncryptionRef.current = false;
       if (syncRetryTimeoutRef.current) {
         window.clearTimeout(syncRetryTimeoutRef.current);
         syncRetryTimeoutRef.current = null;
@@ -364,7 +367,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         setSyncStatus('error');
         setSyncError(message);
 
-        if (syncFailureRetriesRef.current < 5) {
+        // A missing or wrong key won't fix itself; retrying only makes the Settings layout jump
+        // while the user is entering the key. Changing the key re-runs the sync.
+        isBlockedOnEncryptionRef.current = error instanceof GistEncryptionError;
+        if (!isBlockedOnEncryptionRef.current && syncFailureRetriesRef.current < 5) {
           const delay = Math.min(30_000, 2 ** syncFailureRetriesRef.current * 2_000);
           syncFailureRetriesRef.current += 1;
           if (syncRetryTimeoutRef.current) {
@@ -651,7 +657,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const handleFocus = () => {
       if (document.visibilityState !== 'visible') return;
 
-      if (isGistConfigured && !isCaptureUrlRef.current) {
+      if (isGistConfigured && !isCaptureUrlRef.current && !isBlockedOnEncryptionRef.current) {
         void syncFromGist();
       }
 
