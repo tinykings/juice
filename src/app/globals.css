@@ -169,53 +169,9 @@ body:has(.app-shell) {
 }
 
 :root {
-  /* Thin top bar holding search + settings (32px buttons, 4px around). */
-  --app-header-height: calc(env(safe-area-inset-top, 0px) + 40px);
-}
-
-.header-icon-button {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  color: var(--muted);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.header-icon-button:hover {
-  background: var(--accent-subtle);
-  color: var(--accent);
-}
-
-/* Floating add button, kept clear of the iOS home indicator. */
-.fab-add-button {
-  position: absolute;
-  right: max(16px, env(safe-area-inset-right, 0px));
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  z-index: 25;
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  background: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: var(--shadow-md);
-  transition: background 0.15s, transform 0.15s;
-}
-
-.fab-add-button:hover {
-  background: var(--accent-surface);
-}
-
-.fab-add-button:active {
-  transform: scale(0.94);
+  /* Full home-indicator inset (~34px) makes the footer look oversized in the
+     iOS PWA; keep just enough to lift the buttons clear of the indicator. */
+  --footer-safe-bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 16px));
 }
 
 /* iOS standalone PWAs draw from the top of the screen (under the status bar)
