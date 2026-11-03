@@ -85,8 +85,8 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 ## 5. Components
 
 ### Task list
-- **Group headers** are plain text, not boxes: Pinned, Overdue (red), Today, Tomorrow, weekday names for the rest of the week, then month names.
-- **Task cards:** `--task-surface`, 1px border, `--radius-md`, 13px padding. Title, optional muted note (text after the first period), then a meta row.
+- **Group headers** are plain text, not boxes: Pinned, Overdue (red), Today, Tomorrow, weekday names for the rest of the week, then month names. Tapping a day header opens the add form for that day (a small `+` marks it). With two or more overdue tasks, Overdue offers "Move all to today".
+- **Task cards:** `--task-surface`, 1px border, `--radius-md`, 11px padding, 8px apart. Title, optional muted note (text after the first period), then a meta row.
 - **Checkbox:** 24px outlined circle (`--checkbox-border`); hover tints to accent; completing fills it with the accent (red if overdue) and draws a check, then the card fades and slides left.
 - **Times** display as `2 pm` / `9:30 am`, read the same way they sort (bare 1–6 is afternoon, 7–11 morning).
 - **Reschedule control:** a borderless chevron. With a mouse it appears only when the task is hovered (always shown on overdue tasks); on touch it's always visible. The menu offers Today, Tomorrow, the next four weekdays, Next week, and Pick a date…, and flips above when there's no room below.
@@ -94,10 +94,12 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 
 ### Calendar
 - Day cells are soft filled tiles with no border; today and the selected day get an accent tint and accent border.
+- Desktop weeks are 150px tall when they hold real tasks, 64px when upcoming and empty (recurrence previews alone don't count), and 28px when past and empty.
 - Task chips are 10px / 600 muted text on an inset fill, up to two lines. Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.
 
 ### Buttons
 - `.btn-accent` (Add / Save / `+`), `.icon-btn` (footer icons), `.btn-soft` (secondary), `.menu-option` (menus). Hover states are CSS only.
+- Elements styled inline get hover from helper classes (`.hover-surface`, `.hover-accent-outline`, `.hover-fill-accent`, `.hover-link`, …). Add `data-active` to skip hover on a selected toggle. Never set hover styles from `onMouseEnter`.
 
 ### Dialogs
 - Blurred dark backdrop, card panel at `--radius-md`, `--shadow-lg`.

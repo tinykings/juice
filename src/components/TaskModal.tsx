@@ -359,18 +359,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             const nextIsRecurring = !isRecurring;
             setIsRecurring(nextIsRecurring);
           }}
-          onMouseEnter={(e) => {
-            if (!isRecurring) {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isRecurring) {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }
-          }}
+          className="hover-accent-outline"
+          data-active={isRecurring || undefined}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -410,18 +400,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               onClick={() => {
                 setRecurrenceType(type);
               }}
-              onMouseEnter={(e) => {
-                if (recurrenceType !== type) {
-                  e.currentTarget.style.borderColor = 'var(--accent)';
-                  e.currentTarget.style.color = 'var(--accent)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (recurrenceType !== type) {
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                  e.currentTarget.style.color = 'var(--muted)';
-                }
-              }}
+              className="hover-accent-outline"
+              data-active={recurrenceType === type || undefined}
               style={{
                 padding: '0 14px',
                 fontSize: 13,
@@ -480,14 +460,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           <button
             type="button"
             onClick={() => setShowHelp(!showHelp)}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = showHelp ? 'var(--accent)' : 'var(--muted)';
-            }}
+            className="hover-accent-outline"
             style={{
               width: 42,
               height: 42,
@@ -512,12 +485,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
               type="button"
               onClick={handleDelete}
               aria-expanded={isConfirmingDelete}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--red)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border)';
-              }}
+              className="hover-danger-border"
               style={{
                 padding: '0 16px',
                 fontSize: 14,

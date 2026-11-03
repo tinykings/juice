@@ -404,6 +404,47 @@ input, textarea, button {
   color: var(--red);
 }
 
+.group-header-add {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 -6px;
+  padding: 4px 6px;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.group-header-add-icon {
+  align-self: center;
+  color: var(--muted);
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.group-header-add:focus-visible .group-header-add-icon {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.group-header-action {
+  margin-left: auto;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--red);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
 .menu-option {
   display: flex;
   align-items: center;
@@ -435,6 +476,59 @@ input, textarea, button {
     color: var(--accent);
     background: var(--accent-subtle);
     border-color: var(--accent);
+  }
+
+  /* Hover helpers for elements whose resting look is set inline; !important
+     lets the hover state win over those inline styles. */
+  .hover-accent-border:hover {
+    border-color: var(--accent) !important;
+  }
+
+  .hover-accent-outline:not([data-active]):hover {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+  }
+
+  .hover-danger-border:hover {
+    border-color: var(--red) !important;
+  }
+
+  .hover-surface:hover {
+    background: var(--surface-hover) !important;
+    color: var(--foreground) !important;
+  }
+
+  .hover-surface-accent:not([data-active]):hover {
+    background: var(--surface-hover) !important;
+    color: var(--accent) !important;
+  }
+
+  .hover-fill-accent:not(:disabled):hover {
+    background: var(--accent-hover) !important;
+    border-color: var(--accent-hover) !important;
+  }
+
+  .hover-fill-accent[data-tone="danger"]:not(:disabled):hover {
+    background: color-mix(in srgb, var(--red) 82%, white) !important;
+    border-color: color-mix(in srgb, var(--red) 82%, white) !important;
+  }
+
+  .hover-link:hover {
+    color: var(--accent-hover) !important;
+    text-decoration: underline !important;
+  }
+
+  .group-header-add:hover {
+    background: var(--surface-hover);
+  }
+
+  .group-header-add:hover .group-header-add-icon {
+    opacity: 1;
+    color: var(--accent);
+  }
+
+  .group-header-action:hover {
+    border-color: var(--red);
   }
 
   .menu-option:hover {

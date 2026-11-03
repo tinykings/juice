@@ -25,7 +25,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
         gridTemplateColumns: '38px minmax(0, 1fr)',
         alignItems: 'flex-start',
         columnGap: 12,
-        padding: '13px 14px 13px 12px',
+        padding: '11px 12px 11px 10px',
         background: isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
@@ -87,7 +87,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           {titleParts.title}
         </p>
         {titleParts.note && (
-          <p style={{ margin: '5px 0 0', fontSize: 'var(--text-body)', color: 'var(--muted)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+          <p style={{ margin: '3px 0 0', fontSize: 'var(--text-body)', color: 'var(--muted)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
             {titleParts.note}
           </p>
         )}

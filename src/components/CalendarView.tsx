@@ -30,6 +30,8 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MOBILE_BREAKPOINT = 1000;
 const DESKTOP_DAY_MIN_HEIGHT = 150;
 const DESKTOP_COMPRESSED_DAY_MIN_HEIGHT = 28;
+// Upcoming weeks with nothing scheduled stay tappable but don't fill the screen.
+const DESKTOP_EMPTY_DAY_MIN_HEIGHT = 64;
 const MOBILE_DAY_MIN_HEIGHT = 88;
 const MOBILE_COMPRESSED_DAY_MIN_HEIGHT = 24;
 
@@ -139,6 +141,7 @@ function ContinuousCalendar({
   const calendarDays = getRelevantCalendarDays(months);
   const currentWeekStart = startOfWeek(today).getTime();
   const compressedWeekRows = getEmptyPastWeekRows(calendarDays, tasksByDate, currentWeekStart);
+  const emptyWeekRows = getEmptyUpcomingWeekRows(calendarDays, tasksByDate, currentWeekStart, selectedDate);
 
   return (
     <div style={{
@@ -171,6 +174,7 @@ function ContinuousCalendar({
         const row = Math.floor(index / 7) + 2;
         const column = (index % 7) + 1;
         const isCompressedWeek = compressedWeekRows.has(Math.floor(index / 7));
+        const isEmptyWeek = emptyWeekRows.has(Math.floor(index / 7));
 
         return (
           <DayCell
@@ -187,6 +191,7 @@ function ContinuousCalendar({
             monthLabel={isMonthStart ? format(day, 'MMM') : undefined}
             dayKey={key}
             isCompressedWeek={isCompressedWeek}
+            isEmptyWeek={isEmptyWeek}
           />
         );
       })}
@@ -232,6 +237,7 @@ function DayCell({
   monthLabel,
   dayKey,
   isCompressedWeek,
+  isEmptyWeek,
 }: {
   day: Date;
   inVisibleMonth: boolean;
@@ -245,6 +251,7 @@ function DayCell({
   monthLabel?: string;
   dayKey: string;
   isCompressedWeek: boolean;
+  isEmptyWeek: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const isTodayCell = isSameDay(day, today);
@@ -265,7 +272,9 @@ function DayCell({
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         padding: isCompressedWeek ? '3px 6px' : '10px 9px',
-        minHeight: isCompressedWeek ? DESKTOP_COMPRESSED_DAY_MIN_HEIGHT : DESKTOP_DAY_MIN_HEIGHT,
+        minHeight: isCompressedWeek
+          ? DESKTOP_COMPRESSED_DAY_MIN_HEIGHT
+          : (isEmptyWeek ? DESKTOP_EMPTY_DAY_MIN_HEIGHT : DESKTOP_DAY_MIN_HEIGHT),
         fontSize: 13,
         fontWeight: isActive ? 700 : 500,
         background: isActive
@@ -572,6 +581,28 @@ function MobileDayButton({
 
 function getCalendarTaskTitle(task: Task) {
   return splitTaskTitle(stripTaskTime(task.title) || task.title).title;
+}
+
+function getEmptyUpcomingWeekRows(
+  days: Date[],
+  tasksByDate: Record<string, Task[]>,
+  currentWeekStart: number,
+  selectedDate: Date | null
+) {
+  const rows = new Set<number>();
+
+  for (let row = 0; row < days.length; row += 7) {
+    const weekDays = days.slice(row, row + 7);
+    if (weekDays.length < 7) continue;
+    if (startOfWeek(weekDays[0]).getTime() <= currentWeekStart) continue;
+    if (selectedDate && weekDays.some(day => isSameDay(day, selectedDate))) continue;
+
+    // Recurrence previews alone don't keep a week full height; they still fit in the shorter cells.
+    const weekHasTasks = weekDays.some(day => (tasksByDate[format(day, 'yyyy-MM-dd')] || []).some(task => !task.isRecurrencePreview));
+    if (!weekHasTasks) rows.add(row / 7);
+  }
+
+  return rows;
 }
 
 function getEmptyPastWeekRows(days: Date[], tasksByDate: Record<string, Task[]>, currentWeekStart: number) {

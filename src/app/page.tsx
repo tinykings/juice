@@ -16,7 +16,7 @@ import CompletedTaskItem from '@/components/CompletedTaskItem';
 import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
 import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
-import { parseTaskDate } from '@/utils/taskDate';
+import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
 import { parseTaskTimeMinutes } from '@/utils/taskTime';
 import { splitTaskTitle } from '@/utils/taskTitle';
@@ -35,7 +35,7 @@ interface TaskGroup {
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
+  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
   const { badgeEnabled } = useSettings();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
@@ -612,14 +612,7 @@ export default function HomePage() {
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--accent)';
-                  e.currentTarget.style.textDecoration = 'underline';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--muted)';
-                  e.currentTarget.style.textDecoration = 'none';
-                }}
+                className="hover-link"
               >
                 Settings
               </button>
@@ -825,14 +818,7 @@ Back
                         cursor: 'pointer',
                         textDecoration: 'none',
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--accent-hover)';
-                        e.currentTarget.style.textDecoration = 'underline';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = 'var(--accent)';
-                        e.currentTarget.style.textDecoration = 'none';
-                      }}
+                      className="hover-link"
                     >
                       Start something.
                     </button>
@@ -880,8 +866,8 @@ Back
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 10,
-                  paddingTop: 10,
+                  gap: 8,
+                  paddingTop: 8,
                 }}>
                   {pinnedTasks.map((task) => (
                     editingTask?.id === task.id ? (
@@ -920,12 +906,28 @@ Back
                     marginBottom: 24,
                   }}
                 >
-                  <GroupHeader label={group.label} detail={group.detail} tone={group.isOverdue ? 'overdue' : group.isToday ? 'today' : 'default'} />
+                  <GroupHeader
+                    label={group.label}
+                    detail={group.detail}
+                    tone={group.isOverdue ? 'overdue' : group.isToday ? 'today' : 'default'}
+                    onAdd={group.date && !group.isOverdue
+                      ? () => openInlineTaskForm(group.isToday ? null : formatTaskDate(group.date!))
+                      : undefined}
+                    action={group.isOverdue && group.tasks.length > 1 ? {
+                      label: 'Move all to today',
+                      onClick: () => {
+                        const today = formatTaskDate(startOfDay(new Date()));
+                        group.tasks
+                          .filter(task => !task.isCalendarEvent && !task.isRecurrencePreview)
+                          .forEach(task => updateTask(task.id, { dueDate: today }));
+                      },
+                    } : undefined}
+                  />
                   <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
-                    padding: '10px 0 0',
+                    gap: 8,
+                    padding: '8px 0 0',
                     justifyContent: groupHasTasks ? 'flex-start' : 'center',
                     alignItems: groupHasTasks ? 'stretch' : 'center'
                   }}>
@@ -1220,22 +1222,61 @@ function withEventsLast(items: Task[], compareTasks: (a: Task, b: Task) => numbe
   return [...tasks, ...events];
 }
 
-function GroupHeader({ label, detail, tone }: { label: string; detail?: string; tone: 'today' | 'overdue' | 'default' }) {
+function GroupHeader({
+  label,
+  detail,
+  tone,
+  onAdd,
+  action,
+}: {
+  label: string;
+  detail?: string;
+  tone: 'today' | 'overdue' | 'default';
+  /** Tapping the header opens the add form for that day. */
+  onAdd?: () => void;
+  action?: { label: string; onClick: () => void };
+}) {
+  const text = (
+    <>
+      <span>{label}</span>
+      {detail && (
+        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>{detail}</span>
+      )}
+    </>
+  );
+
   return (
     <h2 style={{
       display: 'flex',
-      alignItems: 'baseline',
+      alignItems: 'center',
       gap: 8,
       margin: 0,
       padding: '0 4px',
+      minHeight: 28,
       fontSize: tone === 'today' ? 15 : 13,
       fontWeight: 700,
       letterSpacing: '0.01em',
       color: tone === 'overdue' ? 'var(--red)' : tone === 'today' ? 'var(--foreground)' : 'var(--muted)',
     }}>
-      {label}
-      {detail && (
-        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>{detail}</span>
+      {onAdd ? (
+        <button
+          type="button"
+          className="group-header-add"
+          onClick={onAdd}
+          aria-label={`Add task for ${label}${detail ? `, ${detail}` : ''}`}
+        >
+          {text}
+          <svg className="group-header-add-icon" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      ) : (
+        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>{text}</span>
+      )}
+      {action && (
+        <button type="button" className="group-header-action" onClick={action.onClick}>
+          {action.label}
+        </button>
       )}
     </h2>
   );

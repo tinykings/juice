@@ -72,7 +72,7 @@ export default function TaskItem({
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
           columnGap: 12,
-          padding: '13px 14px 13px 12px',
+          padding: '11px 12px 11px 10px',
           border: `1px ${isRecurrencePreview ? 'dashed' : 'solid'} var(--border)`,
           borderRadius: 'var(--radius-md)',
           opacity: isCompleting ? 0.3 : (isRecurrencePreview ? 0.58 : 1),
@@ -150,7 +150,7 @@ export default function TaskItem({
                 </p>
                 {titleParts.note && (
                   <p style={{ 
-                    margin: '5px 0 0', 
+                    margin: '3px 0 0', 
                   fontSize: 'var(--text-body)', 
                     color: 'var(--muted)', 
                     lineHeight: 1.45,
@@ -167,7 +167,7 @@ export default function TaskItem({
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   gap: 10,
-                  margin: '8px 0 0',
+                  margin: '6px 0 0',
                   fontSize: 'var(--text-meta)',
                   fontWeight: 500,
                   color: 'var(--muted)',
@@ -213,8 +213,8 @@ export default function TaskItem({
                   }}
                   style={{
                     borderRadius: 'var(--radius-sm)',
-                    width: 32,
-                    height: 32,
+                    width: 28,
+                    height: 28,
                     padding: 0,
                     display: 'flex',
                     alignItems: 'center',

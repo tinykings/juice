@@ -111,12 +111,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           color: 'var(--foreground)',
           fontWeight: 400,
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'var(--accent)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'var(--border)';
-        }}
+        className="hover-accent-border"
         >
           <CalendarIcon />
           <input
@@ -162,12 +157,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
           fontFamily: 'inherit',
           fontWeight: 400,
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.16)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'var(--border)';
-        }}
+        className="hover-accent-border"
       >
         <CalendarIcon />
         {displayText}

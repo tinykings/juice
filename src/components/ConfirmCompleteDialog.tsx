@@ -182,16 +182,7 @@ export default function ConfirmCompleteDialog({
               height: 42,
               transition: 'background 0.15s, border-color 0.15s, color 0.15s',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--surface-hover)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--foreground)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--surface-inset)';
-              e.currentTarget.style.borderColor = 'var(--border)';
-              e.currentTarget.style.color = 'var(--muted)';
-            }}
+            className="hover-surface"
           >
             Cancel
           </button>
@@ -212,14 +203,8 @@ export default function ConfirmCompleteDialog({
               height: 42,
               transition: 'background 0.15s, border-color 0.15s',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = confirmTone === 'danger' ? '#ff8585' : 'var(--accent-hover)';
-              e.currentTarget.style.borderColor = confirmTone === 'danger' ? '#ff8585' : 'var(--accent-hover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = confirmTone === 'danger' ? 'var(--red)' : 'var(--accent)';
-              e.currentTarget.style.borderColor = confirmTone === 'danger' ? 'var(--red)' : 'var(--accent)';
-            }}
+            className="hover-fill-accent"
+            data-tone={confirmTone}
           >
             {confirmLabel}
           </button>
