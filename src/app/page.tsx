@@ -759,7 +759,7 @@ export default function HomePage() {
         <div className="app-scroll" style={{
           flex: 1,
           height: (isWideScreen || showSplitView) ? '100%' : 'auto',
-          paddingBottom: showSplitView ? 0 : 'calc(53px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: showSplitView ? 0 : 'calc(65px + env(safe-area-inset-bottom, 0px))',
         }}>
           <CalendarView
             tasks={displayTasks}
@@ -1079,13 +1079,13 @@ Back
       {!(isLandscapePhone && view === 'calendar') && (
       <footer
         style={{
-          background: 'color-mix(in srgb, var(--background) 65%, transparent)',
-          // Hug the 44px buttons: 4px above/below + 1px top border, then extend
-          // through the home-indicator inset so no blank band shows below.
-          height: 'calc(53px + env(safe-area-inset-bottom, 0px))',
-          minHeight: 'calc(53px + env(safe-area-inset-bottom, 0px))',
-          maxHeight: 'calc(53px + env(safe-area-inset-bottom, 0px))',
-          padding: '4px 16px calc(4px + env(safe-area-inset-bottom, 0px))',
+          background: 'color-mix(in srgb, var(--background) 45%, transparent)',
+          // Hug the 44px buttons: 4px above, 16px below + 1px top border, then
+          // extend through the home-indicator inset so no blank band shows below.
+          height: 'calc(65px + env(safe-area-inset-bottom, 0px))',
+          minHeight: 'calc(65px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: 'calc(65px + env(safe-area-inset-bottom, 0px))',
+          padding: '4px 16px calc(16px + env(safe-area-inset-bottom, 0px))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
