@@ -6,11 +6,13 @@
 
 ## Step 1: Confirm GitHub Pages Path
 
-1. This app is configured for the repository Pages URL:
+1. This app is served from the custom domain:
    ```text
-   https://tinykings.github.io/juice/
+   https://juice.tinyk.ing/
    ```
-2. Keep `next.config.ts` configured with `basePath: "/juice"` and no `public/CNAME` file.
+2. In Cloudflare DNS, add a `CNAME` record `juice` → `tinykings.github.io` (DNS only).
+3. In the repository's **Settings** → **Pages**, set the custom domain to `juice.tinyk.ing` and enable **Enforce HTTPS**.
+4. Keep `next.config.ts` with no `basePath`, since the app is served from the domain root. No `public/CNAME` file is needed with GitHub Actions deploys.
 
 ## Step 2: Push Code to GitHub
 
@@ -74,17 +76,17 @@
 
 After deployment, your site will be available at:
 ```
-https://tinykings.github.io/juice/
+https://juice.tinyk.ing/
 ```
 
 ## Important Notes
 
 - The `.nojekyll` file is automatically created to prevent Jekyll processing
 - The site will automatically rebuild and deploy on every push to `main` (if using GitHub Actions)
-- The app uses `/juice` as its Next.js `basePath`, matching the GitHub Pages repository path
+- The app is served from the domain root, so it has no Next.js `basePath`
 
 ## Troubleshooting
 
 - **404 errors**: Confirm GitHub Pages is using GitHub Actions and the repository name is `juice`
-- **Assets not loading**: Check that generated asset URLs include `/juice/_next/`
+- **Assets not loading**: Check that generated asset URLs start with `/_next/` and that the custom domain is set in **Settings** → **Pages**
 - **Build fails**: Check GitHub Actions logs in the **Actions** tab

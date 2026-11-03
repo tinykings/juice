@@ -35,7 +35,7 @@ Add origin under new app ID:
 ```toml
 APP_CONFIG = '''
 {
-  "juice": ["https://tinykings.github.io"],
+  "juice": ["https://juice.tinyk.ing"],
   "another-app": ["https://example.com"]
 }
 '''
