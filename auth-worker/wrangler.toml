@@ -13,6 +13,7 @@ id = "63ae3b0ffaa64bab814cc102b339ddbc"
 APP_CONFIG = '''
 {
   "juice": [
+    "https://juice.tinyk.ing",
     "https://tinykings.github.io",
     "http://localhost:3000"
   ],
