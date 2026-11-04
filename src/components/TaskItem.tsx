@@ -14,6 +14,8 @@ interface TaskItemProps {
   onComplete: () => void;
   onEdit: () => void;
   showDate?: boolean;
+  /** Shown in the meta row where the group header doesn't already give the date. */
+  dateLabel?: string;
   isOverdue?: boolean;
   needsConfirmation?: boolean;
 }
@@ -23,6 +25,7 @@ export default function TaskItem({
   onComplete, 
   onEdit,
   showDate,
+  dateLabel,
   isOverdue: isOverdueProp,
   needsConfirmation = false
 }: TaskItemProps) {
@@ -85,6 +88,7 @@ export default function TaskItem({
       >
         <button
             data-task-checkbox="true"
+            className="task-checkbox"
             disabled={isCompleting || isRecurrencePreview}
             onClick={(e) => {
               e.stopPropagation();
@@ -135,72 +139,9 @@ export default function TaskItem({
 
         {/* Content */}
         <div style={{ minWidth: 0, paddingTop: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: showDate ? 'minmax(0, 1fr) auto' : '1fr', alignItems: 'start', gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: 'var(--text-task-title)', 
-                  fontWeight: 600,
-                  lineHeight: 1.35,
-                  color: isOverdue ? 'var(--red)' : 'var(--foreground)',
-                  transition: 'color 0.2s',
-                  overflowWrap: 'anywhere',
-                }}>
-                  {titleParts.title}
-                </p>
-                {titleParts.note && (
-                  <p style={{ 
-                    margin: '3px 0 0', 
-                  fontSize: 'var(--text-body)', 
-                    color: 'var(--muted)', 
-                    lineHeight: 1.45,
-                    whiteSpace: 'pre-wrap',
-                    overflowWrap: 'anywhere',
-                    maxWidth: '100%'
-                  }}>
-                    {titleParts.note}
-                  </p>
-                )}
-              {(task.isRecurring || taskTime || isRecurrencePreview) && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 10,
-                  margin: '6px 0 0',
-                  fontSize: 'var(--text-meta)',
-                  fontWeight: 500,
-                  color: 'var(--muted)',
-                }}>
-                  {isRecurrencePreview && (
-                    <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 10 }}>
-                      Future occurrence
-                    </span>
-                  )}
-                  {task.isRecurring && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
-                      </svg>
-                      {task.recurrenceType}
-                    </span>
-                  )}
-                  {taskTime && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v6l4 2"/>
-                      </svg>
-                      {taskTime}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {/* Date indicator */}
+          {/* Floats so only the title's first line makes room for it, even while it's hidden. */}
             {showDate && !isRecurrencePreview && (
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', float: 'right', marginLeft: 12, marginBottom: -6 }}>
                 <button
                   className="reschedule-btn"
                   data-overdue={isOverdue ? 'true' : undefined}
@@ -241,7 +182,77 @@ export default function TaskItem({
                 )}
               </div>
             )}
-          </div>
+            <div style={{ minWidth: 0 }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: 'var(--text-task-title)', 
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                  color: isOverdue ? 'var(--red)' : 'var(--foreground)',
+                  transition: 'color 0.2s',
+                  overflowWrap: 'anywhere',
+                  textWrap: 'pretty',
+                }}>
+                  {titleParts.title}
+                </p>
+                {titleParts.note && (
+                  <p style={{ 
+                    margin: '3px 0 0', 
+                  fontSize: 'var(--text-body)', 
+                    color: 'var(--muted)', 
+                    lineHeight: 1.45,
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                    maxWidth: '100%'
+                  }}>
+                    {titleParts.note}
+                  </p>
+                )}
+              {(task.isRecurring || taskTime || isRecurrencePreview || dateLabel) && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                  margin: '6px 0 0',
+                  fontSize: 'var(--text-meta)',
+                  fontWeight: 500,
+                  color: 'var(--muted)',
+                }}>
+                  {dateLabel && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <path d="M16 2v4M8 2v4M3 10h18"/>
+                      </svg>
+                      {dateLabel}
+                    </span>
+                  )}
+                  {isRecurrencePreview && (
+                    <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: 10 }}>
+                      Future occurrence
+                    </span>
+                  )}
+                  {task.isRecurring && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/>
+                      </svg>
+                      {task.recurrenceType}
+                    </span>
+                  )}
+                  {taskTime && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                      </svg>
+                      {taskTime}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
         </div>
       </div>
     </div>

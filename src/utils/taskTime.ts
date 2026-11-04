@@ -47,6 +47,16 @@ export function formatTaskTime(title: string): string | null {
   return mins ? `${hours12}:${String(mins).padStart(2, '0')} ${suffix}` : `${hours12} ${suffix}`;
 }
 
+/** Timed tasks first, earliest first; everything else alphabetically. Used wherever a day's tasks are listed. */
+export function compareTasksByTime(a: { title: string }, b: { title: string }): number {
+  const timeA = parseTaskTimeMinutes(a.title);
+  const timeB = parseTaskTimeMinutes(b.title);
+  if (timeA !== null && timeB === null) return -1;
+  if (timeA === null && timeB !== null) return 1;
+  if (timeA !== null && timeB !== null && timeA !== timeB) return timeA - timeB;
+  return a.title.localeCompare(b.title);
+}
+
 /** Title with any @time tokens removed. */
 export function stripTaskTime(title: string): string {
   return title.replace(new RegExp(TASK_TIME_PATTERN.source, 'gi'), '').replace(/\s{2,}/g, ' ').trim();

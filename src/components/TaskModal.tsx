@@ -13,6 +13,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
   const { addTask, addTaskFromCaptureUrl, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
+  // The form stays on screen while it animates closed; a second Enter must not save again.
+  const hasSubmittedRef = useRef(false);
 
   const initialDueDate = editTask
     ? normalizeTaskDate(editTask.dueDate)
@@ -56,7 +58,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       items.push({
         start: timeResult.index,
         end: timeResult.index + timeResult[0].length,
-        color: 'var(--purple)',
+        color: 'var(--event)',
       });
     }
 
@@ -114,7 +116,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     
     let title = titleValue.trim();
     
-    if (!title || isSaving) return;
+    if (!title || isSaving || hasSubmittedRef.current) return;
 
     let effectiveDueDate = dueDate;
 
@@ -154,6 +156,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       addTask(taskData);
     }
 
+    hasSubmittedRef.current = true;
     onClose();
     if (onSave) onSave();
   }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, findNewDateWord, isRecurring, isSaving, onClose, onSave, recurrenceType, updateTask, titleValue]);
@@ -223,7 +226,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             <textarea
               ref={titleRef}
               name="title"
-              placeholder="New To-Do"
+              placeholder="New task"
               aria-label="Task title"
               rows={1}
               value={titleValue}
@@ -302,7 +305,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
                 }
                 return segs;
               })() : (
-                <span style={{ color: 'var(--muted)' }}>New To-Do</span>
+                <span style={{ color: 'var(--muted)' }}>New task</span>
               )}
             </div>
           </div>
@@ -386,7 +389,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       {showHelp && (
         <div style={{
           padding: '14px 16px',
-          background: 'var(--muted-light)',
+          background: 'var(--surface-inset)',
           borderTop: '1px solid var(--border)',
           fontSize: 14,
           lineHeight: 1.6,
@@ -400,7 +403,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>next month</span> — 1st of next month</div>
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>mon</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>tue</span>, … — next occurrence</div>
             <div><span style={{ color: 'var(--accent)', fontWeight: 600 }}>jan 15</span>, <span style={{ color: 'var(--accent)', fontWeight: 600 }}>15 jan</span> — specific date</div>
-            <div style={{ marginTop: 4 }}><span style={{ color: 'var(--purple)', fontWeight: 600 }}>@9am</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@530</span>, <span style={{ color: 'var(--purple)', fontWeight: 600 }}>@2:30pm</span> — set time</div>
+            <div style={{ marginTop: 4 }}><span style={{ color: 'var(--event)', fontWeight: 600 }}>@9am</span>, <span style={{ color: 'var(--event)', fontWeight: 600 }}>@530</span>, <span style={{ color: 'var(--event)', fontWeight: 600 }}>@2:30pm</span> — set time</div>
             <div><span style={{ color: 'var(--muted)', fontWeight: 600 }}>.</span> text after a period becomes a note</div>
           </div>
         </div>

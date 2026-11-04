@@ -61,11 +61,12 @@ export function findSpawnedRecurrence(tasks: Task[], task: Task): Task | undefin
 
 /**
  * Add read-only recurring previews only within months already visible from
- * real tasks (plus current month). Previews never make blank future months
+ * real tasks (plus current month and any `extraVisibleMonths`, as yyyy-MM, that
+ * the caller is already showing). Previews never make blank future months
  * appear, persist, or sync.
  */
-export function withRecurrencePreviews(tasks: Task[], now = new Date()): Task[] {
-  const visibleMonths = new Set<string>([formatTaskDate(now).slice(0, 7)]);
+export function withRecurrencePreviews(tasks: Task[], now = new Date(), extraVisibleMonths: string[] = []): Task[] {
+  const visibleMonths = new Set<string>([formatTaskDate(now).slice(0, 7), ...extraVisibleMonths]);
 
   for (const task of tasks) {
     if (!task.completed && !task.deletedAt && task.dueDate) {

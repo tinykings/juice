@@ -18,8 +18,8 @@ import CalendarView from '@/components/CalendarView';
 import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
 import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
-import { parseTaskTimeMinutes } from '@/utils/taskTime';
-import { splitTaskTitle } from '@/utils/taskTitle';
+import { compareTasksByTime } from '@/utils/taskTime';
+import { getTaskDisplayTitle } from '@/utils/taskTitle';
 
 // Width of the task list on the left of wide screens; the calendar takes the rest on the right.
 const SPLIT_LIST_WIDTH = 'clamp(420px, 42vw, 560px)';
@@ -45,6 +45,7 @@ export default function HomePage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [initialDate, setInitialDate] = useState<string | null>(null);
+  const [taskFormKey, setTaskFormKey] = useState(0);
   const [selectedDateFilter, setSelectedDateFilter] = useState<Date | null>(null);
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -194,6 +195,13 @@ export default function HomePage() {
     [tasksWithRecurrencePreviews, calendarEventTasks]
   );
 
+  // The calendar follows the search too, so both sides show the same tasks.
+  const calendarTasks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return displayTasks;
+    return displayTasks.filter(t => t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query));
+  }, [displayTasks, searchQuery]);
+
   // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
     const today = startOfDay(currentDate);
@@ -261,10 +269,10 @@ export default function HomePage() {
     });
     if (overdueTasks.length > 0 || undatedTasks.length > 0) {
       const yesterday = addDays(today, -1);
-      // Sort alphabetically by title; undated tasks follow the ones that were due.
+      // Oldest first; undated tasks follow the ones that were due.
       const sortedOverdueTasks = [
-        ...[...overdueTasks].sort((a, b) => a.title.localeCompare(b.title)),
-        ...[...undatedTasks].sort((a, b) => a.title.localeCompare(b.title)),
+        ...[...overdueTasks].sort(compareTasksByDateAndTime),
+        ...[...undatedTasks].sort(compareTasksByTime),
       ];
       groups.push({ label: 'Overdue', tasks: sortedOverdueTasks, isOverdue: true, date: yesterday });
     }
@@ -274,24 +282,14 @@ export default function HomePage() {
       const d = parseTaskDate(t.dueDate);
       return isSameDay(d, today);
     });
-    // Timed tasks first (by time), then alphabetically.
-    const sortByTime = (a: Task, b: Task) => {
-      const timeA = parseTaskTimeMinutes(a.title);
-      const timeB = parseTaskTimeMinutes(b.title);
-      if (timeA !== null && timeB === null) return -1;
-      if (timeA === null && timeB !== null) return 1;
-      if (timeA !== null && timeB !== null && timeA !== timeB) return timeA - timeB;
-      return a.title.localeCompare(b.title);
-    };
-    const sortedTodayTasks = withEventsLast(todayTasks, sortByTime);
+    const sortedTodayTasks = withEventsLast(todayTasks, compareTasksByTime);
     groups.push({ label: 'Today', detail: format(today, 'EEE, MMM d'), tasks: sortedTodayTasks, isToday: true, date: today });
 
     // Next 7 days (by day of week)
     for (let i = 1; i <= 7; i++) {
       const date = addDays(today, i);
       const dayTasks = incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), date));
-      // Sort alphabetically by title
-      const sortedDayTasks = withEventsLast(dayTasks, (a, b) => a.title.localeCompare(b.title));
+      const sortedDayTasks = withEventsLast(dayTasks, compareTasksByTime);
       const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
       groups.push({ label, detail: format(date, i === 1 ? 'EEE, MMM d' : 'MMM d'), tasks: sortedDayTasks, date });
     }
@@ -307,8 +305,7 @@ export default function HomePage() {
     });
 
     Object.entries(monthGroups).forEach(([month, monthTasks]) => {
-      // Sort by due date
-      const sortedMonthTasks = [...monthTasks].sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
+      const sortedMonthTasks = [...monthTasks].sort(compareTasksByDateAndTime);
       groups.push({ label: month, tasks: sortedMonthTasks });
     });
 
@@ -367,6 +364,7 @@ export default function HomePage() {
       window.clearTimeout(inlineCloseTimerRef.current);
       inlineCloseTimerRef.current = null;
     }
+    setTaskFormKey(key => key + 1);
     setTaskFormPresentation(presentation);
     setIsInlineFormClosing(false);
     setEditingTask(task);
@@ -509,7 +507,7 @@ export default function HomePage() {
     initialDate
       ? withEventsLast(
         displayTasks.filter(t => !t.completed && t.dueDate === initialDate),
-        (a, b) => a.title.localeCompare(b.title)
+        compareTasksByTime
       )
       : []
   ), [initialDate, displayTasks]);
@@ -636,11 +634,12 @@ export default function HomePage() {
           position: 'fixed',
           top: 0,
           left: 0,
-          right: 0,
+          // On wide screens it stays over the list, leaving the calendar's month controls in view.
+          right: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH})` : 0,
           zIndex: 20,
           background: 'color-mix(in srgb, var(--background) 92%, transparent)',
           padding: 'calc(12px + env(safe-area-inset-top, 0px)) 16px',
-          paddingRight: showSplitView ? 196 : 72,
+          paddingRight: showSplitView ? 16 : 72,
           borderBottom: '1px solid var(--border)',
           backdropFilter: 'blur(16px)',
           display: 'flex',
@@ -720,6 +719,7 @@ export default function HomePage() {
           onClose={handleCloseModal}
           dayTasks={overlayDayTasks}
           onShowDay={initialDate ? () => showDayInList(initialDate) : undefined}
+          formKey={taskFormKey}
         />
       )}
 
@@ -732,7 +732,7 @@ export default function HomePage() {
           paddingBottom: showSplitView ? 0 : 'calc(65px + env(safe-area-inset-bottom, 0px))',
         }}>
           <CalendarView
-            tasks={displayTasks}
+            tasks={calendarTasks}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
             fullScreen={isLandscapePhone}
@@ -788,7 +788,19 @@ Back
                 alignItems: 'center',
                 gap: 16
               }}>
-                {hasNoTasks ? (
+                {searchQuery.trim() ? (
+                  <div style={{
+                    fontSize: 17,
+                    fontWeight: 600,
+                    lineHeight: 1.4,
+                    maxWidth: 360,
+                    textAlign: 'center',
+                    overflowWrap: 'anywhere',
+                    color: 'var(--muted)',
+                  }}>
+                    No tasks match “{searchQuery.trim()}”
+                  </div>
+                ) : hasNoTasks ? (
                   <div style={{
                     fontSize: 28,
                     fontWeight: 700,
@@ -925,6 +937,7 @@ Back
                           onComplete={() => handleTaskComplete(task.id, !!(group.isToday || group.isOverdue))}
                           onEdit={() => openInlineTaskForm(null, task)}
                           showDate={true}
+                          dateLabel={getTaskDateLabel(task, group, currentDate)}
                           isOverdue={group.isOverdue || false}
                           needsConfirmation={!(group.isToday || group.isOverdue)}
                         />
@@ -1066,6 +1079,33 @@ Back
               <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
           </button>
+
+          {/* The calendar sits beside the list on wide screens; narrower ones switch between them. */}
+          {!showSplitView && (
+            <button
+              title={view === 'calendar' ? 'Show list' : 'Show calendar'}
+              className="icon-btn"
+              onClick={() => {
+                setSearchQuery('');
+                setIsSearchExpanded(false);
+                setSelectedDateFilter(null);
+                setView(view === 'calendar' ? 'list' : 'calendar');
+              }}
+              style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)' }}
+              aria-label={view === 'calendar' ? 'Show list' : 'Show calendar'}
+            >
+              {view === 'calendar' ? (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Add Task — always visible */}
@@ -1125,7 +1165,7 @@ Back
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
           }}>
-            Completed <strong style={{ fontWeight: 650 }}>{splitTaskTitle(undoTask.title).title}</strong>
+            Completed <strong style={{ fontWeight: 650 }}>{getTaskDisplayTitle(undoTask)}</strong>
           </span>
           <button
             type="button"
@@ -1176,6 +1216,20 @@ function AddOrSyncIcon({ isSyncing }: { isSyncing: boolean }) {
       <path d="M12 5v14M5 12h14" />
     </svg>
   );
+}
+
+function compareTasksByDateAndTime(a: Task, b: Task): number {
+  return parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime() || compareTasksByTime(a, b);
+}
+
+/** The date on a task card, for groups whose header doesn't already say which day it is. */
+function getTaskDateLabel(task: Task, group: TaskGroup, now: Date): string | undefined {
+  if (group.isOverdue) {
+    if (!task.dueDate) return 'No date';
+    const date = parseTaskDate(task.dueDate);
+    return format(date, date.getFullYear() === now.getFullYear() ? 'MMM d' : 'MMM d, yyyy');
+  }
+  return group.date ? undefined : format(parseTaskDate(task.dueDate), 'EEE, MMM d');
 }
 
 /** Real tasks first (in the given order), then calendar events by start time. */

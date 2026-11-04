@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   addMonths,
   format,
@@ -12,12 +12,15 @@ import {
   isSameMonth,
   isSameDay,
   isBefore,
+  isAfter,
   startOfDay,
 } from 'date-fns';
 import { Task } from '@/types/task';
-import { splitTaskTitle } from '@/utils/taskTitle';
+import { getCalendarMonths } from '@/utils/calendarMonths';
+import { getTaskDisplayTitle } from '@/utils/taskTitle';
 import { parseTaskDate } from '@/utils/taskDate';
-import { formatTaskTime, stripTaskTime } from '@/utils/taskTime';
+import { withRecurrencePreviews } from '@/utils/taskRecurrence';
+import { compareTasksByTime, formatTaskTime } from '@/utils/taskTime';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -34,6 +37,8 @@ const DESKTOP_COMPRESSED_DAY_MIN_HEIGHT = 28;
 const DESKTOP_EMPTY_DAY_MIN_HEIGHT = 64;
 const MOBILE_DAY_MIN_HEIGHT = 88;
 const MOBILE_COMPRESSED_DAY_MIN_HEIGHT = 24;
+// Months kept below the one navigated to, so it can scroll up to the top of the view.
+const MONTHS_KEPT_BELOW_TARGET = 4;
 
 export default function CalendarView({
   tasks,
@@ -54,39 +59,106 @@ export default function CalendarView({
 
   const isMobileCalendar = windowWidth < MOBILE_BREAKPOINT;
 
-  const monthsWithTasks = useMemo(() => {
-    const monthSet = new Set<string>();
-    const now = new Date();
-    monthSet.add(format(now, 'yyyy-MM'));
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const barRef = useRef<HTMLDivElement | null>(null);
+  // Month to scroll to after the next render. Starts on the current month, past any older overdue months.
+  const pendingScrollRef = useRef<Date | null>(startOfMonth(new Date()));
+  const [navigatedStart, setNavigatedStart] = useState<Date | null>(null);
+  const [navigatedEnd, setNavigatedEnd] = useState<Date | null>(null);
+  const [navigationCount, setNavigationCount] = useState(0);
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
 
-    tasks.filter(t => !t.completed && t.dueDate).forEach(task => {
-      monthSet.add(format(parseTaskDate(task.dueDate), 'yyyy-MM'));
-    });
+  // Only real tasks decide which months exist; previews and events fill in the months shown.
+  const realTasks = useMemo(
+    () => tasks.filter(t => !t.isRecurrencePreview && !t.isCalendarEvent),
+    [tasks]
+  );
 
-    return Array.from(monthSet)
-      .sort()
-      .map(key => {
-        const [y, m] = key.split('-').map(Number);
-        return new Date(y, m - 1, 1);
-      });
-  }, [tasks]);
+  const months = useMemo(
+    () => getCalendarMonths(realTasks, new Date(), navigatedStart, navigatedEnd),
+    [realTasks, navigatedStart, navigatedEnd]
+  );
 
   const tasksByDate = useMemo(() => {
+    const shown = [
+      ...withRecurrencePreviews(realTasks, new Date(), months.map(month => format(month, 'yyyy-MM'))),
+      ...tasks.filter(t => t.isCalendarEvent),
+    ];
     const map: Record<string, Task[]> = {};
-    tasks.filter(t => !t.completed && t.dueDate).forEach(task => {
+    shown.filter(t => !t.completed && t.dueDate).forEach(task => {
       const key = format(parseTaskDate(task.dueDate), 'yyyy-MM-dd');
       if (!map[key]) map[key] = [];
       map[key].push(task);
     });
 
-    // Tasks first (alphabetical), then subscribed-calendar events by start time.
+    // Tasks first (by time, like the list), then subscribed-calendar events by start time.
     Object.values(map).forEach(arr => arr.sort((a, b) =>
       Number(Boolean(a.isCalendarEvent)) - Number(Boolean(b.isCalendarEvent))
-      || (a.isCalendarEvent ? (a.eventStart ?? 0) - (b.eventStart ?? 0) : 0)
-      || a.title.localeCompare(b.title)
+      || (a.isCalendarEvent
+        ? (a.eventStart ?? 0) - (b.eventStart ?? 0) || a.title.localeCompare(b.title)
+        : compareTasksByTime(a, b))
     ));
     return map;
-  }, [tasks]);
+  }, [realTasks, tasks, months]);
+
+  const firstMonth = months[0];
+  useLayoutEffect(() => {
+    const target = pendingScrollRef.current;
+    const root = rootRef.current;
+    const bar = barRef.current;
+    if (!target || !root || !bar) return;
+    pendingScrollRef.current = null;
+
+    const scroller = root.closest('.app-scroll');
+    const element = root.querySelector(isMobileCalendar
+      ? `[data-month="${format(target, 'yyyy-MM')}"]`
+      : `[data-date="${format(target, 'yyyy-MM-01')}"]`);
+    if (!scroller || !element) return;
+    if (isSameMonth(target, firstMonth)) {
+      scroller.scrollTop = 0;
+      return;
+    }
+    // Measure against where the bar sits once stuck; it may still be further down the page.
+    const stuckBarBottom = scroller.getBoundingClientRect().top + bar.offsetHeight;
+    scroller.scrollTop += element.getBoundingClientRect().top - stuckBarBottom - 8;
+  }, [navigationCount, firstMonth, isMobileCalendar]);
+
+  const updateVisibleMonth = useCallback(() => {
+    const root = rootRef.current;
+    const bar = barRef.current;
+    if (!root || !bar) return;
+    const month = findVisibleMonth(root, isMobileCalendar, bar.getBoundingClientRect().bottom);
+    if (month) setVisibleMonth(current => (isSameMonth(current, month) ? current : month));
+  }, [isMobileCalendar]);
+
+  useEffect(() => {
+    const scroller = rootRef.current?.closest('.app-scroll');
+    if (!scroller) return;
+    let frame = requestAnimationFrame(updateVisibleMonth);
+    const handleScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateVisibleMonth);
+    };
+    scroller.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      scroller.removeEventListener('scroll', handleScroll);
+    };
+  }, [updateVisibleMonth, months, fullScreen]);
+
+  const goToMonth = (target: Date) => {
+    const current = startOfMonth(new Date());
+    if (isBefore(target, current)) {
+      setNavigatedStart(start => (start && !isAfter(start, target) ? start : target));
+    } else {
+      const end = addMonths(target, MONTHS_KEPT_BELOW_TARGET);
+      setNavigatedEnd(previous => (previous && !isBefore(previous, end) ? previous : end));
+    }
+    pendingScrollRef.current = target;
+    // Set now rather than waiting for the scroll, so quick repeat clicks keep moving.
+    setVisibleMonth(target);
+    setNavigationCount(count => count + 1);
+  };
 
   if (fullScreen) {
     return (
@@ -99,30 +171,115 @@ export default function CalendarView({
   }
 
   return (
-    <div style={{
-      padding: isMobileCalendar ? '18px 10px 110px' : '24px clamp(10px, 2vw, 18px) 120px',
+    <div ref={rootRef} style={{
+      padding: isMobileCalendar ? '8px 10px 110px' : '12px clamp(10px, 2vw, 18px) 120px',
       minWidth: 0,
       width: '100%',
       maxWidth: 1120,
       margin: '0 auto',
     }}>
+      <div ref={barRef} style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 5,
+        background: 'var(--background)',
+        padding: 'calc(10px + env(safe-area-inset-top, 0px)) 0 8px',
+        marginBottom: 8,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <h3 style={{ flex: 1, minWidth: 0, margin: 0, color: 'var(--foreground)', fontSize: 17, fontWeight: 750, lineHeight: 1.25 }}>
+            {format(visibleMonth, 'MMMM yyyy')}
+          </h3>
+          {!isSameMonth(visibleMonth, new Date()) && (
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => goToMonth(startOfMonth(new Date()))}
+              style={{ height: 36, padding: '0 12px', fontSize: 13, fontWeight: 600, borderRadius: 'var(--radius-sm)' }}
+            >
+              Today
+            </button>
+          )}
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Previous month"
+            title="Previous month"
+            onClick={() => goToMonth(addMonths(visibleMonth, -1))}
+            style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)' }}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Next month"
+            title="Next month"
+            onClick={() => goToMonth(addMonths(visibleMonth, 1))}
+            style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)' }}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
+        {!isMobileCalendar && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 8, marginTop: 10 }}>
+            {WEEKDAYS.map(day => (
+              <div key={day} style={{
+                textAlign: 'center',
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}>
+                {day}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {isMobileCalendar ? (
         <MobileCalendar
-          months={monthsWithTasks}
+          months={months}
           tasksByDate={tasksByDate}
-            onDaySelect={onDaySelect}
+          onDaySelect={onDaySelect}
           selectedDate={selectedDate}
         />
       ) : (
         <ContinuousCalendar
-          months={monthsWithTasks}
+          months={months}
           tasksByDate={tasksByDate}
-            onDaySelect={onDaySelect}
+          onDaySelect={onDaySelect}
           selectedDate={selectedDate}
         />
       )}
     </div>
   );
+}
+
+/** The month under the sticky bar: on desktop, the month a row ends in, so a row's month is its last day's. */
+function findVisibleMonth(root: HTMLElement, isMobileCalendar: boolean, top: number): Date | null {
+  if (isMobileCalendar) {
+    for (const element of root.querySelectorAll<HTMLElement>('[data-month]')) {
+      if (element.getBoundingClientRect().bottom > top + 12) {
+        return parseTaskDate(`${element.dataset.month}-01`);
+      }
+    }
+    return null;
+  }
+
+  const days = root.querySelectorAll<HTMLElement>('[data-date]');
+  for (let index = 6; index < days.length; index += 7) {
+    if (days[index].getBoundingClientRect().bottom > top + 12) {
+      return startOfMonth(parseTaskDate(days[index].dataset.date!));
+    }
+  }
+  return null;
 }
 
 function ContinuousCalendar({
@@ -150,28 +307,12 @@ function ContinuousCalendar({
       gap: 8,
       width: '100%',
     }}>
-      {WEEKDAYS.map((day, index) => (
-        <div style={{
-          gridColumn: `${index + 1} / ${index + 2}`,
-          gridRow: 1,
-          textAlign: 'center',
-          fontSize: 11,
-          fontWeight: 700,
-          color: 'var(--muted)',
-          padding: '0 0 2px',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-        }} key={day}>
-          {day}
-        </div>
-      ))}
-
       {calendarDays.map((day, index) => {
         const key = format(day, 'yyyy-MM-dd');
         const dayTasks = tasksByDate[key] || [];
         const inVisibleMonth = months.some(month => isSameMonth(day, month));
         const isMonthStart = day.getDate() === 1 && inVisibleMonth;
-        const row = Math.floor(index / 7) + 2;
+        const row = Math.floor(index / 7) + 1;
         const column = (index % 7) + 1;
         const isCompressedWeek = compressedWeekRows.has(Math.floor(index / 7));
         const isEmptyWeek = emptyWeekRows.has(Math.floor(index / 7));
@@ -309,7 +450,8 @@ function DayCell({
             width: isCompressedWeek ? 20 : 24,
             height: isCompressedWeek ? 16 : 24,
             borderRadius: 'var(--radius-xs)',
-            background: isActive ? 'var(--accent-surface)' : 'transparent',
+            background: isTodayCell ? 'var(--accent)' : (isActive ? 'var(--accent-surface)' : 'transparent'),
+            color: isTodayCell ? 'var(--background)' : undefined,
             fontSize: isCompressedWeek ? 12 : 13,
             fontWeight: 750,
           }}>
@@ -339,7 +481,7 @@ function DayCell({
             width: '100%',
           }}>
             {dayTasks.map(task => (
-              <CalendarTaskChip key={task.id} task={task} compact isOverdue={!task.isCalendarEvent && isBefore(day, startOfDay(today))} />
+              <CalendarTaskChip key={task.id} task={task} compact onTint={isActive} isOverdue={!task.isCalendarEvent && isBefore(day, startOfDay(today))} />
             ))}
           </div>
         )}
@@ -362,10 +504,11 @@ function MobileCalendar({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      {months.map(month => (
+      {months.map((month, index) => (
         <MobileMonth
           key={month.toISOString()}
           month={month}
+          isFirst={index === 0}
           today={today}
           tasksByDate={tasksByDate}
             onDaySelect={onDaySelect}
@@ -378,12 +521,14 @@ function MobileCalendar({
 
 function MobileMonth({
   month,
+  isFirst,
   today,
   tasksByDate,
   onDaySelect,
   selectedDate,
 }: {
   month: Date;
+  isFirst: boolean;
   today: Date;
   tasksByDate: Record<string, Task[]>;
   onDaySelect: (date: Date, tasks: Task[]) => void;
@@ -406,20 +551,23 @@ function MobileMonth({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 10,
+        marginBottom: isFirst ? 0 : 10,
       }}>
-        <h3 style={{
-          margin: 0,
-          color: 'var(--foreground)',
-          fontSize: 17,
-          fontWeight: 750,
-          lineHeight: 1.25,
-        }}>
-          {format(month, 'MMMM yyyy')}
-        </h3>
+        {/* The sticky bar above names the first month. */}
+        {!isFirst && (
+          <h3 style={{
+            margin: 0,
+            color: 'var(--foreground)',
+            fontSize: 17,
+            fontWeight: 750,
+            lineHeight: 1.25,
+          }}>
+            {format(month, 'MMMM yyyy')}
+          </h3>
+        )}
       </div>
 
-      <div style={{
+      <div data-month={format(month, 'yyyy-MM')} style={{
         background: 'var(--card)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
@@ -470,6 +618,7 @@ function MobileMonth({
                 dayTasks={dayTasks}
                     inMonth={inMonth}
                 isActive={isActive}
+                isToday={isTodayCell}
                 onDaySelect={onDaySelect}
                 isCompressedWeek={compressedWeekRows.has(weekRow)}
               />
@@ -487,6 +636,7 @@ function MobileDayButton({
   dayTasks,
   inMonth,
   isActive,
+  isToday,
   onDaySelect,
   isCompressedWeek,
 }: {
@@ -495,6 +645,7 @@ function MobileDayButton({
   dayTasks: Task[];
   inMonth: boolean;
   isActive: boolean;
+  isToday: boolean;
   onDaySelect: (date: Date, tasks: Task[]) => void;
   isCompressedWeek: boolean;
 }) {
@@ -530,6 +681,13 @@ function MobileDayButton({
       <span style={{
         alignSelf: 'flex-start',
         lineHeight: 1,
+        ...(isToday ? {
+          margin: '-2px 0 -2px -2px',
+          padding: '2px 4px',
+          borderRadius: 5,
+          background: 'var(--accent)',
+          color: 'var(--background)',
+        } : {}),
       }}>
         {day.getDate()}
       </span>
@@ -558,7 +716,7 @@ function MobileDayButton({
                 border: task.isRecurrencePreview ? '1px dashed var(--border)' : '1px solid transparent',
                 boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
                 borderRadius: 5,
-                background: task.isRecurrencePreview || task.isCalendarEvent ? 'transparent' : 'var(--surface-inset)',
+                background: task.isRecurrencePreview || task.isCalendarEvent ? 'transparent' : (isActive ? 'var(--task-surface)' : 'var(--surface-inset)'),
                 color: isOverdueChip ? 'var(--red)' : (isActive ? 'var(--foreground)' : 'var(--muted)'),
                 opacity: task.isRecurrencePreview ? 0.58 : 1,
                 fontSize: 10,
@@ -580,7 +738,7 @@ function MobileDayButton({
 }
 
 function getCalendarTaskTitle(task: Task) {
-  return splitTaskTitle(stripTaskTime(task.title) || task.title).title;
+  return getTaskDisplayTitle(task);
 }
 
 function getEmptyUpcomingWeekRows(
@@ -626,7 +784,7 @@ function getEmptyPastWeekRows(days: Date[], tasksByDate: Record<string, Task[]>,
   return rows;
 }
 
-function CalendarTaskChip({ task, compact = false, isOverdue = false }: { task: Task; compact?: boolean; isOverdue?: boolean }) {
+function CalendarTaskChip({ task, compact = false, isOverdue = false, onTint = false }: { task: Task; compact?: boolean; isOverdue?: boolean; onTint?: boolean }) {
   const displayTitle = getCalendarTaskTitle(task);
   const taskTime = formatTaskTime(task.title);
 
@@ -639,7 +797,7 @@ function CalendarTaskChip({ task, compact = false, isOverdue = false }: { task: 
         color: isOverdue ? 'var(--red)' : (compact ? 'var(--muted)' : 'var(--foreground)'),
         background: task.isRecurrencePreview || task.isCalendarEvent
           ? 'transparent'
-          : (compact ? 'var(--surface-inset)' : 'var(--task-surface)'),
+          : (compact && !onTint ? 'var(--surface-inset)' : 'var(--task-surface)'),
         border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} ${compact && !task.isRecurrencePreview ? 'transparent' : 'var(--border)'}`,
         boxShadow: task.isCalendarEvent ? 'inset 2px 0 0 var(--event)' : undefined,
         borderRadius: compact ? 5 : 'var(--radius-sm)',
@@ -655,7 +813,7 @@ function CalendarTaskChip({ task, compact = false, isOverdue = false }: { task: 
           WebkitLineClamp: compact ? 2 : undefined,
           WebkitBoxOrient: compact ? 'vertical' : undefined,
           color: isOverdue ? 'var(--red)' : (compact ? 'var(--muted)' : 'var(--foreground)'),
-          fontSize: compact ? 10 : 15,
+          fontSize: compact ? 11 : 15,
           fontWeight: compact ? 600 : 650,
           lineHeight: compact ? 1.2 : 1.3,
           overflow: 'hidden',
@@ -663,6 +821,9 @@ function CalendarTaskChip({ task, compact = false, isOverdue = false }: { task: 
           overflowWrap: compact ? 'anywhere' : undefined,
           textOverflow: 'ellipsis',
         }}>
+          {compact && (taskTime || task.eventTime) && (
+            <span style={{ fontWeight: 700 }}>{taskTime || task.eventTime} </span>
+          )}
           {displayTitle}
         </span>
         {!compact && (taskTime || task.isRecurring || task.eventTime) && (

@@ -23,7 +23,6 @@
   --yellow: #F5B041;
   --red: #ff6b6b;
   --green: #2ECC71;
-  --purple: #9B59B6;
 
   /* UI surfaces */
   --surface-raised: #191713;
@@ -76,20 +75,19 @@
   --background: #F4F1EA;
   --foreground: #1A1712;
   --card: #FFFCF5;
-  --muted: #7E7669;
+  --muted: #6B6357;
   --muted-light: #DDD5C7;
   --border: #D6CDBD;
 
-  --accent: #B7791F;
-  --accent-hover: #935F18;
+  --accent: #8F5C12;
+  --accent-hover: #754A0C;
   --accent-subtle: rgba(183, 121, 31, 0.1);
   --accent-surface: rgba(183, 121, 31, 0.14);
   --accent-border: rgba(183, 121, 31, 0.38);
 
   --yellow: #D4A017;
-  --red: #DC2626;
+  --red: #C81E1E;
   --green: #16A34A;
-  --purple: #7C3AED;
 
   --surface-raised: #FFFCF5;
   --surface-inset: #ECE6DA;
@@ -127,7 +125,7 @@
   --calendar-bg: #F2F0EB;
   --calendar-text: #1A1A18;
   --calendar-event-border: rgba(183, 121, 31, 0.42);
-  --event: #3b6ea8;
+  --event: #2F5F96;
 }
 
 * {
@@ -375,6 +373,7 @@ input, textarea, button {
 }
 
 .reschedule-btn {
+  position: relative;
   color: var(--muted);
   background: transparent;
   border: 1px solid transparent;
@@ -405,6 +404,7 @@ input, textarea, button {
 }
 
 .group-header-add {
+  position: relative;
   display: inline-flex;
   align-items: baseline;
   gap: 8px;
@@ -432,6 +432,7 @@ input, textarea, button {
 }
 
 .group-header-action {
+  position: relative;
   margin-left: auto;
   padding: 4px 8px;
   font: inherit;
@@ -443,6 +444,43 @@ input, textarea, button {
   border-radius: var(--radius-xs);
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
+}
+
+/* Small controls keep their look but get a thumb-sized hit area. */
+.task-checkbox {
+  position: relative;
+}
+
+.task-checkbox::after,
+.reschedule-btn::after,
+.group-header-add::after,
+.group-header-action::after {
+  content: '';
+  position: absolute;
+}
+
+.task-checkbox::after {
+  inset: -6px -3px;
+}
+
+.reschedule-btn::after {
+  inset: -8px;
+}
+
+.group-header-add::after,
+.group-header-action::after {
+  inset: -8px 0;
+}
+
+/* Sits at the top on small screens so the keyboard doesn't cover it. */
+.calendar-task-overlay {
+  align-items: flex-start;
+}
+
+@media (min-width: 1000px) and (hover: hover) {
+  .calendar-task-overlay {
+    align-items: center;
+  }
 }
 
 .menu-option {

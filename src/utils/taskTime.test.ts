@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTaskTime, stripTaskTime } from './taskTime';
+import { compareTasksByTime, formatTaskTime, stripTaskTime } from './taskTime';
 
 describe('formatTaskTime', () => {
   it.each([
@@ -19,5 +19,13 @@ describe('formatTaskTime', () => {
 
   it('strips the time from the title', () => {
     expect(stripTaskTime('Call @2 dentist')).toBe('Call dentist');
+  });
+});
+
+describe('compareTasksByTime', () => {
+  it('puts timed tasks first by time, then the rest alphabetically', () => {
+    const titles = ['Buy milk', 'Call bank @2pm', 'Apples', 'Dentist @9:30am'];
+    const sorted = titles.map(title => ({ title })).sort(compareTasksByTime).map(task => task.title);
+    expect(sorted).toEqual(['Dentist @9:30am', 'Call bank @2pm', 'Apples', 'Buy milk']);
   });
 });

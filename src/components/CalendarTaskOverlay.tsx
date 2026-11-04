@@ -6,6 +6,8 @@ import { format } from 'date-fns';
 import { TaskForm } from './TaskModal';
 import { parseTaskDate } from '@/utils/taskDate';
 import { Task } from '@/types/task';
+import { getTaskDisplayTitle } from '@/utils/taskTitle';
+import { formatTaskTime } from '@/utils/taskTime';
 
 export default function CalendarTaskOverlay({
   initialDate,
@@ -13,6 +15,7 @@ export default function CalendarTaskOverlay({
   onClose,
   dayTasks = [],
   onShowDay,
+  formKey = 0,
 }: {
   initialDate: string | null;
   isClosing: boolean;
@@ -21,6 +24,8 @@ export default function CalendarTaskOverlay({
   dayTasks?: Task[];
   /** Opens the day in the list, where its tasks can be edited and checked off. */
   onShowDay?: () => void;
+  /** Changes on each open, so reopening during the close animation starts with an empty form. */
+  formKey?: number;
 }) {
   const dateLabel = initialDate === ''
     ? 'No date'
@@ -50,6 +55,7 @@ export default function CalendarTaskOverlay({
       role="dialog"
       aria-modal="true"
       aria-labelledby="calendar-task-title"
+      className="calendar-task-overlay"
       style={{
         position: 'fixed',
         inset: visualViewport ? undefined : 0,
@@ -60,8 +66,9 @@ export default function CalendarTaskOverlay({
         boxSizing: 'border-box',
         zIndex: 100,
         display: 'flex',
-        alignItems: 'flex-start',
         justifyContent: 'center',
+        // While closing, let clicks through to what's underneath (like the add button).
+        pointerEvents: isClosing ? 'none' : undefined,
         padding: 'max(8px, env(safe-area-inset-top, 0px)) 16px 16px',
         animation: isClosing ? 'fadeOut 180ms ease-in forwards' : 'fadeIn 140ms ease-out both',
       }}
@@ -155,17 +162,21 @@ export default function CalendarTaskOverlay({
                   whiteSpace: 'nowrap',
                 }}
               >
-                {task.title}
-                {task.isCalendarEvent && (
+                {getTaskDisplayTitle(task)}
+                {task.isCalendarEvent ? (
                   <span style={{ color: 'var(--muted)', fontWeight: 500 }}>
                     {' · '}{task.eventTime ?? 'All day'}
+                  </span>
+                ) : formatTaskTime(task.title) && (
+                  <span style={{ color: 'var(--muted)', fontWeight: 500 }}>
+                    {' · '}{formatTaskTime(task.title)}
                   </span>
                 )}
               </button>
             ))}
           </div>
         )}
-        <TaskForm initialDate={initialDate} onClose={onClose} />
+        <TaskForm key={formKey} initialDate={initialDate} onClose={onClose} />
       </div>
     </div>,
     document.body
