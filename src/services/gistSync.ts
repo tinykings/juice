@@ -41,6 +41,14 @@ export class GistNotFoundError extends Error {
   }
 }
 
+/** GitHub rejected the token: it was revoked or expired, and only signing in again can fix it. */
+export class GistAuthError extends Error {
+  constructor() {
+    super('GitHub no longer accepts this sign-in. Choose Reconnect GitHub in Settings to resume syncing.');
+    this.name = 'GistAuthError';
+  }
+}
+
 export interface GistSettings {
   gistId: string;
   githubToken: string;
@@ -426,6 +434,9 @@ async function fetchGist(settings: GistSettings): Promise<{ gist: GistResponse; 
     },
   });
 
+  if (response.status === 401) {
+    throw new GistAuthError();
+  }
   if (response.status === 404) {
     throw new GistNotFoundError();
   }
@@ -454,6 +465,7 @@ export async function loadSyncSnapshotFromGist(settings: GistSettings): Promise<
   let content = tasksFile.content;
   if (tasksFile.truncated && tasksFile.raw_url) {
     const raw = await fetch(tasksFile.raw_url, { headers: { Authorization: `Bearer ${settings.githubToken}` } });
+    if (raw.status === 401) throw new GistAuthError();
     if (!raw.ok) throw new Error(`Failed to load gist: ${raw.status} ${raw.statusText}`);
     content = await raw.text();
   }
@@ -503,6 +515,9 @@ export async function saveSyncDocumentToGist(
     }),
   });
 
+  if (response.status === 401) {
+    throw new GistAuthError();
+  }
   if (response.status === 404) {
     throw new GistNotFoundError();
   }

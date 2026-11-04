@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Task } from '@/types/task';
 import {
   createSyncDocument,
+  GistAuthError,
+  loadSyncSnapshotFromGist,
   mergeSyncDocuments,
   parseSyncDocument,
   pruneTombstones,
+  saveSyncDocumentToGist,
   syncDocumentContentEquals,
   type TaskTombstone,
 } from './gistSync';
@@ -171,5 +174,23 @@ describe('pruneTombstones', () => {
     const old = { id: 'b', deletedAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' };
 
     expect(pruneTombstones([recent, old], now).map((t) => t.id)).toEqual(['a']);
+  });
+});
+
+describe('rejected GitHub tokens', () => {
+  const settings = { gistId: 'gist-1', githubToken: 'revoked' };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('reports a 401 as an auth error when loading', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 401 })));
+    await expect(loadSyncSnapshotFromGist(settings)).rejects.toBeInstanceOf(GistAuthError);
+  });
+
+  it('reports a 401 as an auth error when saving', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', { status: 401 })));
+    await expect(saveSyncDocumentToGist(createSyncDocument([]), settings)).rejects.toBeInstanceOf(GistAuthError);
   });
 });

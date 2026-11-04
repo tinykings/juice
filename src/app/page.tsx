@@ -6,7 +6,6 @@ import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSa
 import { useTasks } from '@/context/TaskContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCalendarFeed } from '@/context/CalendarFeedContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { Task } from '@/types/task';
@@ -20,7 +19,6 @@ import CalendarView from '@/components/CalendarView';
 import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
 import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
-import { getTheme } from '@/utils/theme';
 import { compareTasksByTime } from '@/utils/taskTime';
 import { getTaskDisplayTitle } from '@/utils/taskTitle';
 
@@ -40,7 +38,6 @@ interface TaskGroup {
 export default function HomePage() {
   const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
   const { badgeEnabled } = useSettings();
-  const { theme } = useTheme();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1126,7 +1123,7 @@ Back
             className="add-task-btn"
           >
             <Image
-              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/add-task-${getTheme(theme).mode}.png`}
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/add-task.png`}
               alt=""
               width={44}
               height={44}
