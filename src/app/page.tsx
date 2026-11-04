@@ -1123,7 +1123,6 @@ Back
             style={{
               width: 44,
               height: 44,
-              color: 'white',
               borderRadius: 'var(--radius-md)',
               boxShadow: 'var(--shadow-md)',
             }}

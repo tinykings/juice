@@ -9,6 +9,8 @@ import { authorizeWithGitHub, isGitHubOAuthConfigured } from '@/services/githubO
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 import EncryptionSettings from '@/components/EncryptionSettings';
 import CalendarSubscriptionSettings from '@/components/CalendarSubscriptionSettings';
+import ThemePicker from '@/components/ThemePicker';
+import { getTheme } from '@/utils/theme';
 import { GistEncryptionError } from '@/services/gistCrypto';
 
 interface SettingsModalProps {
@@ -18,7 +20,9 @@ interface SettingsModalProps {
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, choice } = useTheme();
+  const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
+  const isDarkTheme = getTheme(theme).mode === 'dark';
   const { tasks, syncFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
@@ -219,7 +223,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Theme & Badge buttons row */}
           <div style={{ display: 'grid', gridTemplateColumns: isBadgeSupported() ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 16 }}>
             <button
-              onClick={toggleTheme}
+              onClick={() => setIsThemePickerOpen(open => !open)}
+              aria-expanded={isThemePickerOpen}
               style={{
                 flex: 1,
                 padding: '0 14px',
@@ -239,7 +244,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               }}
               className="hover-surface-accent"
             >
-              {theme === 'dark' ? (
+              {isDarkTheme ? (
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
                 </svg>
@@ -249,7 +254,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
               )}
-              Theme: {theme === 'dark' ? 'Dark' : 'Light'}
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Theme: {choice === 'system' ? 'System' : getTheme(theme).name}
+              </span>
             </button>
             {isBadgeSupported() && (
               <button
@@ -295,6 +302,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </button>
             )}
           </div>
+
+          {isThemePickerOpen && <ThemePicker />}
 
           <div style={{
             background: 'var(--task-surface)',

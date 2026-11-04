@@ -3,7 +3,7 @@ name: Juice
 description: A calm, warm task app for personal use
 source-of-truth: src/app/globals.css (tokens on :root / [data-theme])
 colors:
-  dark:
+  charcoal:
     background: "#0f0e0c"
     foreground: "#F3F0EA"
     card: "#191713"
@@ -16,7 +16,7 @@ colors:
     accent-hover: "#e6bd59"
     red: "#ff6b6b"
     event: "#7fa7d9"
-  light:
+  parchment:
     background: "#F4F1EA"
     foreground: "#1A1712"
     card: "#FFFCF5"
@@ -53,18 +53,19 @@ It rejects the enterprise task-manager look: no kanban boards, no dense tables, 
 - Soft rounded corners throughout (10–14px); circles only for checkboxes.
 - Depth comes from tonal layering (page → card → inset), not shadows.
 - One accent, used on well under 10% of any screen.
-- Every neutral is warm-tinted. Nothing reads grey or blue.
+- Parchment and Charcoal keep every neutral warm-tinted. Other themes bring their own palettes but keep the same rules for hierarchy and the single accent.
 - Hover lives in CSS behind `@media (hover: hover)` so taps never leave a stuck hover state.
 
 ## 2. Color
 
 Tokens live in `src/app/globals.css`. Use them; never hard-code `rgba(255,255,255,…)` overlays, since they vanish in light mode.
 
-- **Accent (honey gold):** `--accent`, with `--accent-subtle` / `--accent-surface` / `--accent-border` tints for hover, selection and today. Text on a solid accent uses `--background`.
+- **Accent (honey gold in Parchment and Charcoal):** `--accent`, with `--accent-subtle` / `--accent-surface` / `--accent-border` tints for hover, selection and today. Text on a solid accent uses `--background`.
 - **Neutrals:** `--background` (page), `--card` / `--task-surface` (raised), `--surface-inset` (fields, inactive toggles), `--surface-hover`, `--surface-faint` (out-of-month calendar days), `--border`.
 - **Semantic:** `--red` for overdue and destructive actions, `--green` for the sync dot, `--event` for subscribed calendar events and `@time` highlights.
 - **Contrast:** `--muted`, `--accent`, `--red` and `--event` meet 4.5:1 for small text on every light surface, including `--surface-inset`; check new pairs in both themes.
-- **Theme:** follows the system until the user picks one; `src/utils/theme.ts` sets it before first paint.
+- **Themes:** picked from the Theme button in Settings. System is the default: Parchment in light mode, Material in dark. Also available: Solarized Light, GitHub Light, Catppuccin Latte and Rosé Pine Dawn; Dracula, Tokyo Night, Gruvbox, Matrix and Charcoal (the original dark palette). `src/utils/theme.ts` lists them and sets the theme before first paint.
+- **Adding a theme:** add it to `THEMES` and give it a block in `globals.css` with its colors. `theme.test.ts` fails if it has no block or any text pair falls under 4.5:1.
 
 **The Pocket Journal Rule.** The accent is rare. When everything is highlighted, nothing is.
 

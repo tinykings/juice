@@ -1,62 +1,62 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { DARK_QUERY, Theme, THEME_COLORS, THEME_STORAGE_KEY as STORAGE_KEY } from '@/utils/theme';
+import {
+  DARK_QUERY,
+  getTheme,
+  parseThemeChoice,
+  resolveTheme,
+  ThemeChoice,
+  ThemeId,
+  THEME_STORAGE_KEY as STORAGE_KEY,
+} from '@/utils/theme';
 
 interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
+  /** The theme on screen. */
+  theme: ThemeId;
+  /** What the user picked, which may be following the system. */
+  choice: ThemeChoice;
+  setChoice: (choice: ThemeChoice) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function systemTheme(): Theme {
-  return window.matchMedia(DARK_QUERY).matches ? 'dark' : 'light';
-}
-
-function storedTheme(): Theme | null {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return stored === 'light' || stored === 'dark' ? stored : null;
-}
-
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  return storedTheme() ?? systemTheme();
+function systemIsDark(): boolean {
+  return window.matchMedia(DARK_QUERY).matches;
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  const [choice, setChoiceState] = useState<ThemeChoice>(() => (
+    typeof window === 'undefined' ? 'system' : parseThemeChoice(localStorage.getItem(STORAGE_KEY))
+  ));
+  const [isDark, setIsDark] = useState(() => (typeof window === 'undefined' ? false : systemIsDark()));
+  const theme = resolveTheme(choice, isDark);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
-      meta.setAttribute('content', THEME_COLORS[theme]);
+      meta.setAttribute('content', getTheme(theme).background);
     });
   }, [theme]);
 
-  // Follow the system setting until the user picks a theme themselves.
   useEffect(() => {
     const query = window.matchMedia(DARK_QUERY);
-    const handleChange = () => {
-      if (!storedTheme()) setTheme(systemTheme());
-    };
+    const handleChange = () => setIsDark(query.matches);
     query.addEventListener('change', handleChange);
     return () => query.removeEventListener('change', handleChange);
   }, []);
 
-  const toggleTheme = () => {
-    const next: Theme = theme === 'light' ? 'dark' : 'light';
-    // Choosing the system theme goes back to following the system.
-    if (next === systemTheme()) {
+  const setChoice = (next: ThemeChoice) => {
+    if (next === 'system') {
       localStorage.removeItem(STORAGE_KEY);
     } else {
       localStorage.setItem(STORAGE_KEY, next);
     }
-    setTheme(next);
+    setChoiceState(next);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, choice, setChoice }}>
       {children}
     </ThemeContext.Provider>
   );
