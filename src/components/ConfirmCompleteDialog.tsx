@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { Task } from '@/types/task';
 import { parseTaskDate } from '@/utils/taskDate';
 import { splitTaskTitle } from '@/utils/taskTitle';
+import { stripTaskTime } from '@/utils/taskTime';
 
 export default function ConfirmCompleteDialog({
   task,
@@ -69,7 +70,7 @@ export default function ConfirmCompleteDialog({
 
   const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
   const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'No date';
-  const titleParts = splitTaskTitle(task.title);
+  const titleParts = splitTaskTitle(stripTaskTime(task.title) || task.title);
 
   return createPortal(
     <div

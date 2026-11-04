@@ -23,11 +23,11 @@ colors:
     task-surface: "#FFFCF5"
     task-surface-hover: "#F8F1E3"
     surface-inset: "#ECE6DA"
-    muted: "#7E7669"
+    muted: "#6B6357"
     border: "#D6CDBD"
-    accent: "#B7791F"
-    accent-hover: "#935F18"
-    red: "#DC2626"
+    accent: "#8F5C12"
+    accent-hover: "#754A0C"
+    red: "#C81E1E"
 typography:
   family: "Plus Jakarta Sans, system-ui, sans-serif"
   task-title: { size: 17px, weight: 600, lineHeight: 1.35 }
@@ -62,7 +62,8 @@ Tokens live in `src/app/globals.css`. Use them; never hard-code `rgba(255,255,25
 
 - **Accent (honey gold):** `--accent`, with `--accent-subtle` / `--accent-surface` / `--accent-border` tints for hover, selection and today. Text on a solid accent uses `--background`.
 - **Neutrals:** `--background` (page), `--card` / `--task-surface` (raised), `--surface-inset` (fields, inactive toggles), `--surface-hover`, `--surface-faint` (out-of-month calendar days), `--border`.
-- **Semantic:** `--red` for overdue and destructive actions, `--green` for the sync dot, `--event` for subscribed calendar events.
+- **Semantic:** `--red` for overdue and destructive actions, `--green` for the sync dot, `--event` for subscribed calendar events and `@time` highlights.
+- **Contrast:** `--muted`, `--accent`, `--red` and `--event` meet 4.5:1 for small text on every light surface, including `--surface-inset`; check new pairs in both themes.
 - **Theme:** follows the system until the user picks one; `src/utils/theme.ts` sets it before first paint.
 
 **The Pocket Journal Rule.** The accent is rare. When everything is highlighted, nothing is.
@@ -78,32 +79,36 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 
 ## 4. Layout
 
-- **Phone:** single list column, 10–18px side padding, a translucent blurred footer (search, settings, gold `+`) that extends through the home-indicator inset.
+- **Phone and tablet (<1000px):** one column, 10–18px side padding, a translucent blurred footer (search, settings, list/calendar switch, gold `+`) that extends through the home-indicator inset. A phone held sideways gets a full-screen month.
 - **Wide (≥1000px):** the list is a fixed column (`clamp(420px, 42vw, 560px)`) on the left with a 1px right divider; the calendar takes the remaining width on the right. The footer and undo toast align to that column.
 - **Installed PWA:** zoom disabled and scrollbars hidden so it feels native; desktop browsers keep thin scrollbars.
 
 ## 5. Components
 
 ### Task list
-- **Group headers** are plain text, not boxes: Overdue (red), Today, Tomorrow, weekday names for the rest of the week, then month names. Tapping a day header opens the add form for that day (a small `+` marks it). With two or more overdue tasks, Overdue offers "Move all to today".
+- **Group headers** are plain text, not boxes: Overdue (red), Today, Tomorrow, weekday names for the rest of the week, then month names. Tapping a day header opens the add form for that day (a small `+` marks it). Rows sort the same way everywhere: timed tasks by time, then alphabetically; Overdue and month groups sort by date first. With two or more overdue tasks, Overdue offers "Move all to today".
 - **No pinning.** Every new task gets a date. Undated tasks (older pinned ones, or any made in the iOS app) wait under Overdue, after the ones that were due, until they get a date or are done. The `pinned` field stays in the sync format for the iOS app.
-- **Task cards:** `--task-surface`, 1px border, `--radius-md`, 11px padding, 8px apart. Title, optional muted note (text after the first period), then a meta row.
+- **Task cards:** `--task-surface`, 1px border, `--radius-md`, 11px padding, 8px apart. Title, optional muted note (text after the first period), then a meta row. Overdue and month-group cards show their date in the meta row, because their header doesn't (`Oct 28`, `Wed, Nov 18`, `No date`).
 - **Checkbox:** 24px outlined circle (`--checkbox-border`); hover tints to accent; completing fills it with the accent (red if overdue) and draws a check, then the card fades and slides left.
 - **Times** display as `2 pm` / `9:30 am`, read the same way they sort (bare 1–6 is afternoon, 7–11 morning).
-- **Reschedule control:** a borderless chevron. With a mouse it appears only when the task is hovered (always shown on overdue tasks); on touch it's always visible. The menu offers Today, Tomorrow, the next four weekdays, Next week, and Pick a date…, and flips above when there's no room below.
+- **Reschedule control:** a borderless chevron floated beside the title's first line, so longer titles keep the card's full width. With a mouse it appears only when the task is hovered (always shown on overdue tasks); on touch it's always visible. The menu offers Today, Tomorrow, the next four weekdays, Next week, and Pick a date…, and flips above when there's no room below.
 - **Completed** tasks collapse under today; an Undo toast follows each completion.
 
 ### Calendar
-- Day cells are soft filled tiles with no border; today and the selected day get an accent tint and accent border.
+- A sticky bar names the month in view, with previous/next and, away from the current month, Today. Weekday names sit in the bar on desktop.
+- It shows the current month and at least three more with no gaps, past months with open tasks, and any month navigated to; opening scrolls past older months to the current one. Search filters it along with the list.
+- Day cells are soft filled tiles with no border; today and the selected day get an accent tint and accent border. Today's number is solid accent, and chips on a tinted day use `--task-surface` so they stay visible.
 - Desktop weeks are 150px tall when they hold real tasks, 64px when upcoming and empty (recurrence previews alone don't count), and 28px when past and empty.
-- Task chips are 10px / 600 muted text on an inset fill, up to two lines. Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.
+- Task chips are 11px / 600 muted text on an inset fill, up to two lines, led by the time on desktop (10px with no time on narrow screens). Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.
 
 ### Buttons
 - `.btn-accent` (Add / Save / `+`), `.icon-btn` (footer icons), `.btn-soft` (secondary), `.menu-option` (menus). Hover states are CSS only.
 - Elements styled inline get hover from helper classes (`.hover-surface`, `.hover-accent-outline`, `.hover-fill-accent`, `.hover-link`, …). Add `data-active` to skip hover on a selected toggle. Never set hover styles from `onMouseEnter`.
+- Small controls (checkbox, chevron, header `+`, Move all to today) keep their look and get a larger hit area from an `::after`.
+- Only a confirmed destructive action is solid red; Reset App stays quiet until it asks for confirmation.
 
 ### Dialogs
-- Blurred dark backdrop, card panel at `--radius-md`, `--shadow-lg`.
+- Blurred dark backdrop, card panel at `--radius-md`, `--shadow-lg`. Centered with a mouse on wide screens; the add dialog sits at the top on small screens so the keyboard doesn't cover it.
 - Focus moves into the dialog (Cancel for destructive actions), Tab stays inside, Escape closes, and focus returns on close.
 
 ## 6. Do's and Don'ts

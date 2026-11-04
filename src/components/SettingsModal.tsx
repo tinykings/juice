@@ -249,7 +249,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
               )}
-              {theme === 'dark' ? 'Dark' : 'Light'}
+              Theme: {theme === 'dark' ? 'Dark' : 'Light'}
             </button>
             {isBadgeSupported() && (
               <button
@@ -274,7 +274,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     borderRadius: 'var(--radius-sm)',
                     borderColor: badgeEnabled ? 'var(--accent-border)' : 'var(--border)',
                     background: badgeEnabled ? 'var(--accent-surface)' : 'var(--surface-inset)',
-                    color: badgeEnabled ? 'var(--background)' : 'var(--foreground)',
+                    color: badgeEnabled ? 'var(--accent)' : 'var(--foreground)',
                     cursor: 'pointer',
                     height: 42,
                     display: 'flex',
@@ -285,12 +285,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   }}
                   className="hover-surface-accent"
                   data-active={badgeEnabled || undefined}
+                  aria-pressed={badgeEnabled}
               >
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                Notify
+                App badge: {badgeEnabled ? 'On' : 'Off'}
               </button>
             )}
           </div>
@@ -544,8 +545,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div style={{
             marginTop: 14,
             padding: 14,
-            background: 'rgba(255, 107, 107, 0.05)',
-            border: '1px solid rgba(255, 107, 107, 0.18)',
+            border: '1px solid var(--border)',
             borderRadius: 'var(--radius-md)',
           }}>
             <div style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 700 }}>
@@ -561,7 +561,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 style={{
                   flex: 1,
                   height: 40,
-                  border: '1px solid var(--red)',
+                  border: `1px solid ${isConfirmingReset ? 'var(--red)' : 'var(--border)'}`,
                   borderRadius: 'var(--radius-sm)',
                   background: isConfirmingReset ? 'var(--red)' : 'transparent',
                   color: isConfirmingReset ? 'var(--background)' : 'var(--red)',

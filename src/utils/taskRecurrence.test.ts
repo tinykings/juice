@@ -29,6 +29,13 @@ describe('recurrence previews', () => {
     expect(getNextRecurrenceDate('2026-03-10', 'yearly')).toBe('2027-03-10');
   });
 
+  it('adds previews to extra months the caller is already showing', () => {
+    const result = withRecurrencePreviews([recurringTask], new Date(2026, 2, 1), ['2026-04']);
+    const previews = result.filter(task => task.isRecurrencePreview);
+
+    expect(previews.map(task => task.dueDate)).toContain('2026-04-07');
+  });
+
   it('adds marked previews without making a blank future month visible', () => {
     const result = withRecurrencePreviews([recurringTask], new Date(2026, 2, 1));
     const previews = result.filter(task => task.isRecurrencePreview);
