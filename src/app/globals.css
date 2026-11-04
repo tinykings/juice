@@ -2,8 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Each theme is a block of tokens on [data-theme], so a preview tile can set the
+   attribute on itself. :root and Charcoal hold the full set of tokens. */
 :root,
-[data-theme="dark"] {
+[data-theme="charcoal"] {
+  color-scheme: dark;
   /* Base */
   --background: #0f0e0c;
   --foreground: #F3F0EA;
@@ -71,7 +74,8 @@
   --event: #7fa7d9;
 }
 
-[data-theme="light"] {
+[data-theme="parchment"] {
+  color-scheme: light;
   --background: #F4F1EA;
   --foreground: #1A1712;
   --card: #FFFCF5;
@@ -126,6 +130,187 @@
   --calendar-text: #1A1A18;
   --calendar-event-border: rgba(183, 121, 31, 0.42);
   --event: #2F5F96;
+}
+
+/* Popular palettes, adjusted where needed so small text meets 4.5:1 (see
+   theme.test.ts). They set their colors; the tints below are derived from them. */
+[data-theme="solarized-light"] {
+  --background: #FDF6E3;
+  --foreground: #073642;
+  --card: #FFFBEE;
+  --task-surface: #FFFBEE;
+  --task-surface-hover: #F7F0DC;
+  --surface-inset: #EEE8D5;
+  --muted: #4F6469;
+  --accent: #1B659C;
+  --accent-hover: #14507D;
+  --red: #C22B28;
+  --green: #5F7100;
+  --event: #6C4FB0;
+}
+
+[data-theme="github-light"] {
+  --background: #F6F8FA;
+  --foreground: #1F2328;
+  --card: #FFFFFF;
+  --task-surface: #FFFFFF;
+  --task-surface-hover: #F3F5F7;
+  --surface-inset: #EFF2F5;
+  --muted: #59636E;
+  --accent: #0969DA;
+  --accent-hover: #0757B5;
+  --red: #CF222E;
+  --green: #1A7F37;
+  --event: #7A45D6;
+}
+
+[data-theme="catppuccin-latte"] {
+  --background: #EFF1F5;
+  --foreground: #4C4F69;
+  --card: #F9FAFC;
+  --task-surface: #F9FAFC;
+  --task-surface-hover: #F1F3F7;
+  --surface-inset: #E6E9EF;
+  --muted: #5C5F77;
+  --accent: #7F32E8;
+  --accent-hover: #6A26C8;
+  --red: #CC0E37;
+  --green: #40A02B;
+  --event: #1A5AD8;
+}
+
+[data-theme="rose-pine-dawn"] {
+  --background: #FAF4ED;
+  --foreground: #575279;
+  --card: #FFFAF3;
+  --task-surface: #FFFAF3;
+  --task-surface-hover: #F6EDE4;
+  --surface-inset: #F2E9E1;
+  --muted: #6A6585;
+  --accent: #286983;
+  --accent-hover: #1F5569;
+  --red: #A04A64;
+  --green: #286983;
+  --event: #6D5A99;
+}
+
+[data-theme="material"] {
+  --background: #263238;
+  --foreground: #EEFFFF;
+  --card: #2E3C43;
+  --task-surface: #2E3C43;
+  --task-surface-hover: #35454D;
+  --surface-inset: #34434A;
+  --muted: #B0BEC5;
+  --accent: #80CBC4;
+  --accent-hover: #A7E0DA;
+  --red: #FF9288;
+  --green: #C3E88D;
+  --event: #8AB0FF;
+}
+
+[data-theme="dracula"] {
+  --background: #282A36;
+  --foreground: #F8F8F2;
+  --card: #303341;
+  --task-surface: #343746;
+  --task-surface-hover: #3B3E50;
+  --surface-inset: #383B4C;
+  --muted: #B6BDD6;
+  --accent: #BD93F9;
+  --accent-hover: #CFB0FF;
+  --red: #FF8585;
+  --green: #50FA7B;
+  --event: #8BE9FD;
+}
+
+[data-theme="tokyo-night"] {
+  --background: #1A1B26;
+  --foreground: #C0CAF5;
+  --card: #1F2335;
+  --task-surface: #24283B;
+  --task-surface-hover: #292E42;
+  --surface-inset: #2C3147;
+  --muted: #A9B1D6;
+  --accent: #7AA2F7;
+  --accent-hover: #9DBBFA;
+  --red: #F7768E;
+  --green: #9ECE6A;
+  --event: #7DCFFF;
+}
+
+[data-theme="gruvbox"] {
+  --background: #282828;
+  --foreground: #EBDBB2;
+  --card: #32302F;
+  --task-surface: #3C3836;
+  --task-surface-hover: #45403D;
+  --surface-inset: #45403D;
+  --muted: #D5C4A1;
+  --accent: #FABD2F;
+  --accent-hover: #FFD35C;
+  --red: #FF8E7A;
+  --green: #B8BB26;
+  --event: #A9C5BB;
+}
+
+[data-theme="matrix"] {
+  --background: #050A06;
+  --foreground: #B8FFC8;
+  --card: #0B140D;
+  --task-surface: #0E1A11;
+  --task-surface-hover: #14241A;
+  --surface-inset: #16291B;
+  --muted: #6FD98A;
+  --accent: #00FF41;
+  --accent-hover: #5CFF85;
+  --red: #FF6B6B;
+  --green: #00FF41;
+  --event: #5CE1E6;
+}
+
+/* Tints and surfaces for all the palettes above. */
+[data-theme="solarized-light"],
+[data-theme="github-light"],
+[data-theme="catppuccin-latte"],
+[data-theme="rose-pine-dawn"],
+[data-theme="material"],
+[data-theme="dracula"],
+[data-theme="tokyo-night"],
+[data-theme="gruvbox"],
+[data-theme="matrix"] {
+  --accent-subtle: color-mix(in srgb, var(--accent) 9%, transparent);
+  --accent-surface: color-mix(in srgb, var(--accent) 13%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 36%, transparent);
+  --yellow: var(--accent);
+  --surface-raised: var(--card);
+  --surface-hover: var(--task-surface-hover);
+  --surface-faint: color-mix(in srgb, var(--foreground) 3%, var(--background));
+  --muted-light: color-mix(in srgb, var(--foreground) 8%, transparent);
+  --border: color-mix(in srgb, var(--foreground) 14%, transparent);
+  --hover-ring: color-mix(in srgb, var(--foreground) 6%, transparent);
+  --checkbox-border: color-mix(in srgb, var(--foreground) 36%, transparent);
+  --calendar-month-start: var(--task-surface-hover);
+  --calendar-bg: var(--background);
+  --calendar-text: var(--foreground);
+  --calendar-event-border: color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+/* The light palettes share Parchment's corners, sizes and softer shadows. */
+[data-theme="solarized-light"],
+[data-theme="github-light"],
+[data-theme="catppuccin-latte"],
+[data-theme="rose-pine-dawn"] {
+  color-scheme: light;
+  --shadow-sm: 0 1px 2px rgba(77, 54, 28, 0.08), 0 0 0 1px rgba(77, 54, 28, 0.02);
+  --shadow-md: 0 12px 32px rgba(77, 54, 28, 0.12);
+  --shadow-lg: 0 24px 60px rgba(77, 54, 28, 0.18);
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --text-meta: 12px;
 }
 
 * {
@@ -207,7 +392,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Selection */
 ::selection {
   background-color: var(--accent);
-  color: white;
+  color: var(--background);
 }
 
 /* Safe area padding */
