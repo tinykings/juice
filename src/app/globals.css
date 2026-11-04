@@ -538,6 +538,22 @@ input, textarea, button {
   opacity: 0.6;
 }
 
+.add-task-btn {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 22.5%;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: transform 0.15s ease-out;
+}
+
+.add-task-btn:active {
+  transform: scale(0.95);
+}
+
 .icon-btn {
   display: flex;
   align-items: center;
@@ -689,6 +705,10 @@ input, textarea, button {
 }
 
 @media (hover: hover) {
+  .add-task-btn:hover {
+    transform: scale(1.05);
+  }
+
   .btn-accent:not(:disabled):hover {
     background: var(--accent-hover);
     border-color: var(--accent-hover);

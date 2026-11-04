@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCalendarFeed } from '@/context/CalendarFeedContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useAppBadge } from '@/hooks/useAppBadge';
 import { Task } from '@/types/task';
@@ -18,6 +20,7 @@ import CalendarView from '@/components/CalendarView';
 import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
 import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
+import { getTheme } from '@/utils/theme';
 import { compareTasksByTime } from '@/utils/taskTime';
 import { getTaskDisplayTitle } from '@/utils/taskTitle';
 
@@ -37,6 +40,7 @@ interface TaskGroup {
 export default function HomePage() {
   const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
   const { badgeEnabled } = useSettings();
+  const { theme } = useTheme();
   useServiceWorker();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1119,15 +1123,16 @@ Back
               openTaskForm(date, null, 'calendar-overlay');
             }}
             aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
-            className="btn-accent"
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 'var(--radius-md)',
-              boxShadow: 'var(--shadow-md)',
-            }}
+            className="add-task-btn"
           >
-            <AddOrSyncIcon isSyncing={isSyncing} />
+            <Image
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/add-task-${getTheme(theme).mode}.png`}
+              alt=""
+              width={44}
+              height={44}
+              style={{ display: 'block', opacity: isSyncing ? 0.35 : 1 }}
+            />
+            {isSyncing && <SyncSpinner />}
           </button>
         </div>
       </footer>
@@ -1201,18 +1206,10 @@ Back
   );
 }
 
-function AddOrSyncIcon({ isSyncing }: { isSyncing: boolean }) {
-  if (isSyncing) {
-    return (
-      <svg className="sync-spinner" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="36 16" />
-      </svg>
-    );
-  }
-
+function SyncSpinner() {
   return (
-    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" />
+    <svg className="sync-spinner" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', inset: 0, margin: 'auto', color: 'var(--foreground)' }}>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="36 16" />
     </svg>
   );
 }

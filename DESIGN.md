@@ -45,7 +45,7 @@ rounded:
 
 ## 1. Overview
 
-Juice should feel like a pocket journal you reach for every morning: compact, warm, and quiet. A warm charcoal (dark) or parchment (light) base carries the screen, and a single honey-gold accent marks the few things that matter: the add button, today, and focus.
+Juice should feel like a pocket journal you reach for every morning: compact, warm, and quiet. A warm charcoal (dark) or parchment (light) base carries the screen, and a single honey-gold accent marks the few things that matter: today and focus. The add button is the rainbow checkmark, the one place with more than one color.
 
 It rejects the enterprise task-manager look: no kanban boards, no dense tables, no status pipelines. The app should get quieter the more you use it.
 
@@ -80,7 +80,7 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 
 ## 4. Layout
 
-- **Phone and tablet (<1000px):** one column, 10–18px side padding, a translucent blurred footer (search, settings, list/calendar switch, gold `+`) that extends through the home-indicator inset. A phone held sideways gets a full-screen month.
+- **Phone and tablet (<1000px):** one column, 10–18px side padding, a translucent blurred footer (search, settings, list/calendar switch, add button) that extends through the home-indicator inset. A phone held sideways gets a full-screen month.
 - **Wide (≥1000px):** the list is a fixed column (`clamp(420px, 42vw, 560px)`) on the left with a 1px right divider; the calendar takes the remaining width on the right. The footer and undo toast align to that column.
 - **Installed PWA:** zoom disabled and scrollbars hidden so it feels native; desktop browsers keep thin scrollbars.
 
@@ -103,7 +103,7 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 - Task chips are 11px / 600 muted text on an inset fill, up to two lines, led by the time on desktop (10px with no time on narrow screens). Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.
 
 ### Buttons
-- `.btn-accent` (Add / Save / `+`), `.icon-btn` (footer icons), `.btn-soft` (secondary), `.menu-option` (menus). Hover states are CSS only.
+- `.add-task-btn` (the footer's rainbow checkmark: `add-task-light.png` or `add-task-dark.png`, by the theme's mode), `.btn-accent` (Add / Save), `.icon-btn` (footer icons), `.btn-soft` (secondary), `.menu-option` (menus). Hover states are CSS only.
 - Elements styled inline get hover from helper classes (`.hover-surface`, `.hover-accent-outline`, `.hover-fill-accent`, `.hover-link`, …). Add `data-active` to skip hover on a selected toggle. Never set hover styles from `onMouseEnter`.
 - Small controls (checkbox, chevron, header `+`, Move all to today) keep their look and get a larger hit area from an `::after`.
 - Only a confirmed destructive action is solid red; Reset App stays quiet until it asks for confirmation.
