@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description: "A beautiful task management app",
   manifest: `${basePath}/manifest.json`,
   icons: {
-    icon: `${basePath}/icon-180.png`,
+    icon: `${basePath}/favicon-48.png`,
     apple: `${basePath}/icon-180.png`,
   },
   appleWebApp: {
