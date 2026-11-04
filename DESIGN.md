@@ -103,7 +103,7 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 - Task chips are 11px / 600 muted text on an inset fill, up to two lines, led by the time on desktop (10px with no time on narrow screens). Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.
 
 ### Buttons
-- `.add-task-btn` (the footer's rainbow checkmark: `add-task-light.png` or `add-task-dark.png`, by the theme's mode), `.btn-accent` (Add / Save), `.icon-btn` (footer icons), `.btn-soft` (secondary), `.menu-option` (menus). Hover states are CSS only.
+- `.add-task-btn` (the footer's rainbow checkmark: `add-task.png`, transparent, the same in every theme), `.btn-accent` (Add / Save), `.icon-btn` (footer icons), `.btn-soft` (secondary), `.menu-option` (menus). Hover states are CSS only.
 - Elements styled inline get hover from helper classes (`.hover-surface`, `.hover-accent-outline`, `.hover-fill-accent`, `.hover-link`, …). Add `data-active` to skip hover on a selected toggle. Never set hover styles from `onMouseEnter`.
 - Small controls (checkbox, chevron, header `+`, Move all to today) keep their look and get a larger hit area from an `::after`.
 - Only a confirmed destructive action is solid red; Reset App stays quiet until it asks for confirmation.

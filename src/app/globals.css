@@ -545,7 +545,6 @@ input, textarea, button {
   height: 44px;
   padding: 0;
   border-radius: 22.5%;
-  box-shadow: var(--shadow-md);
   cursor: pointer;
   transition: transform 0.15s ease-out;
 }
