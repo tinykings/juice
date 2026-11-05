@@ -97,7 +97,7 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 
 ### Calendar
 - A sticky bar names the month in view, with Today when away from the current month. Weekday names sit in the bar on desktop. Months are reached by scrolling, not arrows.
-- It starts with the previous month, the current month and at least three more with no gaps, plus past months with open tasks; opening scrolls to the current month. More months load as you near either end. Every task and event shows on its day, and a day grows to fit them. Search filters it along with the list.
+- It starts at the current month, which is as far up as it scrolls, with at least three more after it and no gaps; overdue tasks from earlier months stay in the list. More months load as you near the bottom. Every task and event shows on its day, and a day grows to fit them. Search filters it along with the list.
 - Day cells are soft filled tiles with no border; today and the selected day get an accent tint and accent border. Today's number is solid accent, and chips on a tinted day use `--task-surface` so they stay visible.
 - Desktop weeks are 150px tall when they hold real tasks, 64px when upcoming and empty (recurrence previews alone don't count), and 28px when past and empty.
 - Task chips are 11px / 600 muted text on an inset fill, up to two lines, led by the time on desktop (10px with no time on narrow screens). Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.

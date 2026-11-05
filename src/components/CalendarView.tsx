@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
-  addMonths,
   format,
   startOfMonth,
   endOfMonth,
@@ -39,7 +38,7 @@ const DESKTOP_EMPTY_DAY_MIN_HEIGHT = 64;
 const MOBILE_DAY_MIN_HEIGHT = 88;
 const MOBILE_COMPRESSED_DAY_MIN_HEIGHT = 24;
 const FULL_SCREEN_DAY_MIN_HEIGHT = 60;
-// How close to either end of the loaded months, in pixels, before more are added.
+// How close to the end of the loaded months, in pixels, before more are added.
 const LOAD_MONTHS_MARGIN = 800;
 
 export default function CalendarView({
@@ -66,12 +65,7 @@ export default function CalendarView({
   const barRef = useRef<HTMLDivElement | null>(null);
   // Month to scroll to after the next render. Starts on the current month, past any older overdue months.
   const pendingScrollRef = useRef<Date | null>(startOfMonth(new Date()));
-  // Starts a month back, so there's always something to scroll up into.
-  const [navigatedStart, setNavigatedStart] = useState<Date>(() => startOfMonth(addMonths(new Date(), -1)));
   const [navigatedEnd, setNavigatedEnd] = useState<Date | null>(null);
-  // Set while months are added above, so what's on screen stays put.
-  const heightBeforePrependRef = useRef<number | null>(null);
-  const lastScrollTopRef = useRef(0);
   const [navigationCount, setNavigationCount] = useState(0);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
 
@@ -84,8 +78,8 @@ export default function CalendarView({
   const now = useMemo(() => currentDate ?? new Date(), [currentDate]);
 
   const months = useMemo(
-    () => getCalendarMonths(realTasks, now, navigatedStart, navigatedEnd),
-    [realTasks, now, navigatedStart, navigatedEnd]
+    () => getCalendarMonths(realTasks, now, navigatedEnd),
+    [realTasks, now, navigatedEnd]
   );
 
   const tasksByDate = useMemo(() => {
@@ -140,16 +134,6 @@ export default function CalendarView({
     if (month) setVisibleMonth(current => (isSameMonth(current, month) ? current : month));
   }, [isMobileCalendar]);
 
-  // Keep the view steady when months are added above it.
-  useLayoutEffect(() => {
-    const heightBefore = heightBeforePrependRef.current;
-    const scroller = rootRef.current?.closest('.app-scroll');
-    if (heightBefore === null || !scroller) return;
-    heightBeforePrependRef.current = null;
-    scroller.scrollTop += scroller.scrollHeight - heightBefore;
-    lastScrollTopRef.current = scroller.scrollTop;
-  }, [months]);
-
   useEffect(() => {
     const scroller = rootRef.current?.closest('.app-scroll');
     if (!scroller) return;
@@ -160,12 +144,6 @@ export default function CalendarView({
         const end = getNextMonthsEnd(months, now);
         setNavigatedEnd(previous => (previous && !isBefore(previous, end) ? previous : end));
       }
-      // Only when heading up, so the first month's position on opening doesn't trigger it.
-      if (scrollTop < lastScrollTopRef.current && scrollTop < LOAD_MONTHS_MARGIN && heightBeforePrependRef.current === null) {
-        heightBeforePrependRef.current = scrollHeight;
-        setNavigatedStart(addMonths(months[0], -1));
-      }
-      lastScrollTopRef.current = scrollTop;
     };
 
     const update = () => {

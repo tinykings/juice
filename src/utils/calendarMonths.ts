@@ -8,22 +8,22 @@ export const MONTHS_ALWAYS_AHEAD = 3;
 export const MAX_FILLED_MONTHS_AHEAD = 12;
 
 /**
- * Months the calendar shows, oldest first: past months with open tasks, the
- * current month onward without gaps, and any months scrolled to.
+ * Months the calendar shows, oldest first: always starting at the current month,
+ * then onward without gaps, plus any months scrolled to. Overdue tasks from
+ * earlier months stay in the list instead.
  */
 export function getCalendarMonths(
   tasks: Task[],
   now: Date,
-  navigatedStart: Date | null = null,
   navigatedEnd: Date | null = null
 ): Date[] {
   const current = startOfMonth(now);
   const taskMonths = tasks
     .filter(task => !task.completed && task.dueDate)
-    .map(task => startOfMonth(parseTaskDate(task.dueDate)));
+    .map(task => startOfMonth(parseTaskDate(task.dueDate)))
+    .filter(month => !isBefore(month, current));
 
   const latest = (dates: Date[]) => dates.reduce((a, b) => (isAfter(b, a) ? b : a));
-  const earliest = (dates: Date[]) => dates.reduce((a, b) => (isBefore(b, a) ? b : a));
 
   const furthestFilledTask = taskMonths.filter(month => !isAfter(month, addMonths(current, MAX_FILLED_MONTHS_AHEAD)));
   const end = latest([
@@ -31,10 +31,9 @@ export function getCalendarMonths(
     ...furthestFilledTask,
     ...(navigatedEnd ? [startOfMonth(navigatedEnd)] : []),
   ]);
-  const start = earliest([current, ...(navigatedStart ? [startOfMonth(navigatedStart)] : [])]);
 
   const months = new Map<string, Date>();
-  for (const month of [...eachMonthOfInterval({ start, end }), ...taskMonths]) {
+  for (const month of [...eachMonthOfInterval({ start: current, end }), ...taskMonths]) {
     months.set(format(month, 'yyyy-MM'), month);
   }
 

@@ -41,20 +41,16 @@ describe('getCalendarMonths', () => {
     expect(months.at(-1)).toBe('2030-06');
   });
 
-  it('keeps past months with open tasks without filling the gap', () => {
+  it('starts at the current month even with overdue tasks from earlier months', () => {
     const months = keys(getCalendarMonths([task('2026-07-10')], NOW));
-    expect(months.slice(0, 2)).toEqual(['2026-07', '2026-11']);
+    expect(months[0]).toBe('2026-11');
+    expect(months).not.toContain('2026-07');
   });
 
-  it('ignores completed tasks', () => {
-    expect(keys(getCalendarMonths([task('2026-07-10', { completed: true })], NOW))[0]).toBe('2026-11');
-  });
-
-  it('includes months the user navigated to', () => {
-    const months = keys(getCalendarMonths([], NOW, new Date(2026, 8, 1), new Date(2027, 3, 1)));
-    expect(months[0]).toBe('2026-09');
+  it('includes months scrolled to', () => {
+    const months = keys(getCalendarMonths([], NOW, new Date(2027, 3, 1)));
+    expect(months[0]).toBe('2026-11');
     expect(months.at(-1)).toBe('2027-04');
-    expect(months).toContain('2026-10');
   });
 });
 
