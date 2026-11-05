@@ -1,4 +1,9 @@
-const CACHE_NAME = 'juice-v13.1';
+// Both filled in by scripts/postbuild.mjs. A new build gets a new cache, and
+// activating it removes the old one, so old hashed files don't pile up.
+const BUILD_ID = 'dev';
+const BUILD_ASSETS = [];
+
+const CACHE_NAME = `juice-${BUILD_ID}`;
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -9,7 +14,8 @@ const STATIC_ASSETS = [
   './icon-maskable-192.png',
   './icon-maskable-512.png',
   './favicon-48.png',
-  './add-task.png'
+  './add-task.png',
+  ...BUILD_ASSETS
 ];
 
 // Install event - cache static assets

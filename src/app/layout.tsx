@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { TaskProvider } from "@/context/TaskContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -9,9 +9,11 @@ import { THEME_COLORS, themeBootScript } from "@/utils/theme";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Self-hosted so a build never depends on reaching Google Fonts. A variable font,
+// so in-between weights like 650 render as written.
+const plusJakarta = localFont({
+  src: "./fonts/PlusJakartaSans-latin-variable.woff2",
+  weight: "200 800",
   variable: "--font-body",
   display: "swap",
 });
@@ -34,8 +36,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
