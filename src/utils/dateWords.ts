@@ -1,4 +1,5 @@
 import { startOfDay, addDays, addMonths, startOfMonth } from 'date-fns';
+import { findNoteSeparator } from '@/utils/taskTitle';
 
 export interface DateWordMatch {
   word: string;
@@ -137,9 +138,9 @@ export function findDateWord(title: string): DateWordMatch | null {
   return earliest;
 }
 
-/** Like findDateWord, but ignores the note (text after the first period). */
+/** Like findDateWord, but ignores the note (see findNoteSeparator). */
 export function findDateWordInTitle(value: string): DateWordMatch | null {
-  const separatorIndex = value.indexOf('.');
+  const separatorIndex = findNoteSeparator(value);
   return findDateWord(separatorIndex === -1 ? value : value.slice(0, separatorIndex));
 }
 

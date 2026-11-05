@@ -1,8 +1,25 @@
-import { addDays, addMonths, addWeeks, addYears } from 'date-fns';
+import { addDays, addMonths, addWeeks, addYears, getDaysInMonth, setDate } from 'date-fns';
 import { RecurrenceType, Task } from '@/types/task';
 import { formatTaskDate, normalizeTaskDate, parseTaskDate } from '@/utils/taskDate';
 
-export function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceType): string {
+/**
+ * The day of the month a monthly or yearly series aims for. A task on the 31st
+ * lands on Feb 28 and returns to Mar 31 because the occurrence remembers 31 in
+ * `recurrenceDay`. A stored day only counts while the date is that month's last
+ * day; any other date means the task was moved, so its own day takes over.
+ */
+export function getRecurrenceAnchorDay(dueDate: string, recurrenceDay?: number): number {
+  const date = parseTaskDate(dueDate);
+  const day = date.getDate();
+  const isValid = Number.isInteger(recurrenceDay) && recurrenceDay! > day && recurrenceDay! <= 31;
+  return isValid && day === getDaysInMonth(date) ? recurrenceDay! : day;
+}
+
+function onAnchorDay(date: Date, anchorDay?: number): Date {
+  return anchorDay ? setDate(date, Math.min(anchorDay, getDaysInMonth(date))) : date;
+}
+
+export function getNextRecurrenceDate(currentDate: string, recurrenceType: RecurrenceType, anchorDay?: number): string {
   const date = parseTaskDate(currentDate);
 
   switch (recurrenceType) {
@@ -11,9 +28,9 @@ export function getNextRecurrenceDate(currentDate: string, recurrenceType: Recur
     case 'weekly':
       return formatTaskDate(addWeeks(date, 1));
     case 'monthly':
-      return formatTaskDate(addMonths(date, 1));
+      return formatTaskDate(onAnchorDay(addMonths(date, 1), anchorDay));
     case 'yearly':
-      return formatTaskDate(addYears(date, 1));
+      return formatTaskDate(onAnchorDay(addYears(date, 1), anchorDay));
     default:
       return normalizeTaskDate(currentDate);
   }
@@ -26,13 +43,14 @@ export function getNextRecurrenceDate(currentDate: string, recurrenceType: Recur
 export function getNextRecurrenceDateAfterCompletion(
   currentDate: string,
   recurrenceType: RecurrenceType,
-  now = new Date()
+  now = new Date(),
+  anchorDay?: number
 ): string {
   const today = formatTaskDate(now);
-  let nextDate = getNextRecurrenceDate(currentDate, recurrenceType);
+  let nextDate = getNextRecurrenceDate(currentDate, recurrenceType, anchorDay);
 
   for (let step = 0; step < 100_000 && nextDate <= today; step += 1) {
-    const following = getNextRecurrenceDate(nextDate, recurrenceType);
+    const following = getNextRecurrenceDate(nextDate, recurrenceType, anchorDay);
     if (following <= nextDate) break;
     nextDate = following;
   }
@@ -63,10 +81,12 @@ export function findSpawnedRecurrence(tasks: Task[], task: Task): Task | undefin
  * Add read-only recurring previews only within months already visible from
  * real tasks (plus current month and any `extraVisibleMonths`, as yyyy-MM, that
  * the caller is already showing). Previews never make blank future months
- * appear, persist, or sync.
+ * appear, persist, or sync. They only cover days after today: completing an
+ * overdue task skips its missed occurrences, so those days will never exist.
  */
 export function withRecurrencePreviews(tasks: Task[], now = new Date(), extraVisibleMonths: string[] = []): Task[] {
-  const visibleMonths = new Set<string>([formatTaskDate(now).slice(0, 7), ...extraVisibleMonths]);
+  const today = formatTaskDate(now);
+  const visibleMonths = new Set<string>([today.slice(0, 7), ...extraVisibleMonths]);
 
   for (const task of tasks) {
     if (!task.completed && !task.deletedAt && task.dueDate) {
@@ -84,14 +104,15 @@ export function withRecurrencePreviews(tasks: Task[], now = new Date(), extraVis
 
     const taskPreviews: Task[] = [];
     let occurrenceDate = normalizeTaskDate(task.dueDate);
+    const anchorDay = getRecurrenceAnchorDay(occurrenceDate, task.recurrenceDay);
 
     // Limit protects malformed ancient data while allowing over 270 years of daily recurrences.
     for (let occurrence = 0; occurrence < 100_000; occurrence += 1) {
-      const nextDate = getNextRecurrenceDate(occurrenceDate, task.recurrenceType);
+      const nextDate = getNextRecurrenceDate(occurrenceDate, task.recurrenceType, anchorDay);
       if (nextDate <= occurrenceDate || nextDate.slice(0, 7) > lastVisibleMonth) break;
       occurrenceDate = nextDate;
 
-      if (visibleMonths.has(nextDate.slice(0, 7))) {
+      if (nextDate > today && visibleMonths.has(nextDate.slice(0, 7))) {
         taskPreviews.push({
           ...task,
           id: `recurrence-preview:${task.id}:${nextDate}`,

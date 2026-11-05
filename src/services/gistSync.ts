@@ -41,6 +41,14 @@ export class GistNotFoundError extends Error {
   }
 }
 
+/** GitHub couldn't be reached at all, usually because this device is offline. */
+export class GistNetworkError extends Error {
+  constructor() {
+    super("Can't reach GitHub. Your tasks are safe on this device and will sync when you're back online.");
+    this.name = 'GistNetworkError';
+  }
+}
+
 /** GitHub rejected the token: it was revoked or expired, and only signing in again can fix it. */
 export class GistAuthError extends Error {
   constructor() {
@@ -83,7 +91,20 @@ export interface MergeResult {
 
 type TombstoneMap = Record<string, TaskTombstone>;
 
-function normalizeTask(task: Task): Task {
+/** fetch, with connection failures reported as GistNetworkError rather than a bare TypeError. */
+async function gistFetch(url: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new GistNetworkError();
+  }
+}
+
+// GitHub lets browsers reuse API responses for 60 seconds. Merging against a
+// reused copy could overwrite another device's newer save, so always revalidate.
+const FRESH_READ: RequestCache = 'no-cache';
+
+export function normalizeTask(task: Task): Task {
   const dueDate = normalizeTaskDate(task.dueDate);
   const pinned = Boolean(task.pinned) || !dueDate;
   return {
@@ -130,7 +151,7 @@ function comparableTombstone(tombstone: TaskTombstone) {
 }
 
 function normalizeTasks(tasks: Task[]): Task[] {
-  return tasks.map(normalizeTask).filter((task) => !task.deletedAt);
+  return tasks.map((task) => normalizeTask(task)).filter((task) => !task.deletedAt);
 }
 
 function normalizeTombstones(tombstones: TaskTombstone[] = []): TaskTombstone[] {
@@ -427,7 +448,8 @@ async function fetchGist(settings: GistSettings): Promise<{ gist: GistResponse; 
     throw new Error('Gist ID and GitHub token are required');
   }
 
-  const response = await fetch(`${GIST_API_URL}/${settings.gistId}`, {
+  const response = await gistFetch(`${GIST_API_URL}/${settings.gistId}`, {
+    cache: FRESH_READ,
     headers: {
       Authorization: `Bearer ${settings.githubToken}`,
       Accept: 'application/vnd.github+json',
@@ -464,7 +486,7 @@ export async function loadSyncSnapshotFromGist(settings: GistSettings): Promise<
   // Files over about 1 MB come back truncated; fetch the full text.
   let content = tasksFile.content;
   if (tasksFile.truncated && tasksFile.raw_url) {
-    const raw = await fetch(tasksFile.raw_url, { headers: { Authorization: `Bearer ${settings.githubToken}` } });
+    const raw = await gistFetch(tasksFile.raw_url, { cache: FRESH_READ, headers: { Authorization: `Bearer ${settings.githubToken}` } });
     if (raw.status === 401) throw new GistAuthError();
     if (!raw.ok) throw new Error(`Failed to load gist: ${raw.status} ${raw.statusText}`);
     content = await raw.text();
@@ -484,11 +506,6 @@ export async function loadSyncDocumentFromGist(settings: GistSettings): Promise<
   return (await loadSyncSnapshotFromGist(settings)).document;
 }
 
-export async function loadTasksFromGist(settings: GistSettings): Promise<Task[]> {
-  const document = await loadSyncDocumentFromGist(settings);
-  return document.tasks;
-}
-
 export async function saveSyncDocumentToGist(
   document: SyncDocument,
   settings: GistSettings,
@@ -498,7 +515,7 @@ export async function saveSyncDocumentToGist(
     return;
   }
 
-  const response = await fetch(`${GIST_API_URL}/${settings.gistId}`, {
+  const response = await gistFetch(`${GIST_API_URL}/${settings.gistId}`, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${settings.githubToken}`,
@@ -531,17 +548,14 @@ export async function saveSyncDocumentToGist(
   }
 }
 
-export async function saveTasksToGist(tasks: Task[], settings: GistSettings): Promise<void> {
-  await saveSyncDocumentToGist(createSyncDocument(tasks), settings);
-}
-
 export async function findJuiceGist(githubToken: string): Promise<string | null> {
   if (!githubToken) throw new Error('GitHub token is required');
 
   // Gists are returned newest-first. Follow pagination so older Juice installs
   // remain discoverable on a new device.
   for (let page = 1; page <= 10; page += 1) {
-    const response = await fetch(`${GIST_API_URL}?per_page=100&page=${page}`, {
+    const response = await gistFetch(`${GIST_API_URL}?per_page=100&page=${page}`, {
+      cache: FRESH_READ,
       headers: {
         Authorization: `Bearer ${githubToken}`,
         Accept: 'application/vnd.github+json',
@@ -569,7 +583,7 @@ export async function createNewGist(tasks: Task[], githubToken: string, encrypti
     throw new Error('GitHub token is required');
   }
 
-  const response = await fetch(GIST_API_URL, {
+  const response = await gistFetch(GIST_API_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${githubToken}`,

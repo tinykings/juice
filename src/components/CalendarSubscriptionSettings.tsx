@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useCalendarFeed } from '@/context/CalendarFeedContext';
 
 /** Settings panel for this device's subscribed .ics calendar. */
@@ -8,9 +8,12 @@ export default function CalendarSubscriptionSettings() {
   const { calendarUrl, setCalendarUrl, events, status, error, lastFetchedAt, refresh } = useCalendarFeed();
   const [draft, setDraft] = useState(calendarUrl);
 
-  useEffect(() => {
+  // Start over from the saved link whenever it changes.
+  const [savedUrl, setSavedUrl] = useState(calendarUrl);
+  if (savedUrl !== calendarUrl) {
+    setSavedUrl(calendarUrl);
     setDraft(calendarUrl);
-  }, [calendarUrl]);
+  }
 
   const trimmed = draft.trim();
   const isDirty = trimmed !== calendarUrl;

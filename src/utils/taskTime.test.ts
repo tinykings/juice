@@ -17,6 +17,15 @@ describe('formatTaskTime', () => {
     expect(formatTaskTime('Water plants')).toBeNull();
   });
 
+  it.each(['Email bob@123.com', 'Ping @99', 'Ping @12:75', 'Read @2nd chapter'])('finds no time in "%s"', (title) => {
+    expect(formatTaskTime(title)).toBeNull();
+    expect(stripTaskTime(title)).toBe(title);
+  });
+
+  it('still reads a time at the end of a sentence', () => {
+    expect(formatTaskTime('Dentist @9am. Bring the card')).toBe('9 am');
+  });
+
   it('strips the time from the title', () => {
     expect(stripTaskTime('Call @2 dentist')).toBe('Call dentist');
   });

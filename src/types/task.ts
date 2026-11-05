@@ -15,6 +15,8 @@ export interface Task {
   pinned: boolean;
   isRecurring: boolean;
   recurrenceType: RecurrenceType;
+  /** Day of the month a monthly or yearly series returns to after a shorter month. */
+  recurrenceDay?: number;
   tags: string[];
   /** UI-only occurrence projected from an active recurring task. Never persisted. */
   isRecurrencePreview?: boolean;
@@ -25,10 +27,4 @@ export interface Task {
   eventTime?: string;
   /** Start instant used to order calendar events within a day. */
   eventStart?: number;
-}
-
-export interface TaskGroup {
-  label: string;
-  date: string;
-  tasks: Task[];
 }

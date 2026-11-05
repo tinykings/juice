@@ -4,6 +4,7 @@ import {
   findSpawnedRecurrence,
   getNextRecurrenceDate,
   getNextRecurrenceDateAfterCompletion,
+  getRecurrenceAnchorDay,
   withRecurrencePreviews,
 } from './taskRecurrence';
 
@@ -116,5 +117,43 @@ describe('completing recurring tasks', () => {
       [completed, { ...spawned, updatedAt: '2026-03-15T10:00:00.000Z' }],
       completed
     )).toBeUndefined();
+  });
+});
+
+describe('recurrence previews around today', () => {
+  it('previews nothing before or on today for an overdue task', () => {
+    const overdue = { ...recurringTask, dueDate: '2026-03-01', recurrenceType: 'daily' as const };
+    const dates = withRecurrencePreviews([overdue], new Date(2026, 2, 6))
+      .filter(task => task.isRecurrencePreview)
+      .map(task => task.dueDate);
+
+    expect(dates[0]).toBe('2026-03-07');
+    expect(dates.at(-1)).toBe('2026-03-31');
+  });
+});
+
+describe('recurrence anchor day', () => {
+  it('returns to the 31st after a shorter month', () => {
+    const anchor = getRecurrenceAnchorDay('2026-01-31');
+    const february = getNextRecurrenceDate('2026-01-31', 'monthly', anchor);
+    const march = getNextRecurrenceDate(february, 'monthly', anchor);
+
+    expect(february).toBe('2026-02-28');
+    expect(march).toBe('2026-03-31');
+  });
+
+  it('returns to Feb 29 in the next leap year', () => {
+    const anchor = getRecurrenceAnchorDay('2028-02-29');
+    expect(getNextRecurrenceDate('2028-02-29', 'yearly', anchor)).toBe('2029-02-28');
+    expect(getNextRecurrenceDate('2031-02-28', 'yearly', anchor)).toBe('2032-02-29');
+  });
+
+  it('uses a stored day only while the date is the last of its month', () => {
+    expect(getRecurrenceAnchorDay('2026-02-28', 31)).toBe(31);
+    expect(getRecurrenceAnchorDay('2026-02-20', 31)).toBe(20);
+  });
+
+  it('keeps the anchor when skipping missed occurrences', () => {
+    expect(getNextRecurrenceDateAfterCompletion('2026-01-31', 'monthly', new Date(2026, 2, 1), 31)).toBe('2026-03-31');
   });
 });
