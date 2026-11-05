@@ -9,7 +9,7 @@ export const MAX_FILLED_MONTHS_AHEAD = 12;
 
 /**
  * Months the calendar shows, oldest first: past months with open tasks, the
- * current month onward without gaps, and any months the user navigated to.
+ * current month onward without gaps, and any months scrolled to.
  */
 export function getCalendarMonths(
   tasks: Task[],
@@ -39,4 +39,15 @@ export function getCalendarMonths(
   }
 
   return Array.from(months.keys()).sort().map(key => months.get(key)!);
+}
+
+/**
+ * The month to extend to when scrolling down: a couple past the unbroken run from
+ * the current month, so a task years away doesn't fill in everything before it.
+ */
+export function getNextMonthsEnd(months: Date[], now: Date, monthsToAdd = 2): Date {
+  const shown = new Set(months.map(month => format(month, 'yyyy-MM')));
+  let last = startOfMonth(now);
+  while (shown.has(format(addMonths(last, 1), 'yyyy-MM'))) last = addMonths(last, 1);
+  return addMonths(last, monthsToAdd);
 }

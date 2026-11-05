@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { useSettings } from '@/context/SettingsContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useTasks } from '@/context/TaskContext';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import { findOrCreateJuiceGist, loadSyncDocumentFromGist } from '@/services/gistSync';
 import { authorizeWithGitHub, isGitHubOAuthConfigured } from '@/services/githubOAuth';
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
@@ -19,11 +20,18 @@ interface SettingsModalProps {
 }
 
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+  return isOpen ? <SettingsPanel onClose={onClose} /> : null;
+}
+
+function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
   const { theme, choice } = useTheme();
   const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
   const isDarkTheme = getTheme(theme).mode === 'dark';
   const { tasks, syncFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
+  const conflictCount = tasks.filter((task) => task.conflictOf && !task.completed).length;
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalFocus(panelRef, onClose);
   
   const [gistId, setGistId] = useState(gistSettings.gistId);
   const [token, setToken] = useState(gistSettings.githubToken);
@@ -31,14 +39,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Sync local state with persisted settings when modal opens or settings change
-  useEffect(() => {
-    if (isOpen) {
-      setGistId(gistSettings.gistId);
-      setToken(gistSettings.githubToken);
-      setIsConfirmingReset(false);
-    }
-  }, [isOpen, gistSettings.gistId, gistSettings.githubToken]);
+  // Follow the saved settings if they change while open (e.g. sync finds a new Gist).
+  const [savedCredentials, setSavedCredentials] = useState({ gistId: gistSettings.gistId, token: gistSettings.githubToken });
+  if (savedCredentials.gistId !== gistSettings.gistId || savedCredentials.token !== gistSettings.githubToken) {
+    setSavedCredentials({ gistId: gistSettings.gistId, token: gistSettings.githubToken });
+    setGistId(gistSettings.gistId);
+    setToken(gistSettings.githubToken);
+  }
 
   const syncLabel = !isGistConfigured
     ? 'Auto-sync disabled'
@@ -46,24 +53,22 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       ? 'Syncing...'
       : syncStatus === 'error'
         ? 'Sync error'
-        : syncStatus === 'conflict'
-          ? 'Conflict preserved'
+        : conflictCount > 0
+          ? 'Conflict to review'
           : 'Auto-sync enabled';
   const syncDotColor = !isGistConfigured
     ? 'var(--muted)'
     : syncStatus === 'error'
       ? 'var(--red)'
-      : syncStatus === 'conflict'
+      : conflictCount > 0
         ? 'var(--accent)'
         : 'var(--green)';
   const syncDescription = syncError
-    ?? (syncStatus === 'conflict'
-      ? 'Two devices edited the same task, so Juice kept both versions.'
+    ?? (conflictCount > 0
+      ? 'Two devices edited the same task, so Juice kept both versions. Look for "Conflict copy" in your task list to keep or discard each one.'
       : lastSyncedAt
         ? `Last synced ${new Date(lastSyncedAt).toLocaleString()}`
         : 'Tasks will automatically sync to your Gist when changed.');
-
-  if (!isOpen) return null;
 
   const handleResetApp = () => {
     if (!isConfirmingReset) {
@@ -150,7 +155,10 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   return (
-    <div 
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-title"
       style={{
         position: 'fixed',
         inset: 0,
@@ -164,8 +172,11 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div 
+      <div
+        ref={panelRef}
+        tabIndex={-1}
         style={{
+          outline: 'none',
           background: 'var(--card)',
           width: '100%',
           maxWidth: 460,
@@ -185,7 +196,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           padding: '16px 18px',
           borderBottom: '1px solid var(--border)',
         }}>
-          <h2 style={{
+          <h2 id="settings-title" style={{
             fontSize: 20,
             fontWeight: 700,
             margin: 0,
@@ -404,7 +415,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 style={{
                   width: '100%',
                   padding: '0 12px',
-                  fontSize: 15,
+                  fontSize: 16,
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--surface-inset)',
@@ -451,7 +462,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 style={{
                   width: '100%',
                   padding: '0 12px',
-                  fontSize: 15,
+                  fontSize: 16,
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--surface-inset)',

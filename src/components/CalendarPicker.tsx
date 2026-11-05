@@ -90,7 +90,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
   const allDays = eachDayOfInterval({ start: calStart, end: calEnd });
   const today = new Date();
 
-  const displayText = format(selected, 'MMM d, yyyy');
+  const displayText = hasDate ? format(selected, 'MMM d, yyyy') : 'No date';
 
   // Native picker for touch devices
   if (useNative) {
@@ -124,7 +124,7 @@ export default function CalendarPicker({ value, onChange }: CalendarPickerProps)
               border: 'none',
               outline: 'none',
               color: 'var(--foreground)',
-              fontSize: 14,
+              fontSize: 16,
               fontFamily: 'inherit',
               minWidth: hasDate ? 'auto' : 80,
             }}
@@ -299,8 +299,6 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
   isToday: boolean;
   onSelect: (d: Date) => void;
 }) {
-  const [hovered, setHovered] = useState(false);
-
   let bg = 'transparent';
   let color = inMonth ? 'var(--foreground)' : 'var(--muted)';
   let fontWeight = 400;
@@ -310,8 +308,6 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
     bg = 'var(--accent)';
     color = 'var(--background)';
     fontWeight = 700;
-  } else if (hovered && inMonth) {
-    bg = 'var(--muted-light)';
   }
 
   if (isToday && !isSelected) {
@@ -323,8 +319,7 @@ function DayCell({ day, inMonth, isSelected, isToday, onSelect }: {
     <button
       type="button"
       onClick={() => onSelect(day)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className={inMonth && !isSelected ? 'picker-day' : undefined}
       style={{
         width: '100%',
         aspectRatio: '1',

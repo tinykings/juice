@@ -1,35 +1,56 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { format } from 'date-fns';
 import { TaskForm } from './TaskModal';
 import { parseTaskDate } from '@/utils/taskDate';
 import { Task } from '@/types/task';
 import { getTaskDisplayTitle } from '@/utils/taskTitle';
 import { formatTaskTime } from '@/utils/taskTime';
+import { useModalFocus } from '@/hooks/useModalFocus';
 
 export default function CalendarTaskOverlay({
   initialDate,
   isClosing,
   onClose,
-  dayTasks = [],
+  tasksForDay,
   onShowDay,
+  dismissRef,
   formKey = 0,
 }: {
   initialDate: string | null;
   isClosing: boolean;
   onClose: () => void;
-  /** What's already on this day, listed above the form. */
-  dayTasks?: Task[];
-  /** Opens the day in the list, where its tasks can be edited and checked off. */
-  onShowDay?: () => void;
+  /** What's already on a day, listed above the form. */
+  tasksForDay: (day: string) => Task[];
+  /** Opens a day in the list, where its tasks can be edited and checked off. */
+  onShowDay: (day: string) => void;
+  /** Lets tapping away save what was typed. */
+  dismissRef: React.RefObject<(() => void) | null>;
   /** Changes on each open, so reopening during the close animation starts with an empty form. */
   formKey?: number;
 }) {
-  const dateLabel = initialDate === ''
+  const panelRef = useRef<HTMLDivElement>(null);
+  useModalFocus(panelRef);
+
+  // Follows the form: picking another date or typing "tomorrow" moves the header and list with it.
+  const [changedDate, setChangedDate] = useState<string | null>(null);
+  const handleDateChange = useCallback((date: string) => {
+    setChangedDate(date === (initialDate ?? format(new Date(), 'yyyy-MM-dd')) ? null : date);
+  }, [initialDate]);
+  const day = changedDate ?? initialDate;
+  const dayTasks = day ? tasksForDay(day) : [];
+  const dateLabel = day === ''
     ? 'No date'
-    : format(initialDate ? parseTaskDate(initialDate) : new Date(), 'EEEE, MMMM d');
+    : format(day ? parseTaskDate(day) : new Date(), 'EEEE, MMMM d');
+
+  const showDay = () => {
+    if (!day) return;
+    dismissRef.current?.();
+    onShowDay(day);
+  };
+
   const [visualViewport, setVisualViewport] = useState<{ height: number; offsetTop: number } | null>(null);
 
   useEffect(() => {
@@ -76,7 +97,7 @@ export default function CalendarTaskOverlay({
       <button
         type="button"
         aria-label="Close add task"
-        onClick={onClose}
+        onClick={() => dismissRef.current?.()}
         style={{
           position: 'absolute',
           inset: 0,
@@ -88,8 +109,9 @@ export default function CalendarTaskOverlay({
         }}
       />
 
-      <div style={{
+      <div ref={panelRef} tabIndex={-1} style={{
         position: 'relative',
+        outline: 'none',
         width: 'min(100%, 560px)',
         maxHeight: '100%',
         overflowY: 'auto',
@@ -141,7 +163,7 @@ export default function CalendarTaskOverlay({
               <button
                 key={task.id}
                 type="button"
-                onClick={onShowDay}
+                onClick={showDay}
                 title="Show this day in the list"
                 style={{
                   display: 'block',
@@ -156,7 +178,7 @@ export default function CalendarTaskOverlay({
                   fontSize: 14,
                   fontWeight: 600,
                   textAlign: 'left',
-                  cursor: onShowDay ? 'pointer' : 'default',
+                  cursor: 'pointer',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -176,7 +198,7 @@ export default function CalendarTaskOverlay({
             ))}
           </div>
         )}
-        <TaskForm key={formKey} initialDate={initialDate} onClose={onClose} />
+        <TaskForm key={formKey} initialDate={initialDate} onClose={onClose} onDateChange={handleDateChange} dismissRef={dismissRef} isClosing={isClosing} />
       </div>
     </div>,
     document.body

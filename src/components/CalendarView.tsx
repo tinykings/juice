@@ -12,11 +12,10 @@ import {
   isSameMonth,
   isSameDay,
   isBefore,
-  isAfter,
   startOfDay,
 } from 'date-fns';
 import { Task } from '@/types/task';
-import { getCalendarMonths } from '@/utils/calendarMonths';
+import { getCalendarMonths, getNextMonthsEnd } from '@/utils/calendarMonths';
 import { getTaskDisplayTitle } from '@/utils/taskTitle';
 import { parseTaskDate } from '@/utils/taskDate';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
@@ -26,7 +25,9 @@ interface CalendarViewProps {
   tasks: Task[];
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate?: Date | null;
+  /** Landscape phone: the calendar owns the screen, with shorter days to fit more of the month. */
   fullScreen?: boolean;
+  currentDate?: Date;
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -37,14 +38,16 @@ const DESKTOP_COMPRESSED_DAY_MIN_HEIGHT = 28;
 const DESKTOP_EMPTY_DAY_MIN_HEIGHT = 64;
 const MOBILE_DAY_MIN_HEIGHT = 88;
 const MOBILE_COMPRESSED_DAY_MIN_HEIGHT = 24;
-// Months kept below the one navigated to, so it can scroll up to the top of the view.
-const MONTHS_KEPT_BELOW_TARGET = 4;
+const FULL_SCREEN_DAY_MIN_HEIGHT = 60;
+// How close to either end of the loaded months, in pixels, before more are added.
+const LOAD_MONTHS_MARGIN = 800;
 
 export default function CalendarView({
   tasks,
   onDaySelect,
   selectedDate = null,
   fullScreen = false,
+  currentDate,
 }: CalendarViewProps) {
   const [windowWidth, setWindowWidth] = useState(() =>
     typeof window === 'undefined' ? MOBILE_BREAKPOINT : window.innerWidth
@@ -63,8 +66,12 @@ export default function CalendarView({
   const barRef = useRef<HTMLDivElement | null>(null);
   // Month to scroll to after the next render. Starts on the current month, past any older overdue months.
   const pendingScrollRef = useRef<Date | null>(startOfMonth(new Date()));
-  const [navigatedStart, setNavigatedStart] = useState<Date | null>(null);
+  // Starts a month back, so there's always something to scroll up into.
+  const [navigatedStart, setNavigatedStart] = useState<Date>(() => startOfMonth(addMonths(new Date(), -1)));
   const [navigatedEnd, setNavigatedEnd] = useState<Date | null>(null);
+  // Set while months are added above, so what's on screen stays put.
+  const heightBeforePrependRef = useRef<number | null>(null);
+  const lastScrollTopRef = useRef(0);
   const [navigationCount, setNavigationCount] = useState(0);
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(new Date()));
 
@@ -74,14 +81,16 @@ export default function CalendarView({
     [tasks]
   );
 
+  const now = useMemo(() => currentDate ?? new Date(), [currentDate]);
+
   const months = useMemo(
-    () => getCalendarMonths(realTasks, new Date(), navigatedStart, navigatedEnd),
-    [realTasks, navigatedStart, navigatedEnd]
+    () => getCalendarMonths(realTasks, now, navigatedStart, navigatedEnd),
+    [realTasks, now, navigatedStart, navigatedEnd]
   );
 
   const tasksByDate = useMemo(() => {
     const shown = [
-      ...withRecurrencePreviews(realTasks, new Date(), months.map(month => format(month, 'yyyy-MM'))),
+      ...withRecurrencePreviews(realTasks, now, months.map(month => format(month, 'yyyy-MM'))),
       ...tasks.filter(t => t.isCalendarEvent),
     ];
     const map: Record<string, Task[]> = {};
@@ -99,7 +108,7 @@ export default function CalendarView({
         : compareTasksByTime(a, b))
     ));
     return map;
-  }, [realTasks, tasks, months]);
+  }, [realTasks, tasks, months, now]);
 
   const firstMonth = months[0];
   useLayoutEffect(() => {
@@ -131,48 +140,63 @@ export default function CalendarView({
     if (month) setVisibleMonth(current => (isSameMonth(current, month) ? current : month));
   }, [isMobileCalendar]);
 
+  // Keep the view steady when months are added above it.
+  useLayoutEffect(() => {
+    const heightBefore = heightBeforePrependRef.current;
+    const scroller = rootRef.current?.closest('.app-scroll');
+    if (heightBefore === null || !scroller) return;
+    heightBeforePrependRef.current = null;
+    scroller.scrollTop += scroller.scrollHeight - heightBefore;
+    lastScrollTopRef.current = scroller.scrollTop;
+  }, [months]);
+
   useEffect(() => {
     const scroller = rootRef.current?.closest('.app-scroll');
     if (!scroller) return;
-    let frame = requestAnimationFrame(updateVisibleMonth);
+
+    const loadNearbyMonths = () => {
+      const { scrollTop, scrollHeight, clientHeight } = scroller;
+      if (scrollHeight - scrollTop - clientHeight < LOAD_MONTHS_MARGIN) {
+        const end = getNextMonthsEnd(months, now);
+        setNavigatedEnd(previous => (previous && !isBefore(previous, end) ? previous : end));
+      }
+      // Only when heading up, so the first month's position on opening doesn't trigger it.
+      if (scrollTop < lastScrollTopRef.current && scrollTop < LOAD_MONTHS_MARGIN && heightBeforePrependRef.current === null) {
+        heightBeforePrependRef.current = scrollHeight;
+        setNavigatedStart(addMonths(months[0], -1));
+      }
+      lastScrollTopRef.current = scrollTop;
+    };
+
+    const update = () => {
+      updateVisibleMonth();
+      loadNearbyMonths();
+    };
+    let frame = requestAnimationFrame(update);
     const handleScroll = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(updateVisibleMonth);
+      frame = requestAnimationFrame(update);
     };
     scroller.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       cancelAnimationFrame(frame);
       scroller.removeEventListener('scroll', handleScroll);
     };
-  }, [updateVisibleMonth, months, fullScreen]);
+  }, [updateVisibleMonth, months, now]);
 
-  const goToMonth = (target: Date) => {
-    const current = startOfMonth(new Date());
-    if (isBefore(target, current)) {
-      setNavigatedStart(start => (start && !isAfter(start, target) ? start : target));
-    } else {
-      const end = addMonths(target, MONTHS_KEPT_BELOW_TARGET);
-      setNavigatedEnd(previous => (previous && !isBefore(previous, end) ? previous : end));
-    }
+  const goToCurrentMonth = () => {
+    const target = startOfMonth(now);
     pendingScrollRef.current = target;
-    // Set now rather than waiting for the scroll, so quick repeat clicks keep moving.
+    // Set now rather than waiting for the scroll.
     setVisibleMonth(target);
     setNavigationCount(count => count + 1);
   };
 
-  if (fullScreen) {
-    return (
-      <FullScreenMonth
-        tasksByDate={tasksByDate}
-        onDaySelect={onDaySelect}
-        selectedDate={selectedDate}
-      />
-    );
-  }
-
   return (
     <div ref={rootRef} style={{
-      padding: isMobileCalendar ? '8px 10px 110px' : '12px clamp(10px, 2vw, 18px) 120px',
+      padding: fullScreen
+        ? '0 max(8px, env(safe-area-inset-right, 0px)) 24px max(8px, env(safe-area-inset-left, 0px))'
+        : (isMobileCalendar ? '8px 10px 110px' : '12px clamp(10px, 2vw, 18px) 120px'),
       minWidth: 0,
       width: '100%',
       maxWidth: 1120,
@@ -183,47 +207,25 @@ export default function CalendarView({
         top: 0,
         zIndex: 5,
         background: 'var(--background)',
-        padding: 'calc(10px + env(safe-area-inset-top, 0px)) 0 8px',
+        padding: fullScreen
+          ? 'max(6px, env(safe-area-inset-top, 0px)) 0 4px'
+          : 'calc(10px + env(safe-area-inset-top, 0px)) 0 8px',
         marginBottom: 8,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <h3 style={{ flex: 1, minWidth: 0, margin: 0, color: 'var(--foreground)', fontSize: 17, fontWeight: 750, lineHeight: 1.25 }}>
             {format(visibleMonth, 'MMMM yyyy')}
           </h3>
-          {!isSameMonth(visibleMonth, new Date()) && (
+          {!isSameMonth(visibleMonth, now) && (
             <button
               type="button"
               className="icon-btn"
-              onClick={() => goToMonth(startOfMonth(new Date()))}
+              onClick={goToCurrentMonth}
               style={{ height: 36, padding: '0 12px', fontSize: 13, fontWeight: 600, borderRadius: 'var(--radius-sm)' }}
             >
               Today
             </button>
           )}
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="Previous month"
-            title="Previous month"
-            onClick={() => goToMonth(addMonths(visibleMonth, -1))}
-            style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)' }}
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            aria-label="Next month"
-            title="Next month"
-            onClick={() => goToMonth(addMonths(visibleMonth, 1))}
-            style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)' }}
-          >
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.25" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </button>
         </div>
         {!isMobileCalendar && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 8, marginTop: 10 }}>
@@ -249,6 +251,7 @@ export default function CalendarView({
           tasksByDate={tasksByDate}
           onDaySelect={onDaySelect}
           selectedDate={selectedDate}
+          dayMinHeight={fullScreen ? FULL_SCREEN_DAY_MIN_HEIGHT : MOBILE_DAY_MIN_HEIGHT}
         />
       ) : (
         <ContinuousCalendar
@@ -394,7 +397,6 @@ function DayCell({
   isCompressedWeek: boolean;
   isEmptyWeek: boolean;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
   const isTodayCell = isSameDay(day, today);
   const hasTasks = dayTasks.length > 0;
   const isActive = isSelected || isTodayCell;
@@ -403,9 +405,10 @@ function DayCell({
   return (
     <button
       type="button"
+      className="calendar-day"
+      data-active={isActive || undefined}
+      data-ringed="true"
       onClick={() => onDaySelect(day, selectableTasks)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       data-date={dayKey}
       style={{
         display: 'flex',
@@ -420,13 +423,10 @@ function DayCell({
         fontWeight: isActive ? 700 : 500,
         background: isActive
           ? 'var(--accent-subtle)'
-          : (isHovered
-            ? 'var(--task-surface-hover)'
-            : (inVisibleMonth ? 'var(--task-surface)' : 'var(--surface-faint)')),
+          : (inVisibleMonth ? 'var(--task-surface)' : 'var(--surface-faint)'),
         color: inVisibleMonth ? 'var(--foreground)' : 'var(--muted)',
         border: `1px solid ${isActive ? 'var(--accent-border)' : 'transparent'}`,
         borderRadius: 'var(--radius-md)',
-        boxShadow: isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
         cursor: 'pointer',
         textAlign: 'left',
         overflow: 'visible',
@@ -494,11 +494,13 @@ function MobileCalendar({
   tasksByDate,
   onDaySelect,
   selectedDate,
+  dayMinHeight,
 }: {
   months: Date[];
   tasksByDate: Record<string, Task[]>;
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate: Date | null;
+  dayMinHeight: number;
 }) {
   const today = new Date();
 
@@ -511,8 +513,9 @@ function MobileCalendar({
           isFirst={index === 0}
           today={today}
           tasksByDate={tasksByDate}
-            onDaySelect={onDaySelect}
+          onDaySelect={onDaySelect}
           selectedDate={selectedDate}
+          dayMinHeight={dayMinHeight}
         />
       ))}
     </div>
@@ -526,6 +529,7 @@ function MobileMonth({
   tasksByDate,
   onDaySelect,
   selectedDate,
+  dayMinHeight,
 }: {
   month: Date;
   isFirst: boolean;
@@ -533,6 +537,7 @@ function MobileMonth({
   tasksByDate: Record<string, Task[]>;
   onDaySelect: (date: Date, tasks: Task[]) => void;
   selectedDate: Date | null;
+  dayMinHeight: number;
 }) {
   const days = useMemo(() => {
     const calendarStart = startOfWeek(startOfMonth(month));
@@ -621,6 +626,7 @@ function MobileMonth({
                 isToday={isTodayCell}
                 onDaySelect={onDaySelect}
                 isCompressedWeek={compressedWeekRows.has(weekRow)}
+                minHeight={dayMinHeight}
               />
             );
           })}
@@ -639,6 +645,7 @@ function MobileDayButton({
   isToday,
   onDaySelect,
   isCompressedWeek,
+  minHeight,
 }: {
   day: Date;
   dayKey: string;
@@ -648,24 +655,24 @@ function MobileDayButton({
   isToday: boolean;
   onDaySelect: (date: Date, tasks: Task[]) => void;
   isCompressedWeek: boolean;
+  minHeight: number;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
   const hasTasks = dayTasks.length > 0;
 
   return (
     <button
       type="button"
+      className="calendar-day"
+      data-active={isActive || undefined}
       data-date={dayKey}
       onClick={() => onDaySelect(day, dayTasks)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       style={{
         position: 'relative',
-        minHeight: isCompressedWeek ? MOBILE_COMPRESSED_DAY_MIN_HEIGHT : MOBILE_DAY_MIN_HEIGHT,
+        minHeight: isCompressedWeek ? MOBILE_COMPRESSED_DAY_MIN_HEIGHT : minHeight,
         padding: isCompressedWeek ? '3px 2px' : '6px 4px',
         border: `1px solid ${isActive ? 'var(--accent-border)' : 'transparent'}`,
         borderRadius: 'var(--radius-sm)',
-        background: isActive ? 'var(--accent-subtle)' : (isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)'),
+        background: isActive ? 'var(--accent-subtle)' : 'var(--task-surface)',
         color: isActive ? 'var(--accent)' : (inMonth ? 'var(--foreground)' : 'var(--muted)'),
         opacity: inMonth ? 1 : 0.45,
         cursor: 'pointer',
@@ -844,186 +851,6 @@ function CalendarTaskChip({ task, compact = false, isOverdue = false, onTint = f
           </span>
         )}
       </span>
-    </div>
-  );
-}
-
-
-const FULL_SCREEN_LABEL_HEIGHT = 16;
-const FULL_SCREEN_DAY_NUMBER_HEIGHT = 22;
-
-/**
- * Landscape phone layout: one month that fills the screen edge to edge, as many labels per day as
- * fit, and a swipe or the arrows to change month. Matches the iOS app's sideways calendar.
- */
-function FullScreenMonth({
-  tasksByDate,
-  onDaySelect,
-  selectedDate,
-}: {
-  tasksByDate: Record<string, Task[]>;
-  onDaySelect: (date: Date, tasks: Task[]) => void;
-  selectedDate: Date | null;
-}) {
-  const [month, setMonth] = useState(() => startOfMonth(new Date()));
-  const [cellHeight, setCellHeight] = useState(0);
-  const gridRef = useRef<HTMLDivElement | null>(null);
-  const touchStartX = useRef<number | null>(null);
-  const today = new Date();
-
-  const days = useMemo(() => eachDayOfInterval({
-    start: startOfWeek(startOfMonth(month)),
-    end: endOfWeek(endOfMonth(month)),
-  }), [month]);
-  const rows = days.length / 7;
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-    const observer = new ResizeObserver(([entry]) => {
-      setCellHeight((entry.contentRect.height - (rows - 1) * 2) / rows);
-    });
-    observer.observe(grid);
-    return () => observer.disconnect();
-  }, [rows]);
-
-  const fit = Math.max(Math.floor((cellHeight - FULL_SCREEN_DAY_NUMBER_HEIGHT) / FULL_SCREEN_LABEL_HEIGHT), 0);
-  const isCurrentMonth = isSameMonth(month, today);
-
-  const navButton: React.CSSProperties = {
-    width: 32,
-    height: 32,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-sm)',
-    background: 'transparent',
-    color: 'var(--foreground)',
-    cursor: 'pointer',
-    fontSize: 15,
-    fontWeight: 650,
-  };
-
-  return (
-    <div
-      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-      onTouchEnd={(e) => {
-        if (touchStartX.current === null) return;
-        const dx = e.changedTouches[0].clientX - touchStartX.current;
-        touchStartX.current = null;
-        if (Math.abs(dx) > 50) setMonth((m) => addMonths(m, dx < 0 ? 1 : -1));
-      }}
-      style={{
-        height: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        // The grid runs to the bottom edge, like the iOS landscape calendar.
-        padding: 'max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left))',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 4px 4px' }}>
-        <h3 style={{ flex: 1, margin: 0, fontSize: 17, fontWeight: 750, color: 'var(--foreground)' }}>
-          {format(month, 'MMMM yyyy')}
-        </h3>
-        {!isCurrentMonth && (
-          <button type="button" style={{ ...navButton, width: 'auto', padding: '0 10px', fontSize: 13 }} onClick={() => setMonth(startOfMonth(new Date()))}>
-            Today
-          </button>
-        )}
-        <button type="button" aria-label="Previous month" style={navButton} onClick={() => setMonth((m) => addMonths(m, -1))}>‹</button>
-        <button type="button" aria-label="Next month" style={navButton} onClick={() => setMonth((m) => addMonths(m, 1))}>›</button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 2, paddingBottom: 3 }}>
-        {WEEKDAYS.map(day => (
-          <div key={day} style={{ color: 'var(--muted)', fontSize: 10, fontWeight: 700, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            {day.slice(0, 3)}
-          </div>
-        ))}
-      </div>
-
-      <div
-        ref={gridRef}
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-          gap: 2,
-        }}
-      >
-        {days.map((day) => {
-          const key = format(day, 'yyyy-MM-dd');
-          const dayTasks = tasksByDate[key] ?? [];
-          const total = dayTasks.length;
-          // Keep a line for "+n" when not everything fits.
-          const shown = total <= fit ? total : Math.max(fit - 1, 0);
-          const shownTasks = dayTasks.slice(0, shown);
-          const inMonth = isSameMonth(day, month);
-          const isTodayCell = isSameDay(day, today);
-          const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
-
-          return (
-            <button
-              key={key}
-              type="button"
-              data-date={key}
-              onClick={() => onDaySelect(day, dayTasks)}
-              style={{
-                minHeight: 0,
-                minWidth: 0,
-                overflow: 'hidden',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'stretch',
-                justifyContent: 'flex-start',
-                gap: 2,
-                padding: 3,
-                border: `1px solid ${isTodayCell ? 'var(--accent-border)' : (isSelected ? 'var(--muted)' : 'var(--border)')}`,
-                borderRadius: 'var(--radius-xs)',
-                // Days outside the month keep a faint fill so the grid reaches the screen edges.
-                background: isTodayCell ? 'var(--accent-subtle)' : (inMonth ? 'var(--task-surface)' : 'transparent'),
-                color: isTodayCell ? 'var(--accent)' : 'var(--foreground)',
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              <span style={{ fontSize: 11, fontWeight: isTodayCell ? 800 : 650, lineHeight: '14px', opacity: inMonth ? 1 : 0.4 }}>
-                {day.getDate()}
-              </span>
-              {shownTasks.map(task => (
-                <span
-                  key={task.id}
-                  style={{
-                    display: 'block',
-                    padding: '0 3px',
-                    border: `1px ${task.isRecurrencePreview ? 'dashed' : 'solid'} ${task.isCalendarEvent ? 'var(--event)' : 'var(--accent-border)'}`,
-                    borderRadius: 4,
-                    color: task.isCalendarEvent ? 'var(--event)' : 'var(--accent)',
-                    opacity: task.isRecurrencePreview ? 0.6 : 1,
-                    fontSize: 10,
-                    fontWeight: 650,
-                    lineHeight: '12px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {getCalendarTaskTitle(task)}
-                </span>
-              ))}
-              {total > shown && (
-                <span style={{ fontSize: 9, fontWeight: 650, color: 'var(--muted)', lineHeight: '11px' }}>
-                  +{total - shown}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

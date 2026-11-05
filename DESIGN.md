@@ -80,9 +80,9 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 
 ## 4. Layout
 
-- **Phone and tablet (<1000px):** one column, 10–18px side padding, a translucent blurred footer (search, settings, list/calendar switch, add button) that extends through the home-indicator inset. A phone held sideways gets a full-screen month.
+- **Phone and tablet (<1000px):** one column, 10–18px side padding, a translucent blurred footer (search, settings, add button, and a list/calendar switch in narrow desktop windows) that extends through the home-indicator inset. Phones reach the calendar by rotating: held sideways, it fills the screen and scrolls like the rest. A sync problem adds a small notice to the footer that opens Settings.
 - **Wide (≥1000px):** the list is a fixed column (`clamp(420px, 42vw, 560px)`) on the left with a 1px right divider; the calendar takes the remaining width on the right. The footer and undo toast align to that column.
-- **Installed PWA:** zoom disabled and scrollbars hidden so it feels native; desktop browsers keep thin scrollbars.
+- **Installed PWA:** scrollbars hidden so it feels native, with pinch zoom left on for accessibility; desktop browsers keep thin scrollbars.
 
 ## 5. Components
 
@@ -96,8 +96,8 @@ One family, Plus Jakarta Sans. Hierarchy comes from size and weight, not font sw
 - **Completed** tasks collapse under today; an Undo toast follows each completion.
 
 ### Calendar
-- A sticky bar names the month in view, with previous/next and, away from the current month, Today. Weekday names sit in the bar on desktop.
-- It shows the current month and at least three more with no gaps, past months with open tasks, and any month navigated to; opening scrolls past older months to the current one. Search filters it along with the list.
+- A sticky bar names the month in view, with Today when away from the current month. Weekday names sit in the bar on desktop. Months are reached by scrolling, not arrows.
+- It starts with the previous month, the current month and at least three more with no gaps, plus past months with open tasks; opening scrolls to the current month. More months load as you near either end. Every task and event shows on its day, and a day grows to fit them. Search filters it along with the list.
 - Day cells are soft filled tiles with no border; today and the selected day get an accent tint and accent border. Today's number is solid accent, and chips on a tinted day use `--task-surface` so they stay visible.
 - Desktop weeks are 150px tall when they hold real tasks, 64px when upcoming and empty (recurrence previews alone don't count), and 28px when past and empty.
 - Task chips are 11px / 600 muted text on an inset fill, up to two lines, led by the time on desktop (10px with no time on narrow screens). Overdue chips are red; recurrence previews are dashed and faded; subscribed events have a blue left stripe.

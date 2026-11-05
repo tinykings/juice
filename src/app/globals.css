@@ -542,6 +542,73 @@ input, textarea, button {
   opacity: 0.6;
 }
 
+/* Shown in the footer when sync needs attention. */
+.sync-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.sync-notice-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.sync-notice[data-tone="error"] .sync-notice-dot {
+  background: var(--red);
+}
+
+.task-card {
+  background: var(--task-surface);
+}
+
+/* Reaches the editor from the keyboard; the card itself takes taps and clicks. */
+.task-card-open {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.task-checkbox-circle {
+  color: var(--muted);
+}
+
+.task-conflict {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.task-conflict button {
+  position: relative;
+  padding: 4px 8px;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+
 .add-task-btn {
   position: relative;
   display: block;
@@ -714,6 +781,42 @@ input, textarea, button {
 @media (hover: hover) {
   .add-task-btn:hover {
     transform: scale(1.05);
+  }
+
+  .sync-notice:hover {
+    border-color: var(--accent);
+  }
+
+  .task-card:not([data-recurrence-preview]):hover {
+    background: var(--task-surface-hover);
+    box-shadow: 0 0 0 1px var(--hover-ring);
+  }
+
+  .task-checkbox:not(:disabled):hover .task-checkbox-circle {
+    color: var(--accent);
+    background: var(--accent-subtle) !important;
+    box-shadow: 0 0 0 3px var(--hover-ring);
+  }
+
+  .task-checkbox:not(:disabled):not([data-overdue]):hover .task-checkbox-circle {
+    border-color: var(--accent) !important;
+  }
+
+  .task-conflict button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .calendar-day:not([data-active]):hover {
+    background: var(--task-surface-hover) !important;
+  }
+
+  .calendar-day[data-ringed]:hover {
+    box-shadow: 0 0 0 1px var(--hover-ring);
+  }
+
+  .picker-day:hover {
+    background: var(--muted-light) !important;
   }
 
   .btn-accent:not(:disabled):hover {

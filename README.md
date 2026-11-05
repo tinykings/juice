@@ -13,12 +13,12 @@ Tasks are stored in your browser's local storage. Connect a GitHub Gist for opti
 
 - **Task scheduling** — assign due dates and group tasks by overdue, today, this week, and beyond
 - **Recurring tasks** — daily, weekly, monthly, or yearly recurrence
-- **Calendar view** — month grid showing tasks by date
+- **Calendar view** — months that load as you scroll, with every task and event on its day
 - **Search** — filter tasks by title or notes
 - **Completed tasks** — view completions from today
 - **GitHub Gist sync** — two-way sync across devices using a private Gist, shared with the Juice iOS app
 - **Encrypted sync** — optional key you keep in a password manager; the Gist holds only ciphertext
-- **Landscape calendar** — on a phone held sideways, a full-screen month grid
+- **Landscape calendar** — hold a phone sideways to open the calendar full screen
 - **Dark / light theme** — follows system preference, manually overridable
 - **PWA** — installable on mobile and desktop, works offline
 - **App badge** — shows pending task count on the app icon
@@ -70,4 +70,5 @@ cd auth-worker && npm run deploy
 | Key | Action |
 |-----|--------|
 | `N` | New task |
+| `S` | Search |
 | `Escape` | Close modal |

@@ -1,44 +1,45 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import Image from 'next/image';
-import { format, isToday, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
+import { format, addDays, startOfDay, endOfDay, isAfter, isBefore, isSameDay } from 'date-fns';
 import { useTasks } from '@/context/TaskContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useCalendarFeed } from '@/context/CalendarFeedContext';
 import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { useAppBadge } from '@/hooks/useAppBadge';
+import { useViewport } from '@/hooks/useViewport';
 import { Task } from '@/types/task';
 import { TaskForm } from '@/components/TaskModal';
 import SettingsModal from '@/components/SettingsModal';
 import TaskItem from '@/components/TaskItem';
 import CalendarEventItem from '@/components/CalendarEventItem';
-import CompletedTaskItem from '@/components/CompletedTaskItem';
 import ConfirmCompleteDialog from '@/components/ConfirmCompleteDialog';
 import CalendarView from '@/components/CalendarView';
 import CalendarTaskOverlay from '@/components/CalendarTaskOverlay';
+import CaptureTaskPage from '@/components/CaptureTaskPage';
+import AppFooter, { SyncNotice } from '@/components/AppFooter';
+import CompletedTasksSection from '@/components/CompletedTasksSection';
+import GroupHeader from '@/components/GroupHeader';
+import SearchHeader from '@/components/SearchHeader';
+import TaskListEmptyState from '@/components/TaskListEmptyState';
+import UndoToast from '@/components/UndoToast';
 import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
+import { buildTaskGroups, getTaskDateLabel, TaskGroup, withEventsLast } from '@/utils/taskGroups';
 import { withRecurrencePreviews } from '@/utils/taskRecurrence';
 import { compareTasksByTime } from '@/utils/taskTime';
-import { getTaskDisplayTitle } from '@/utils/taskTitle';
 
 // Width of the task list on the left of wide screens; the calendar takes the rest on the right.
 const SPLIT_LIST_WIDTH = 'clamp(420px, 42vw, 560px)';
 
-interface TaskGroup {
-  label: string;
-  /** Short date shown beside the label, e.g. "Nov 4". */
-  detail?: string;
-  tasks: Task[];
-  isToday?: boolean;
-  isOverdue?: boolean;
-  date?: Date;
+function matchesSearch(task: Task, query: string): boolean {
+  return task.title.toLowerCase().includes(query) || (task.notes ?? '').toLowerCase().includes(query);
 }
 
 export default function HomePage() {
-  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing } = useTasks();
+  const { tasks, completeTask, uncompleteTask, updateTask, getCompletedTasks, getTodayTasks, isLoaded, isSyncing, syncStatus } = useTasks();
   const { badgeEnabled } = useSettings();
   useServiceWorker();
+  const { width: windowWidth, isTouch, isLandscapePhone } = useViewport();
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [taskFormPresentation, setTaskFormPresentation] = useState<'inline' | 'calendar-overlay'>('inline');
@@ -51,57 +52,23 @@ export default function HomePage() {
   const [confirmCompleteTask, setConfirmCompleteTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [windowWidth, setWindowWidth] = useState(0);
-  // Phone held sideways: the calendar takes the whole screen, like the iOS app.
-  const [isLandscapePhone, setIsLandscapePhone] = useState(false);
-  const [newTaskUrlMode, setNewTaskUrlMode] = useState<'pending' | 'off' | 'today'>('pending');
-  const [hasAddedTaskFromUrl, setHasAddedTaskFromUrl] = useState(false);
+  const [isCaptureUrl, setIsCaptureUrl] = useState<boolean | null>(null);
   const [undoTask, setUndoTask] = useState<Task | null>(null);
   const undoTimerRef = useRef<number | null>(null);
   const listScrollRef = useRef<HTMLElement | null>(null);
   const inlineCloseTimerRef = useRef<number | null>(null);
   const landscapeCalendarWasAutomaticRef = useRef(false);
+  /** Set by the open task form: saves what was typed and closes it. */
+  const formDismissRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
-      const newTaskEntry = Array.from(params.entries()).find(([key]) => key.toLowerCase() === 'newtask');
-      if (!newTaskEntry) {
-        setNewTaskUrlMode('off');
-        return;
-      }
-
-      setNewTaskUrlMode('today');
+      setIsCaptureUrl(Array.from(params.keys()).some(key => key.toLowerCase() === 'newtask'));
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, []);
-
-  // Track viewport width and PWA landscape mode for responsive layout.
-  useEffect(() => {
-    const updateViewport = () => {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-        Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
-      // Phones and small tablets, installed or in the browser; not a narrow desktop window.
-      const isTouch = window.matchMedia('(pointer: coarse)').matches;
-
-      setWindowWidth(window.innerWidth);
-      setIsLandscapePhone(
-        (isStandalone || isTouch) &&
-        window.matchMedia('(orientation: landscape)').matches &&
-        window.innerWidth < 1000
-      );
-    };
-
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-    window.addEventListener('orientationchange', updateViewport);
-    return () => {
-      window.removeEventListener('resize', updateViewport);
-      window.removeEventListener('orientationchange', updateViewport);
-    };
   }, []);
 
   useEffect(() => {
@@ -121,12 +88,17 @@ export default function HomePage() {
 
   const showSplitView = windowWidth >= 1000;
   const isWideScreen = windowWidth > 600;
+
   const handleSearchClick = useCallback(() => {
-    if (view === 'calendar') {
-      setView('list');
-    }
+    if (view === 'calendar') setView('list');
+    setSelectedDateFilter(null);
     setIsSearchExpanded(true);
   }, [view]);
+
+  const closeSearch = useCallback(() => {
+    setSearchQuery('');
+    setIsSearchExpanded(false);
+  }, []);
 
   useEffect(() => {
     if (view !== 'list' || showSplitView) return;
@@ -141,18 +113,10 @@ export default function HomePage() {
 
   const todayTaskCount = getTodayTasks().length;
   useAppBadge(todayTaskCount, badgeEnabled);
-  // Callback ref focuses search immediately while preserving mobile keyboard user gesture.
-  const searchInputRef = useCallback((node: HTMLInputElement | null) => {
-    if (node) {
-      node.focus();
-    }
-  }, []);
 
-  // Update current date when window gains focus or becomes visible to ensure "Today" is accurate
+  // Keep "Today" accurate: when the app returns to the foreground, and at midnight if it stays open.
   useEffect(() => {
-    const updateDate = () => {
-      setCurrentDate(new Date());
-    };
+    const updateDate = () => setCurrentDate(new Date());
 
     document.addEventListener('visibilitychange', updateDate);
     window.addEventListener('focus', updateDate);
@@ -162,6 +126,14 @@ export default function HomePage() {
       window.removeEventListener('focus', updateDate);
     };
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setCurrentDate(new Date()),
+      endOfDay(currentDate).getTime() - currentDate.getTime() + 1000
+    );
+    return () => window.clearTimeout(timer);
+  }, [currentDate]);
 
   // Project occurrences into months already visible from real tasks. These
   // previews stay derived and never create new calendar months or sync data.
@@ -196,12 +168,13 @@ export default function HomePage() {
     [tasksWithRecurrencePreviews, calendarEventTasks]
   );
 
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+
   // The calendar follows the search too, so both sides show the same tasks.
   const calendarTasks = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return displayTasks;
-    return displayTasks.filter(t => t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query));
-  }, [displayTasks, searchQuery]);
+    if (!trimmedQuery) return displayTasks;
+    return displayTasks.filter(t => matchesSearch(t, trimmedQuery));
+  }, [displayTasks, trimmedQuery]);
 
   // Get all incomplete tasks (filtered by search if query exists)
   const incompleteTasks = useMemo(() => {
@@ -217,30 +190,17 @@ export default function HomePage() {
         if (!selectedDateFilter && isAfter(eventDay, lastEventDay)) return false;
       }
       if (selectedDateFilter && !isSameDay(parseTaskDate(t.dueDate), selectedDateFilter)) return false;
-      if (!searchQuery.trim()) return true;
-      const query = searchQuery.toLowerCase();
-      return t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query);
+      return !trimmedQuery || matchesSearch(t, trimmedQuery);
     });
     return filtered.sort((a, b) => parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime());
-  }, [displayTasks, searchQuery, selectedDateFilter, currentDate]);
+  }, [displayTasks, trimmedQuery, selectedDateFilter, currentDate]);
 
   // Get completed tasks (filtered by search if query exists)
   const completedTasks = useMemo(() => {
+    if (selectedDateFilter) return [];
     const allCompleted = getCompletedTasks();
-    if (selectedDateFilter) return [];
-    if (!searchQuery.trim()) return allCompleted;
-    const query = searchQuery.toLowerCase();
-    return allCompleted.filter(t =>
-      t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query)
-    );
-  }, [getCompletedTasks, searchQuery, selectedDateFilter]);
-
-  // Get tomorrow's tasks
-  const tomorrowTasks = useMemo(() => {
-    if (selectedDateFilter) return [];
-    const tomorrow = addDays(startOfDay(currentDate), 1);
-    return incompleteTasks.filter(t => !t.isCalendarEvent && isSameDay(parseTaskDate(t.dueDate), tomorrow));
-  }, [incompleteTasks, selectedDateFilter, currentDate]);
+    return trimmedQuery ? allCompleted.filter(t => matchesSearch(t, trimmedQuery)) : allCompleted;
+  }, [getCompletedTasks, trimmedQuery, selectedDateFilter]);
 
   const hasNoTasks = tasks.length === 0;
 
@@ -248,119 +208,35 @@ export default function HomePage() {
   // wait under Overdue until they're given a date or done.
   const undatedTasks = useMemo(() => {
     if (selectedDateFilter) return [];
-    const query = searchQuery.trim().toLowerCase();
-    return tasks.filter(t => (
-      !t.dueDate &&
-      !t.completed &&
-      (!query || t.title.toLowerCase().includes(query) || (t.notes ?? '').toLowerCase().includes(query))
-    ));
-  }, [tasks, searchQuery, selectedDateFilter]);
+    return tasks.filter(t => !t.dueDate && !t.completed && (!trimmedQuery || matchesSearch(t, trimmedQuery)));
+  }, [tasks, trimmedQuery, selectedDateFilter]);
 
-  // Group tasks by day (for this week) and month (for later)
-  const groupedTasks = useMemo(() => {
-    const today = startOfDay(currentDate);
-    const weekEnd = endOfDay(addDays(today, 7));
-    
-    const groups: TaskGroup[] = [];
-    
-    // Overdue tasks (due date is before today, not today)
-    const overdueTasks = incompleteTasks.filter(t => {
-      const d = startOfDay(parseTaskDate(t.dueDate));
-      return isBefore(d, today) && !isToday(d);
-    });
-    if (overdueTasks.length > 0 || undatedTasks.length > 0) {
-      const yesterday = addDays(today, -1);
-      // Oldest first; undated tasks follow the ones that were due.
-      const sortedOverdueTasks = [
-        ...[...overdueTasks].sort(compareTasksByDateAndTime),
-        ...[...undatedTasks].sort(compareTasksByTime),
-      ];
-      groups.push({ label: 'Overdue', tasks: sortedOverdueTasks, isOverdue: true, date: yesterday });
-    }
-    
-    // Today's tasks (only today, not overdue)
-    const todayTasks = incompleteTasks.filter(t => {
-      const d = parseTaskDate(t.dueDate);
-      return isSameDay(d, today);
-    });
-    const sortedTodayTasks = withEventsLast(todayTasks, compareTasksByTime);
-    groups.push({ label: 'Today', detail: format(today, 'EEE, MMM d'), tasks: sortedTodayTasks, isToday: true, date: today });
-
-    // Next 7 days (by day of week)
-    for (let i = 1; i <= 7; i++) {
-      const date = addDays(today, i);
-      const dayTasks = incompleteTasks.filter(t => isSameDay(parseTaskDate(t.dueDate), date));
-      const sortedDayTasks = withEventsLast(dayTasks, compareTasksByTime);
-      const label = i === 1 ? 'Tomorrow' : format(date, 'EEEE');
-      groups.push({ label, detail: format(date, i === 1 ? 'EEE, MMM d' : 'MMM d'), tasks: sortedDayTasks, date });
-    }
-
-    // Beyond this week - group by month
-    const futureTasks = incompleteTasks.filter(t => isAfter(parseTaskDate(t.dueDate), weekEnd));
-    const monthGroups: { [key: string]: Task[] } = {};
-    
-    futureTasks.forEach(task => {
-      const monthKey = format(parseTaskDate(task.dueDate), 'MMMM yyyy');
-      if (!monthGroups[monthKey]) monthGroups[monthKey] = [];
-      monthGroups[monthKey].push(task);
-    });
-
-    Object.entries(monthGroups).forEach(([month, monthTasks]) => {
-      const sortedMonthTasks = [...monthTasks].sort(compareTasksByDateAndTime);
-      groups.push({ label: month, tasks: sortedMonthTasks });
-    });
-
-    return groups;
-  }, [incompleteTasks, undatedTasks, currentDate]);
-
-  const visibleGroups = useMemo(() => {
-    const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
-    const creatingDate = isCreatingTask
-      ? (initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate))
-      : null;
-    const hasDatedCreateGroup = creatingDate
-      ? groupedTasks.some(g => g.date && isSameDay(g.date, creatingDate))
-      : false;
-
-    const visible = groupedTasks.filter(g => {
-      if (g.tasks.length > 0 || (g.isToday && completedTasks.length > 0)) return true;
-      if (!creatingDate) return false;
-      if (g.date && isSameDay(g.date, creatingDate)) return true;
-      return !hasDatedCreateGroup && !g.date && g.label === format(creatingDate, 'MMMM yyyy');
-    });
-
-    if (!creatingDate) return visible;
-
-    const hasCreateGroup = visible.some(g => {
-      if (g.date && isSameDay(g.date, creatingDate)) return true;
-      return !hasDatedCreateGroup && !g.date && g.label === format(creatingDate, 'MMMM yyyy');
-    });
-
-    if (hasCreateGroup) return visible;
-
-    return [
-      ...visible,
-      {
-        label: format(creatingDate, 'MMMM yyyy'),
-        tasks: [],
-      },
-    ];
-  }, [groupedTasks, completedTasks.length, currentDate, editingTask, initialDate, isModalOpen, taskFormPresentation]);
+  const groupedTasks = useMemo(
+    () => buildTaskGroups(incompleteTasks, undatedTasks, currentDate),
+    [incompleteTasks, undatedTasks, currentDate]
+  );
 
   const isCreatingTask = isModalOpen && !editingTask && taskFormPresentation === 'inline';
+  const creatingDate = useMemo(() => {
+    if (!isCreatingTask) return null;
+    return initialDate ? parseTaskDate(initialDate) : startOfDay(currentDate);
+  }, [currentDate, initialDate, isCreatingTask]);
+
   const shouldShowCreateFormInGroup = useCallback((group: TaskGroup) => {
-    if (!isCreatingTask) return false;
-    const creatingDate = initialDate ? new Date(`${initialDate}T00:00:00`) : startOfDay(currentDate);
-    const hasDatedCreateGroup = groupedTasks.some(g => g.date && isSameDay(g.date, creatingDate));
-    if (group.date && isSameDay(group.date, creatingDate)) return true;
-    return !hasDatedCreateGroup && !group.date && group.label === format(creatingDate, 'MMMM yyyy');
-  }, [currentDate, groupedTasks, initialDate, isCreatingTask]);
+    return Boolean(creatingDate && group.date && !group.isOverdue && isSameDay(group.date, creatingDate));
+  }, [creatingDate]);
+
+  const visibleGroups = useMemo(() => groupedTasks.filter(g => (
+    g.tasks.length > 0 || (g.isToday && completedTasks.length > 0) || shouldShowCreateFormInGroup(g)
+  )), [groupedTasks, completedTasks.length, shouldShowCreateFormInGroup]);
 
   const openTaskForm = useCallback((
     date: string | null,
     task: Task | null,
     presentation: 'inline' | 'calendar-overlay'
   ) => {
+    // A form already open (say, tapping another card while editing) keeps what was typed.
+    formDismissRef.current?.();
     if (inlineCloseTimerRef.current !== null) {
       window.clearTimeout(inlineCloseTimerRef.current);
       inlineCloseTimerRef.current = null;
@@ -410,21 +286,15 @@ export default function HomePage() {
 
   // Handle task completion with confirmation for future tasks
   const handleTaskComplete = useCallback((taskId: string, isTodayOrOverdue: boolean) => {
+    const task = tasks.find(t => t.id === taskId);
     if (isTodayOrOverdue) {
-      // No confirmation needed for Today or Overdue tasks
       completeTask(taskId);
-      const task = tasks.find(t => t.id === taskId);
       if (task) showUndo(task);
-    } else {
-      // Show confirmation for future tasks
-      const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        setConfirmCompleteTask(task);
-      }
+    } else if (task) {
+      setConfirmCompleteTask(task);
     }
   }, [tasks, completeTask, showUndo]);
 
-  // Confirm completion
   const handleConfirmComplete = useCallback(() => {
     if (confirmCompleteTask) {
       completeTask(confirmCompleteTask.id);
@@ -436,7 +306,6 @@ export default function HomePage() {
   const handleCloseModal = useCallback(() => {
     if (!isModalOpen || isInlineFormClosing) return;
 
-    const hadDateFilter = selectedDateFilter !== null;
     setIsInlineFormClosing(true);
 
     inlineCloseTimerRef.current = window.setTimeout(() => {
@@ -445,13 +314,9 @@ export default function HomePage() {
       setEditingTask(null);
       setInitialDate(null);
       setTaskFormPresentation('inline');
-      setSelectedDateFilter(null);
       inlineCloseTimerRef.current = null;
-      if (hadDateFilter) {
-        setView('calendar');
-      }
     }, 180);
-  }, [isInlineFormClosing, isModalOpen, selectedDateFilter]);
+  }, [isInlineFormClosing, isModalOpen]);
 
   useEffect(() => {
     return () => {
@@ -460,12 +325,6 @@ export default function HomePage() {
       }
     };
   }, []);
-
-  const handleInlineSave = useCallback(() => {
-    if (selectedDateFilter !== null) {
-      setView('calendar');
-    }
-  }, [selectedDateFilter]);
 
   useEffect(() => {
     if (!isModalOpen) return;
@@ -476,7 +335,8 @@ export default function HomePage() {
       if (target.closest('[data-task-inline-form="true"]')) return;
       if (target.closest('[data-task-inline-portal="true"]')) return;
       if (target.closest('[data-task-card="true"]') && !target.closest('[data-task-checkbox="true"]')) return;
-      handleCloseModal();
+      if (formDismissRef.current) formDismissRef.current();
+      else handleCloseModal();
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
@@ -504,14 +364,10 @@ export default function HomePage() {
     setSelectedDateFilter(parseTaskDate(day));
   }, []);
 
-  const overlayDayTasks = useMemo(() => (
-    initialDate
-      ? withEventsLast(
-        displayTasks.filter(t => !t.completed && t.dueDate === initialDate),
-        compareTasksByTime
-      )
-      : []
-  ), [initialDate, displayTasks]);
+  const tasksForDay = useCallback((day: string) => withEventsLast(
+    displayTasks.filter(t => !t.completed && t.dueDate === day),
+    compareTasksByTime
+  ), [displayTasks]);
 
   // Keyboard shortcut
   useEffect(() => {
@@ -529,188 +385,52 @@ export default function HomePage() {
       }
       if (e.key === 's' && canUseShortcut) {
         e.preventDefault();
-        if (view === 'calendar') setView('list');
-        setSelectedDateFilter(null);
-        setIsSearchExpanded(true);
+        handleSearchClick();
       }
       // Escape to close confirmation dialog or clear search
       if (e.key === 'Escape') {
         if (confirmCompleteTask) {
           setConfirmCompleteTask(null);
-        } else if (searchQuery) {
-          setSearchQuery('');
-          setIsSearchExpanded(false);
-          // Also blur the search input if it's focused
-          const el = document.activeElement as HTMLInputElement;
-          if (el?.tagName === 'INPUT') {
-            el.blur();
-          }
-        } else if (isSearchExpanded) {
-           setIsSearchExpanded(false);
+        } else if (searchQuery || isSearchExpanded) {
+          closeSearch();
         }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, isSettingsOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, openTaskForm, view]);
+  }, [isModalOpen, isSettingsOpen, confirmCompleteTask, searchQuery, isSearchExpanded, selectedDateFilter, openTaskForm, handleSearchClick, closeSearch]);
 
-  if (newTaskUrlMode === 'pending' || (newTaskUrlMode !== 'off' && !isLoaded)) {
-    return (
-      <div style={{
-        minHeight: '100dvh',
-        background: 'var(--background)',
-      }} />
-    );
+  const conflictCount = useMemo(() => tasks.filter(t => t.conflictOf && !t.completed).length, [tasks]);
+  const syncNotice = useMemo<SyncNotice | null>(() => {
+    if (syncStatus === 'error') return { label: 'Sync error', tone: 'error' };
+    if (conflictCount > 0) {
+      return { label: `${conflictCount} conflict${conflictCount === 1 ? '' : 's'}`, tone: 'conflict' };
+    }
+    return null;
+  }, [conflictCount, syncStatus]);
+
+  if (isCaptureUrl === null || (isCaptureUrl && !isLoaded)) {
+    return <div style={{ minHeight: '100dvh', background: 'var(--background)' }} />;
   }
 
-  if (newTaskUrlMode !== 'off') {
-    return (
-      <main style={{
-        minHeight: '100dvh',
-        background: 'var(--background)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        padding: '24px 14px',
-      }}>
-        <div style={{
-          width: '100%',
-          maxWidth: 520,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 14,
-        }}>
-          {hasAddedTaskFromUrl ? (
-            <div style={{
-              color: 'var(--foreground)',
-              fontSize: 18,
-              fontWeight: 700,
-              padding: '14px 2px',
-            }}>
-              task added
-            </div>
-          ) : (
-            <>
-              <TaskForm
-                key={`url-new-task-${newTaskUrlMode}`}
-                inline
-                onClose={() => {}}
-                onSave={() => setHasAddedTaskFromUrl(true)}
-                captureUrlMode
-              />
-              <button
-                type="button"
-                onClick={() => setIsSettingsOpen(true)}
-                style={{
-                  alignSelf: 'flex-start',
-                  color: 'var(--muted)',
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '4px 2px',
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-                className="hover-link"
-              >
-                Settings
-              </button>
-            </>
-          )}
-        </div>
+  if (isCaptureUrl) return <CaptureTaskPage />;
 
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-        />
-      </main>
-    );
-  }
+  const openAddForm = () => {
+    const date = selectedDateFilter ? format(selectedDateFilter, 'yyyy-MM-dd') : null;
+    openTaskForm(date, null, 'calendar-overlay');
+  };
+  const splitRightEdge = `calc(100% - ${SPLIT_LIST_WIDTH})`;
 
   return (
     <div className="app-shell" style={{ background: 'var(--background)', maxWidth: (isWideScreen || showSplitView) ? 'none' : 600, margin: '0 auto', display: 'flex', flexDirection: showSplitView ? 'row' : 'column' }}>
-      {/* Search Header */}
       {view === 'list' && isSearchExpanded && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          // On wide screens it stays over the list, leaving the calendar's month controls in view.
-          right: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH})` : 0,
-          zIndex: 20,
-          background: 'color-mix(in srgb, var(--background) 92%, transparent)',
-          padding: 'calc(12px + env(safe-area-inset-top, 0px)) 16px',
-          paddingRight: showSplitView ? 16 : 72,
-          borderBottom: '1px solid var(--border)',
-          backdropFilter: 'blur(16px)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-        }}>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  setSearchQuery('');
-                  setIsSearchExpanded(false);
-                }
-                if (e.key === 'Enter') {
-                  (e.target as HTMLInputElement).blur();
-                }
-              }}
-              style={{
-                width: '100%',
-                padding: '10px 12px 10px 40px',
-                fontSize: 16,
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--foreground)',
-                height: 44
-              }}
-            />
-            <svg
-              width="18"
-              height="18"
-              fill="none"
-              stroke="var(--muted)"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                pointerEvents: 'none'
-              }}
-            >
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-          </div>
-          <button
-            className="btn-soft"
-            onClick={() => {
-              setSearchQuery('');
-              setIsSearchExpanded(false);
-            }}
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              borderRadius: 'var(--radius-md)',
-              padding: '0 16px',
-              height: 44,
-            }}
-          >
-            Cancel
-          </button>
-        </div>
+        <SearchHeader
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onClose={closeSearch}
+          rightEdge={showSplitView ? splitRightEdge : 0}
+          reserveSpaceOnRight={!showSplitView}
+        />
       )}
 
       {isModalOpen && taskFormPresentation === 'calendar-overlay' && (
@@ -718,8 +438,9 @@ export default function HomePage() {
           initialDate={initialDate}
           isClosing={isInlineFormClosing}
           onClose={handleCloseModal}
-          dayTasks={overlayDayTasks}
-          onShowDay={initialDate ? () => showDayInList(initialDate) : undefined}
+          tasksForDay={tasksForDay}
+          onShowDay={showDayInList}
+          dismissRef={formDismissRef}
           formKey={taskFormKey}
         />
       )}
@@ -730,13 +451,14 @@ export default function HomePage() {
           flex: 1,
           order: showSplitView ? 2 : undefined,
           height: (isWideScreen || showSplitView) ? '100%' : 'auto',
-          paddingBottom: showSplitView ? 0 : 'calc(65px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: showSplitView || isLandscapePhone ? 0 : 'calc(65px + env(safe-area-inset-bottom, 0px))',
         }}>
           <CalendarView
             tasks={calendarTasks}
             onDaySelect={handleDaySelect}
             selectedDate={selectedDateFilter}
             fullScreen={isLandscapePhone}
+            currentDate={currentDate}
           />
         </div>
       )}
@@ -750,12 +472,13 @@ export default function HomePage() {
           : 'calc(24px + env(safe-area-inset-top, 0px)) clamp(10px, 2vw, 18px) calc(100px + env(safe-area-inset-bottom, 0px))',
         borderRight: showSplitView ? '1px solid var(--border)' : 'none',
       }}>
-        {/* Back to Calendar button (shown when date filter is active) */}
+        {/* Back out of a single day shown from the calendar */}
         {selectedDateFilter && (
           <button
             onClick={() => {
               setSelectedDateFilter(null);
-              setView('calendar');
+              // Phones rotated back to portrait return to the list; there's no portrait calendar to go to.
+              if (isLandscapePhone || (!showSplitView && !isTouch)) setView('calendar');
             }}
             style={{
               display: 'flex',
@@ -773,117 +496,28 @@ export default function HomePage() {
             }}
           >
             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
+              <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-Back
+            Back
           </button>
         )}
-        {/* Empty / All-done State */}
         {isLoaded && (
           <div>
             {incompleteTasks.length === 0 && undatedTasks.length === 0 && completedTasks.length === 0 && !isCreatingTask && (
-              <div style={{
-                padding: showSplitView ? '80px 24px' : '60px 24px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 16
-              }}>
-                {searchQuery.trim() ? (
-                  <div style={{
-                    fontSize: 17,
-                    fontWeight: 600,
-                    lineHeight: 1.4,
-                    maxWidth: 360,
-                    textAlign: 'center',
-                    overflowWrap: 'anywhere',
-                    color: 'var(--muted)',
-                  }}>
-                    No tasks match “{searchQuery.trim()}”
-                  </div>
-                ) : hasNoTasks ? (
-                  <div style={{
-                    fontSize: 28,
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    letterSpacing: '-0.03em',
-                    maxWidth: 360,
-                    textAlign: 'center',
-                    color: 'var(--muted)',
-                  }}>
-                    You have nothing to do.
-                    <br />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedDateFilter) {
-                          openInlineTaskForm(format(selectedDateFilter, 'yyyy-MM-dd'));
-                        } else {
-                          openInlineTaskForm(null);
-                        }
-                      }}
-                      style={{
-                        color: 'var(--accent)',
-                        background: 'transparent',
-                        border: 'none',
-                        padding: 0,
-                        font: 'inherit',
-                        fontWeight: 'inherit',
-                        cursor: 'pointer',
-                        textDecoration: 'none',
-                      }}
-                      className="hover-link"
-                    >
-                      Start something.
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{
-                    fontSize: 28,
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                    letterSpacing: '-0.03em',
-                    maxWidth: 360,
-                    textAlign: 'center',
-                    color: 'var(--muted)',
-                  }}>
-                    All done for now.
-                    <br />
-                    <span style={{ color: 'var(--accent)' }}>Tomorrow awaits.</span>
-                  </div>
-                )}
-
-                {tomorrowTasks.length > 0 && (
-                  <div style={{
-                    marginTop: 8,
-                    padding: '12px 24px',
-                    background: 'var(--card)',
-                    color: 'var(--foreground)',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-md)',
-                    boxShadow: 'var(--shadow-sm)',
-                  }}>
-                    <span style={{ color: 'var(--accent)' }}>
-                      {tomorrowTasks.length}
-                    </span>
-                    {' '}task{tomorrowTasks.length !== 1 ? 's' : ''} tomorrow
-                  </div>
-                )}
-              </div>
+              <TaskListEmptyState
+                searchQuery={searchQuery}
+                selectedDate={selectedDateFilter}
+                hasNoTasks={hasNoTasks}
+                isWide={showSplitView}
+                onAdd={() => (selectedDateFilter ? openAddForm() : openInlineTaskForm(null))}
+              />
             )}
             {visibleGroups.map((group) => {
               const groupHasCompletedTasks = group.isToday && completedTasks.length > 0;
               const groupHasTasks = group.tasks.length > 0 || groupHasCompletedTasks;
 
               return (
-                <section
-                  key={group.label}
-                  style={{
-                    marginBottom: 24,
-                  }}
-                >
+                <section key={group.label} style={{ marginBottom: 24 }}>
                   <GroupHeader
                     label={group.label}
                     detail={group.detail}
@@ -907,7 +541,7 @@ Back
                     gap: 8,
                     padding: '8px 0 0',
                     justifyContent: groupHasTasks ? 'flex-start' : 'center',
-                    alignItems: groupHasTasks ? 'stretch' : 'center'
+                    alignItems: groupHasTasks ? 'stretch' : 'center',
                   }}>
                     {shouldShowCreateFormInGroup(group) && (
                       <TaskForm
@@ -915,7 +549,7 @@ Back
                         inline
                         isClosing={isInlineFormClosing}
                         onClose={handleCloseModal}
-                        onSave={handleInlineSave}
+                        dismissRef={formDismissRef}
                         initialDate={initialDate}
                       />
                     )}
@@ -929,7 +563,7 @@ Back
                           isClosing={isInlineFormClosing}
                           editTask={task}
                           onClose={handleCloseModal}
-                          onSave={handleInlineSave}
+                          dismissRef={formDismissRef}
                         />
                       ) : (
                         <TaskItem
@@ -945,253 +579,48 @@ Back
                       )
                     ))}
                     {group.isToday && completedTasks.length > 0 && (
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 10,
-                      }}>
-                        <button
-                          type="button"
-                          onClick={() => setIsCompletedExpanded(expanded => !expanded)}
-                          aria-expanded={isCompletedExpanded}
-                          aria-controls="completed-tasks"
-                          style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '7px 10px',
-                            color: 'var(--muted)',
-                            background: 'transparent',
-                            border: 'none',
-                            borderRadius: 'var(--radius-sm)',
-                            fontSize: 13,
-                            fontWeight: 700,
-                            letterSpacing: '0.01em',
-                            textAlign: 'left',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            style={{
-                              transform: isCompletedExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                              transition: 'transform 0.15s ease',
-                            }}
-                          >
-                            <path d="M9 18l6-6-6-6" />
-                          </svg>
-                          <span>Completed</span>
-                          <span style={{
-                            marginLeft: 'auto',
-                            fontSize: 12,
-                            fontWeight: 600,
-                          }}>
-                            {completedTasks.length}
-                          </span>
-                        </button>
-                        {isCompletedExpanded && (
-                          <div
-                            id="completed-tasks"
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 10,
-                            }}
-                          >
-                            {completedTasks.map((task) => (
-                              <CompletedTaskItem key={task.id} task={task} onUncomplete={() => uncompleteTask(task.id)} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <CompletedTasksSection tasks={completedTasks} onUncomplete={uncompleteTask} />
                     )}
                   </div>
                 </section>
               );
             })}
           </div>
-)}
+        )}
       </main>
-)}
+      )}
 
-      {/* Landscape PWA calendar owns the full viewport. */}
+      {/* The landscape phone calendar owns the full viewport. */}
       {!(isLandscapePhone && view === 'calendar') && (
-      <footer
-        style={{
-          background: 'color-mix(in srgb, var(--background) 45%, transparent)',
-          // Hug the 44px buttons: 4px above, 16px below + 1px top border, then
-          // extend through the home-indicator inset so no blank band shows below.
-          height: 'calc(65px + env(safe-area-inset-bottom, 0px))',
-          minHeight: 'calc(65px + env(safe-area-inset-bottom, 0px))',
-          maxHeight: 'calc(65px + env(safe-area-inset-bottom, 0px))',
-          padding: '4px 16px calc(16px + env(safe-area-inset-bottom, 0px))',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          borderTop: '1px solid var(--border)',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          userSelect: 'none',
-          // Overlay the scroll area so content blurs through as it scrolls.
-          position: showSplitView ? 'fixed' : 'absolute',
-          left: 0,
-          right: showSplitView ? `calc(100% - ${SPLIT_LIST_WIDTH})` : 0,
-          bottom: 0,
-          zIndex: 25,
-        }}
-      >
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          {/* Search Button */}
-          <button
-            title="Search tasks"
-            className="icon-btn"
-            onClick={handleSearchClick}
-            style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)' }}
-            aria-label="Search"
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-          </button>
-
-          {/* Settings Button */}
-          <button
-            title="Settings"
-            className="icon-btn"
-            onClick={() => setIsSettingsOpen(true)}
-            style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)' }}
-            aria-label="Settings"
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </button>
-
-          {/* The calendar sits beside the list on wide screens; narrower ones switch between them. */}
-          {!showSplitView && (
-            <button
-              title={view === 'calendar' ? 'Show list' : 'Show calendar'}
-              className="icon-btn"
-              onClick={() => {
-                setSearchQuery('');
-                setIsSearchExpanded(false);
-                setSelectedDateFilter(null);
-                setView(view === 'calendar' ? 'list' : 'calendar');
-              }}
-              style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)' }}
-              aria-label={view === 'calendar' ? 'Show list' : 'Show calendar'}
-            >
-              {view === 'calendar' ? (
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
-                </svg>
-              ) : (
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="3" y="4" width="18" height="18" rx="2"/>
-                  <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* Add Task — always visible */}
-        <div>
-          <button
-            title={isSyncing ? 'Syncing tasks — click to add' : 'New (n)'}
-            onClick={() => {
-              const date = selectedDateFilter
-                ? format(selectedDateFilter, 'yyyy-MM-dd')
-                : null;
-              openTaskForm(date, null, 'calendar-overlay');
-            }}
-            aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
-            className="add-task-btn"
-          >
-            <Image
-              src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/add-task.png`}
-              alt=""
-              width={44}
-              height={44}
-              style={{ display: 'block', opacity: isSyncing ? 0.35 : 1 }}
-            />
-            {isSyncing && <SyncSpinner />}
-          </button>
-        </div>
-      </footer>
+        <AppFooter
+          rightEdge={showSplitView ? splitRightEdge : 0}
+          isFixed={showSplitView}
+          isSyncing={isSyncing}
+          syncNotice={syncNotice}
+          calendarToggle={!showSplitView && !isTouch ? {
+            showingCalendar: view === 'calendar',
+            onToggle: () => {
+              closeSearch();
+              setSelectedDateFilter(null);
+              setView(view === 'calendar' ? 'list' : 'calendar');
+            },
+          } : null}
+          onSearch={handleSearchClick}
+          onSettings={() => setIsSettingsOpen(true)}
+          onAdd={openAddForm}
+        />
       )}
 
       {undoTask && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            position: 'fixed',
-            left: showSplitView ? `calc(${SPLIT_LIST_WIDTH} / 2)` : '50%',
-            bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
-            transform: 'translateX(-50%)',
-            zIndex: 30,
-            width: 'min(420px, calc(100% - 32px))',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '10px 10px 10px 16px',
-            background: 'var(--card)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-md)',
-            boxShadow: 'var(--shadow-lg)',
-            animation: 'slideUp 180ms cubic-bezier(0.16, 1, 0.3, 1) both',
-          }}
-        >
-          <span style={{
-            flex: 1,
-            minWidth: 0,
-            fontSize: 14,
-            color: 'var(--foreground)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            Completed <strong style={{ fontWeight: 650 }}>{getTaskDisplayTitle(undoTask)}</strong>
-          </span>
-          <button
-            type="button"
-            className="btn-soft"
-            onClick={handleUndoComplete}
-            style={{
-              flexShrink: 0,
-              height: 36,
-              padding: '0 14px',
-              fontSize: 14,
-              fontWeight: 600,
-              borderRadius: 'var(--radius-sm)',
-            }}
-          >
-            Undo
-          </button>
-        </div>
+        <UndoToast
+          task={undoTask}
+          left={showSplitView ? `calc(${SPLIT_LIST_WIDTH} / 2)` : '50%'}
+          onUndo={handleUndoComplete}
+        />
       )}
 
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-      />
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
-      {/* Confirmation Dialog */}
       {confirmCompleteTask && (
         <ConfirmCompleteDialog
           task={confirmCompleteTask}
@@ -1200,96 +629,5 @@ Back
         />
       )}
     </div>
-  );
-}
-
-function SyncSpinner() {
-  return (
-    <svg className="sync-spinner" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', inset: 0, margin: 'auto', color: 'var(--foreground)' }}>
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="36 16" />
-    </svg>
-  );
-}
-
-function compareTasksByDateAndTime(a: Task, b: Task): number {
-  return parseTaskDate(a.dueDate).getTime() - parseTaskDate(b.dueDate).getTime() || compareTasksByTime(a, b);
-}
-
-/** The date on a task card, for groups whose header doesn't already say which day it is. */
-function getTaskDateLabel(task: Task, group: TaskGroup, now: Date): string | undefined {
-  if (group.isOverdue) {
-    if (!task.dueDate) return 'No date';
-    const date = parseTaskDate(task.dueDate);
-    return format(date, date.getFullYear() === now.getFullYear() ? 'MMM d' : 'MMM d, yyyy');
-  }
-  return group.date ? undefined : format(parseTaskDate(task.dueDate), 'EEE, MMM d');
-}
-
-/** Real tasks first (in the given order), then calendar events by start time. */
-function withEventsLast(items: Task[], compareTasks: (a: Task, b: Task) => number): Task[] {
-  const tasks = items.filter(t => !t.isCalendarEvent).sort(compareTasks);
-  const events = items
-    .filter(t => t.isCalendarEvent)
-    .sort((a, b) => (a.eventStart ?? 0) - (b.eventStart ?? 0) || a.title.localeCompare(b.title));
-  return [...tasks, ...events];
-}
-
-function GroupHeader({
-  label,
-  detail,
-  tone,
-  onAdd,
-  action,
-}: {
-  label: string;
-  detail?: string;
-  tone: 'today' | 'overdue' | 'default';
-  /** Tapping the header opens the add form for that day. */
-  onAdd?: () => void;
-  action?: { label: string; onClick: () => void };
-}) {
-  const text = (
-    <>
-      <span>{label}</span>
-      {detail && (
-        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)' }}>{detail}</span>
-      )}
-    </>
-  );
-
-  return (
-    <h2 style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      margin: 0,
-      padding: '0 4px',
-      minHeight: 28,
-      fontSize: tone === 'today' ? 15 : 13,
-      fontWeight: 700,
-      letterSpacing: '0.01em',
-      color: tone === 'overdue' ? 'var(--red)' : tone === 'today' ? 'var(--foreground)' : 'var(--muted)',
-    }}>
-      {onAdd ? (
-        <button
-          type="button"
-          className="group-header-add"
-          onClick={onAdd}
-          aria-label={`Add task for ${label}${detail ? `, ${detail}` : ''}`}
-        >
-          {text}
-          <svg className="group-header-add-icon" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
-      ) : (
-        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 8 }}>{text}</span>
-      )}
-      {action && (
-        <button type="button" className="group-header-action" onClick={action.onClick}>
-          {action.label}
-        </button>
-      )}
-    </h2>
   );
 }

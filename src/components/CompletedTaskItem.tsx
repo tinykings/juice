@@ -3,43 +3,36 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
-import { splitTaskTitle } from '@/utils/taskTitle';
-import { stripTaskTime } from '@/utils/taskTime';
+import { getTaskTitleParts } from '@/utils/taskTitle';
 
 export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; onUncomplete: () => void }) {
   const [isUncompleting, setIsUncompleting] = useState(false);
-  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
 
   const handleUncomplete = () => {
     setIsUncompleting(true);
     setTimeout(onUncomplete, 300);
   };
-  const titleParts = splitTaskTitle(stripTaskTime(task.title) || task.title);
+  const titleParts = getTaskTitleParts(task);
 
   return (
     <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="task-card"
       style={{
         display: 'grid',
         gridTemplateColumns: '38px minmax(0, 1fr)',
         alignItems: 'flex-start',
         columnGap: 12,
         padding: '11px 12px 11px 10px',
-        background: isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
         opacity: isUncompleting ? 0.3 : 0.58,
         transform: isUncompleting ? 'translateX(6px)' : 'translateX(0)',
         transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
-        boxShadow: isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
       }}
     >
       <button
+        className="task-checkbox"
         onClick={handleUncomplete}
-        onMouseEnter={() => setIsCheckboxHovered(true)}
-        onMouseLeave={() => setIsCheckboxHovered(false)}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -54,21 +47,20 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
         }}
         aria-label="Mark task incomplete"
       >
-        <div style={{
+        <div className="task-checkbox-circle" style={{
           width: 24,
           height: 24,
           marginTop: 1,
-          background: isCheckboxHovered ? 'var(--accent-subtle)' : 'var(--surface-inset)',
-          border: `1.5px solid ${isCheckboxHovered ? 'var(--accent)' : 'var(--checkbox-border)'}`,
+          background: 'var(--surface-inset)',
+          border: '1.5px solid var(--checkbox-border)',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-          boxShadow: isCheckboxHovered ? '0 0 0 3px var(--hover-ring)' : 'none',
         }}>
           {!isUncompleting && (
-            <svg width="13" height="13" fill="none" stroke={isCheckboxHovered ? 'var(--accent)' : 'var(--muted)'} strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12l5 5L20 7" />
             </svg>
           )}
@@ -88,7 +80,7 @@ export default function CompletedTaskItem({ task, onUncomplete }: { task: Task; 
           {titleParts.title}
         </p>
         {titleParts.note && (
-          <p style={{ margin: '3px 0 0', fontSize: 'var(--text-body)', color: 'var(--muted)', lineHeight: 1.45, overflowWrap: 'anywhere' }}>
+          <p style={{ margin: '3px 0 0', fontSize: 'var(--text-body)', color: 'var(--muted)', lineHeight: 1.45, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
             {titleParts.note}
           </p>
         )}

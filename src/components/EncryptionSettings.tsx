@@ -165,7 +165,7 @@ export default function EncryptionSettings() {
             value={enteredKey}
             onChange={(event) => setEnteredKey(event.target.value)}
             placeholder="Paste key from your password manager"
-            style={{ ...keyStyle, fontFamily: 'inherit' }}
+            style={{ ...keyStyle, fontFamily: 'inherit', fontSize: 16 }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="submit" style={primaryStyle} disabled={!enteredKey}>Save key</button>

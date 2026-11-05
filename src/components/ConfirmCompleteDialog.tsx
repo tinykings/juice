@@ -5,8 +5,7 @@ import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
 import { parseTaskDate } from '@/utils/taskDate';
-import { splitTaskTitle } from '@/utils/taskTitle';
-import { stripTaskTime } from '@/utils/taskTime';
+import { getTaskTitleParts } from '@/utils/taskTitle';
 
 export default function ConfirmCompleteDialog({
   task,
@@ -70,10 +69,11 @@ export default function ConfirmCompleteDialog({
 
   const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
   const formattedDate = taskDate ? format(taskDate, 'EEEE, MMMM d, yyyy') : 'No date';
-  const titleParts = splitTaskTitle(stripTaskTime(task.title) || task.title);
+  const titleParts = getTaskTitleParts(task);
 
   return createPortal(
     <div
+      data-task-inline-portal="true"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-complete-title"
@@ -151,6 +151,7 @@ export default function ConfirmCompleteDialog({
                 color: 'var(--muted)',
                 margin: '5px 0 0 0',
                 lineHeight: 1.45,
+                whiteSpace: 'pre-wrap',
                 overflowWrap: 'anywhere',
               }}>
                 {titleParts.note}

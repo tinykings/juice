@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { format } from 'date-fns';
 import { Task } from '@/types/task';
-import { getCalendarMonths } from './calendarMonths';
+import { getCalendarMonths, getNextMonthsEnd } from './calendarMonths';
 
 const NOW = new Date(2026, 10, 4);
 
@@ -55,5 +55,17 @@ describe('getCalendarMonths', () => {
     expect(months[0]).toBe('2026-09');
     expect(months.at(-1)).toBe('2027-04');
     expect(months).toContain('2026-10');
+  });
+});
+
+describe('getNextMonthsEnd', () => {
+  it('extends past the last month shown', () => {
+    const months = getCalendarMonths([], NOW);
+    expect(format(getNextMonthsEnd(months, NOW), 'yyyy-MM')).toBe('2027-04');
+  });
+
+  it('does not jump to a far-off task', () => {
+    const months = getCalendarMonths([task('2030-06-01')], NOW);
+    expect(format(getNextMonthsEnd(months, NOW), 'yyyy-MM')).toBe('2027-04');
   });
 });

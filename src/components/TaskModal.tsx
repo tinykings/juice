@@ -8,8 +8,22 @@ import CalendarPicker from './CalendarPicker';
 import ConfirmCompleteDialog from './ConfirmCompleteDialog';
 import { findDateWordInTitle, removeDateWord, DateWordMatch } from '@/utils/dateWords';
 import { normalizeTaskDate } from '@/utils/taskDate';
+import { findTaskTime } from '@/utils/taskTime';
+import { splitTaskTitle } from '@/utils/taskTitle';
 
-export function TaskForm({ editTask, onClose, onSave, initialDate, inline = false, isClosing = false, captureUrlMode = false }: { editTask?: Task | null, onClose: () => void, onSave?: () => void, initialDate?: string | null, inline?: boolean, isClosing?: boolean, captureUrlMode?: boolean }) {
+export function TaskForm({ editTask, onClose, onSave, onDateChange, dismissRef, initialDate, inline = false, isClosing = false, captureUrlMode = false }: {
+  editTask?: Task | null;
+  onClose: () => void;
+  onSave?: () => void;
+  /** Reports the day the task would be saved on, including a date typed in the title. */
+  onDateChange?: (date: string) => void;
+  /** Filled with a function for tapping away: it saves what was typed and closes the form. */
+  dismissRef?: React.RefObject<(() => void) | null>;
+  initialDate?: string | null;
+  inline?: boolean;
+  isClosing?: boolean;
+  captureUrlMode?: boolean;
+}) {
   const { addTask, addTaskFromCaptureUrl, updateTask, deleteTask } = useTasks();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const hasFocusedRef = useRef(false);
@@ -53,11 +67,11 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       });
     }
 
-    const timeResult = titleValue.match(/@(\d+(?::\d{2})?(?:pm|am)?)/i);
-    if (timeResult?.index !== undefined) {
+    const time = findTaskTime(titleValue);
+    if (time) {
       items.push({
-        start: timeResult.index,
-        end: timeResult.index + timeResult[0].length,
+        start: time.index,
+        end: time.index + time.text.length,
         color: 'var(--event)',
       });
     }
@@ -111,12 +125,17 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     }
   }, [editTask]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const submit = useCallback(async () => {
     let title = titleValue.trim();
-    
+
     if (!title || isSaving || hasSubmittedRef.current) return;
+
+    // Nothing to save, and saving anyway would mark the task as edited for sync.
+    if (editTask && !hasChanges) {
+      hasSubmittedRef.current = true;
+      onClose();
+      return;
+    }
 
     let effectiveDueDate = dueDate;
 
@@ -126,12 +145,20 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
       title = removeDateWord(title, match);
     }
 
+    // A task that keeps its note in the separate field (e.g. from the iOS app) stays that way.
+    let notes = '';
+    if (editTask?.notes) {
+      const parts = splitTaskTitle(title);
+      title = parts.title;
+      notes = parts.note;
+    }
+
     // Tasks always get a date; an undated one (e.g. made in the iOS app) keeps
     // no date until one is picked, and shows under Overdue meanwhile.
     const normalizedDueDate = effectiveDueDate ? normalizeTaskDate(effectiveDueDate) : '';
     const taskData = {
       title,
-      notes: '',
+      notes,
       dueDate: normalizedDueDate,
       pinned: false,
       isRecurring: normalizedDueDate ? isRecurring : false,
@@ -159,15 +186,39 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
     hasSubmittedRef.current = true;
     onClose();
     if (onSave) onSave();
-  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, findNewDateWord, isRecurring, isSaving, onClose, onSave, recurrenceType, updateTask, titleValue]);
+  }, [addTask, addTaskFromCaptureUrl, captureUrlMode, dueDate, editTask, findNewDateWord, hasChanges, isRecurring, isSaving, onClose, onSave, recurrenceType, updateTask, titleValue]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submit();
+  };
+
+  // Tapping away keeps the work: only Escape or the close button discard it.
+  useEffect(() => {
+    if (!dismissRef) return;
+    dismissRef.current = () => {
+      if (isClosing || hasSubmittedRef.current) return;
+      if (titleValue.trim() && (!editTask || hasChanges)) void submit();
+      else onClose();
+    };
+    return () => {
+      dismissRef.current = null;
+    };
+  }, [dismissRef, editTask, hasChanges, isClosing, onClose, submit, titleValue]);
+
+  const effectiveDate = dateWordMatch ? format(dateWordMatch.date, 'yyyy-MM-dd') : dueDate;
+  useEffect(() => {
+    onDateChange?.(effectiveDate);
+  }, [effectiveDate, onDateChange]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isConfirmingDelete) return;
       if (e.key === 'Escape') onClose();
-      if (e.key === 'Enter' && editTask && hasChanges && !(e.target instanceof HTMLTextAreaElement)) {
+      // Buttons keep their own Enter: Delete shouldn't save.
+      if (e.key === 'Enter' && editTask && hasChanges && !(e.target instanceof HTMLTextAreaElement) && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
-        handleSubmit(e as unknown as React.FormEvent);
+        void submit();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -180,7 +231,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
         document.body.style.overflow = '';
       }
     };
-  }, [editTask, handleSubmit, hasChanges, inline, isConfirmingDelete, onClose]);
+  }, [editTask, hasChanges, inline, isConfirmingDelete, onClose, submit]);
 
   const handleDelete = () => {
     setIsConfirmingDelete(true);
@@ -240,7 +291,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   if (!editTask || hasChanges) {
-                    handleSubmit(e as unknown as React.FormEvent);
+                    void submit();
                   }
                 }
               }}
@@ -273,6 +324,9 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             <div aria-hidden="true" style={{
               position: 'absolute',
               inset: 0,
+              // Same box and wrapping as the textarea, so highlights land on the typed words.
+              border: '1px solid transparent',
+              overflowWrap: 'break-word',
               padding: '10px 12px',
               pointerEvents: 'none',
               fontSize: 19,
@@ -323,6 +377,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
             setIsRecurring(nextIsRecurring);
           }}
           className="hover-accent-outline"
+          aria-pressed={isRecurring}
           data-active={isRecurring || undefined}
           style={{
             display: 'flex',
@@ -363,6 +418,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
                 setRecurrenceType(type);
               }}
               className="hover-accent-outline"
+              aria-pressed={recurrenceType === type}
               data-active={recurrenceType === type || undefined}
               style={{
                 padding: '0 14px',
@@ -422,6 +478,8 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           <button
             type="button"
             onClick={() => setShowHelp(!showHelp)}
+            aria-label="Quick-add help"
+            aria-expanded={showHelp}
             className="hover-accent-outline"
             style={{
               width: 42,
@@ -470,7 +528,7 @@ export function TaskForm({ editTask, onClose, onSave, initialDate, inline = fals
           <button
             type="button"
             className="btn-accent"
-            onClick={handleSubmit}
+            onClick={() => void submit()}
             style={{
               padding: '0 20px',
               fontSize: 14,

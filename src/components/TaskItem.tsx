@@ -5,9 +5,9 @@ import { createPortal } from 'react-dom';
 import { format, isBefore, isToday, startOfDay, startOfWeek, addDays } from 'date-fns';
 import { Task } from '@/types/task';
 import { useTasks } from '@/context/TaskContext';
-import { splitTaskTitle } from '@/utils/taskTitle';
+import { getTaskDisplayTitle, getTaskTitleParts } from '@/utils/taskTitle';
 import { formatTaskDate, parseTaskDate } from '@/utils/taskDate';
-import { formatTaskTime, stripTaskTime } from '@/utils/taskTime';
+import { formatTaskTime } from '@/utils/taskTime';
 
 interface TaskItemProps {
   task: Task;
@@ -29,20 +29,17 @@ export default function TaskItem({
   isOverdue: isOverdueProp,
   needsConfirmation = false
 }: TaskItemProps) {
-  const { updateTask } = useTasks();
+  const { updateTask, deleteTask, keepConflictCopy } = useTasks();
   const [isCompleting, setIsCompleting] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isCheckboxHovered, setIsCheckboxHovered] = useState(false);
   
   const isRecurrencePreview = Boolean(task.isRecurrencePreview);
   const taskDate = task.dueDate ? parseTaskDate(task.dueDate) : null;
   const isOverdue = isOverdueProp || (taskDate ? isBefore(taskDate, startOfDay(new Date())) && !isToday(taskDate) : false);
 
   const taskTime = formatTaskTime(task.title);
-  const displayTitle = stripTaskTime(task.title);
-  const titleParts = splitTaskTitle(displayTitle || task.title);
+  const titleParts = getTaskTitleParts(task);
 
   const handleComplete = () => {
     if (isCompleting) return;
@@ -63,13 +60,13 @@ export default function TaskItem({
   return (
     <div style={{ position: 'relative' }}>
       <div 
+        className="task-card"
         data-task-card="true"
         data-recurrence-preview={isRecurrencePreview ? 'true' : undefined}
         title={isRecurrencePreview ? 'Future occurrence — available after current task is completed' : undefined}
         onClick={isRecurrencePreview ? undefined : onEdit}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         style={{
+          position: 'relative',
           display: 'grid',
           gridTemplateColumns: '38px minmax(0, 1fr)',
           alignItems: 'flex-start',
@@ -81,21 +78,22 @@ export default function TaskItem({
           opacity: isCompleting ? 0.3 : (isRecurrencePreview ? 0.58 : 1),
           transform: isCompleting ? 'translateX(-6px)' : 'translateX(0)',
           transition: 'opacity 0.18s ease, background 0.15s ease, border-color 0.15s ease, transform 0.18s ease, box-shadow 0.15s ease',
-          background: !isRecurrencePreview && isHovered ? 'var(--task-surface-hover)' : 'var(--task-surface)',
-          boxShadow: !isRecurrencePreview && isHovered ? '0 0 0 1px var(--hover-ring)' : 'none',
           cursor: isRecurrencePreview ? 'default' : 'pointer',
         }}
       >
+        {/* Keyboard route to the editor: Enter clicks through to the card's own handler. */}
+        {!isRecurrencePreview && (
+          <button type="button" className="task-card-open" aria-label={`Edit ${getTaskDisplayTitle(task)}`} />
+        )}
         <button
             data-task-checkbox="true"
+            data-overdue={isOverdue ? 'true' : undefined}
             className="task-checkbox"
             disabled={isCompleting || isRecurrencePreview}
             onClick={(e) => {
               e.stopPropagation();
               if (!isRecurrencePreview) handleComplete();
             }}
-            onMouseEnter={() => setIsCheckboxHovered(true)}
-            onMouseLeave={() => setIsCheckboxHovered(false)}
             style={{
               flexShrink: 0,
               display: 'flex',
@@ -110,7 +108,7 @@ export default function TaskItem({
             }}
             aria-label={isRecurrencePreview ? 'Future occurrence preview' : 'Complete task'}
           >
-            <div style={{
+            <div className="task-checkbox-circle" style={{
               width: 24,
               height: 24,
               marginTop: 1,
@@ -119,15 +117,14 @@ export default function TaskItem({
               justifyContent: 'center',
               background: isCompleting
                 ? (isOverdue ? 'var(--red)' : 'var(--accent)')
-                : (isCheckboxHovered ? 'var(--accent-subtle)' : 'transparent'),
+                : 'transparent',
               border: `1.5px ${isRecurrencePreview ? 'dashed' : 'solid'} ${
                 isCompleting
                   ? (isOverdue ? 'var(--red)' : 'var(--accent)')
-                  : isOverdue ? 'var(--red)' : (isCheckboxHovered ? 'var(--accent)' : 'var(--checkbox-border)')
+                  : isOverdue ? 'var(--red)' : 'var(--checkbox-border)'
               }`,
               borderRadius: '50%',
               transition: 'background 0.15s, border-color 0.15s, box-shadow 0.15s',
-              boxShadow: isCheckboxHovered ? '0 0 0 3px var(--hover-ring)' : 'none',
             }}>
               {isCompleting && (
                 <svg width="13" height="13" fill="none" stroke="var(--background)" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
@@ -208,6 +205,13 @@ export default function TaskItem({
                     {titleParts.note}
                   </p>
                 )}
+              {task.conflictOf && !isRecurrencePreview && (
+                <div className="task-conflict" onClick={(e) => e.stopPropagation()}>
+                  <span>Conflict copy</span>
+                  <button type="button" onClick={() => keepConflictCopy(task.id)}>Keep this version</button>
+                  <button type="button" onClick={() => deleteTask(task.id)}>Discard</button>
+                </div>
+              )}
               {(task.isRecurring || taskTime || isRecurrencePreview || dateLabel) && (
                 <div style={{
                   display: 'flex',
@@ -288,15 +292,28 @@ function RescheduleMenu({
   }, [anchorEl]);
 
   useEffect(() => {
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus({ preventScroll: true });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         onClose();
+        return;
       }
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []);
+      if (items.length === 0) return;
+      e.preventDefault();
+      const index = items.indexOf(document.activeElement as HTMLElement);
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      items[(index + step + items.length) % items.length].focus();
     };
     document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
-  }, [onClose]);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
+      anchorEl.focus({ preventScroll: true });
+    };
+  }, [anchorEl, onClose]);
 
   if (typeof document === 'undefined') return null;
 

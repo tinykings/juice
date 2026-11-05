@@ -66,7 +66,7 @@ async function downloadCalendar(url: string): Promise<string> {
 function eventWindow(now = new Date()): [number, number] {
   return [
     startOfMonth(addMonths(now, -1)).getTime(),
-    addDays(now, 180).getTime(),
+    addDays(now, 365).getTime(),
   ];
 }
 
