@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-
 export interface SyncNotice {
   label: string;
   tone: 'error' | 'conflict';
@@ -108,15 +106,20 @@ export default function AppFooter({
           aria-label={isSyncing ? 'Syncing tasks; add task' : 'Add task'}
           className="add-task-btn"
         >
-          <Image
-            src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/add-task.png`}
-            alt=""
-            width={44}
-            height={44}
-            style={{ display: 'block', opacity: isSyncing ? 0.35 : 1 }}
-          />
+          <svg
+            width="22"
+            height="22"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            style={{ opacity: isSyncing ? 0.35 : 1 }}
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           {isSyncing && (
-            <svg className="sync-spinner" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', inset: 0, margin: 'auto', color: 'var(--foreground)' }}>
+            <svg className="sync-spinner" width="20" height="20" fill="none" viewBox="0 0 24 24" aria-hidden="true" style={{ position: 'absolute', inset: 0, margin: 'auto', color: 'var(--background)' }}>
               <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeDasharray="36 16" />
             </svg>
           )}
