@@ -7,7 +7,7 @@
 :root,
 [data-theme="charcoal"] {
   color-scheme: dark;
-  /* Base */},{
+  /* Base */
   --background: #0f0e0c;
   --foreground: #F3F0EA;
   --card: #191713;
