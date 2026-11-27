@@ -278,7 +278,7 @@ function ContinuousCalendar({
 
   const calendarDays = getRelevantCalendarDays(months);
   const currentWeekStart = startOfWeek(today).getTime();
-  const compressedWeekRows = getEmptyPastWeekRows(calendarDays, tasksByDate, currentWeekStart);
+  const compressedWeekRows = getPastWeekRows(calendarDays, currentWeekStart);
   const emptyWeekRows = getEmptyUpcomingWeekRows(calendarDays, tasksByDate, currentWeekStart, selectedDate);
 
   return (
@@ -376,7 +376,9 @@ function DayCell({
   isEmptyWeek: boolean;
 }) {
   const isTodayCell = isSameDay(day, today);
-  const hasTasks = dayTasks.length > 0;
+  // Past weeks stay quiet: date only, no chips, short rows.
+  const visibleTasks = isCompressedWeek ? [] : dayTasks;
+  const hasTasks = visibleTasks.length > 0;
   const isActive = isSelected || isTodayCell;
   const selectableTasks = dayTasks;
 
@@ -458,7 +460,7 @@ function DayCell({
             gap: 5,
             width: '100%',
           }}>
-            {dayTasks.map(task => (
+            {visibleTasks.map(task => (
               <CalendarTaskChip key={task.id} task={task} compact onTint={isActive} isOverdue={!task.isCalendarEvent && isBefore(day, startOfDay(today))} />
             ))}
           </div>
@@ -524,8 +526,8 @@ function MobileMonth({
   }, [month]);
   const currentWeekStart = startOfWeek(today).getTime();
   const compressedWeekRows = useMemo(
-    () => getEmptyPastWeekRows(days, tasksByDate, currentWeekStart),
-    [days, tasksByDate, currentWeekStart]
+    () => getPastWeekRows(days, currentWeekStart),
+    [days, currentWeekStart]
   );
 
   return (
@@ -635,7 +637,9 @@ function MobileDayButton({
   isCompressedWeek: boolean;
   minHeight: number;
 }) {
-  const hasTasks = dayTasks.length > 0;
+  // Past weeks stay quiet: date only, no chips, short rows.
+  const visibleTasks = isCompressedWeek ? [] : dayTasks;
+  const hasTasks = visibleTasks.length > 0;
 
   return (
     <button
@@ -685,7 +689,7 @@ function MobileDayButton({
           minWidth: 0,
           marginTop: 6,
         }}>
-          {dayTasks.map(task => {
+          {visibleTasks.map(task => {
             const isOverdueChip = !task.isCalendarEvent && !task.completed && isBefore(day, startOfDay(new Date()));
             return (
             <span
@@ -748,20 +752,15 @@ function getEmptyUpcomingWeekRows(
   return rows;
 }
 
-function getEmptyPastWeekRows(days: Date[], tasksByDate: Record<string, Task[]>, currentWeekStart: number) {
+/** Weeks fully before the current week: compressed, and they hide chips. */
+function getPastWeekRows(days: Date[], currentWeekStart: number) {
   const rows = new Set<number>();
 
   for (let row = 0; row < days.length; row += 7) {
     const weekDays = days.slice(row, row + 7);
     if (weekDays.length < 7) continue;
 
-    const weekEndedBeforeCurrentWeek = endOfWeek(weekDays[0]).getTime() < currentWeekStart;
-    const weekHasTasks = weekDays.some(day => {
-      const key = format(day, 'yyyy-MM-dd');
-      return (tasksByDate[key] || []).length > 0;
-    });
-
-    if (weekEndedBeforeCurrentWeek && !weekHasTasks) {
+    if (endOfWeek(weekDays[0]).getTime() < currentWeekStart) {
       rows.add(row / 7);
     }
   }
