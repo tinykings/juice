@@ -19,7 +19,7 @@ Tasks are stored in your browser's local storage. Connect a GitHub Gist for opti
 - **GitHub Gist sync** — two-way sync across devices using a private Gist, shared with the Juice iOS app
 - **Encrypted sync** — optional key you keep in a password manager; the Gist holds only ciphertext
 - **Landscape calendar** — hold a phone sideways to open the calendar full screen
-- **Dark / light theme** — follows system preference, manually overridable
+- **Dark / light mode** — follows system preference, with a simple toggle in Settings
 - **PWA** — installable on mobile and desktop, works offline
 - **App badge** — shows pending task count on the app icon
 

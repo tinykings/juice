@@ -10,8 +10,6 @@ import { authorizeWithGitHub, isGitHubOAuthConfigured } from '@/services/githubO
 import { requestBadgePermission, isBadgeSupported } from '@/hooks/useAppBadge';
 import EncryptionSettings from '@/components/EncryptionSettings';
 import CalendarSubscriptionSettings from '@/components/CalendarSubscriptionSettings';
-import ThemePicker from '@/components/ThemePicker';
-import { getTheme } from '@/utils/theme';
 import { GistEncryptionError } from '@/services/gistCrypto';
 
 interface SettingsModalProps {
@@ -25,9 +23,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const { gistSettings, updateGistSettings, isGistConfigured, badgeEnabled, setBadgeEnabled } = useSettings();
-  const { theme, choice } = useTheme();
-  const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
-  const isDarkTheme = getTheme(theme).mode === 'dark';
+  const { theme, toggleTheme } = useTheme();
+  const isDarkTheme = theme === 'dark';
   const { tasks, syncFromGist, syncStatus, syncError, lastSyncedAt } = useTasks();
   const conflictCount = tasks.filter((task) => task.conflictOf && !task.completed).length;
   const panelRef = useRef<HTMLDivElement>(null);
@@ -234,8 +231,10 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {/* Theme & Badge buttons row */}
           <div style={{ display: 'grid', gridTemplateColumns: isBadgeSupported() ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 16 }}>
             <button
-              onClick={() => setIsThemePickerOpen(open => !open)}
-              aria-expanded={isThemePickerOpen}
+              type="button"
+              onClick={toggleTheme}
+              aria-pressed={isDarkTheme}
+              aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
               style={{
                 flex: 1,
                 padding: '0 14px',
@@ -260,13 +259,13 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                   <path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>
                 </svg>
               ) : (
-                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="12" cy="12" r="5"/>
                   <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
                 </svg>
               )}
               <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                Theme: {choice === 'system' ? 'System' : getTheme(theme).name}
+                {isDarkTheme ? 'Dark' : 'Light'}
               </span>
             </button>
             {isBadgeSupported() && (
@@ -313,8 +312,6 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               </button>
             )}
           </div>
-
-          {isThemePickerOpen && <ThemePicker />}
 
           <div style={{
             background: 'var(--task-surface)',

@@ -1,14 +1,20 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseThemeChoice, resolveTheme, themeBootScript, THEMES } from './theme';
+import { parseThemeChoice, resolveTheme, themeBootScript, THEME_COLORS } from './theme';
 
 const css = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
 
 type Rgb = [number, number, number];
 
-function tokensFor(id: string): Record<string, string> {
-  const block = css.match(new RegExp(`\\[data-theme="${id}"\\] \\{([^}]*)\\}`));
-  if (!block) throw new Error(`No color block for theme "${id}"`);
+const MODES = [
+  { id: 'light', selector: '[data-theme="light"]', background: THEME_COLORS.light },
+  { id: 'dark', selector: '[data-theme="dark"]', background: THEME_COLORS.dark },
+] as const;
+
+function tokensFor(selector: string): Record<string, string> {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const block = css.match(new RegExp(`${escaped} \\{([^}]*)\\}`));
+  if (!block) throw new Error(`No color block for "${selector}"`);
   return Object.fromEntries(
     Array.from(block[1].matchAll(/(--[\w-]+):\s*([^;]+);/g), match => [match[1], match[2].trim()])
   );
@@ -36,10 +42,10 @@ function contrast(a: Rgb, b: Rgb): number {
 }
 
 describe('theme palettes', () => {
-  it.each(THEMES.map(theme => [theme.id, theme] as const))('%s has readable text on every surface', (id, theme) => {
-    const tokens = tokensFor(id);
+  it.each(MODES.map(mode => [mode.id, mode] as const))('%s has readable text on every surface', (_id, mode) => {
+    const tokens = tokensFor(mode.selector);
     const background = parseColor(tokens['--background'], [0, 0, 0]);
-    expect(tokens['--background'].toLowerCase()).toBe(theme.background.toLowerCase());
+    expect(tokens['--background'].toLowerCase()).toBe(mode.background.toLowerCase());
     const card = parseColor(tokens['--card'], background);
     const surfaces = {
       background,
@@ -63,26 +69,28 @@ describe('theme palettes', () => {
 });
 
 describe('theme choice', () => {
-  it('follows the system by default: Parchment in light mode, Material in dark', () => {
-    expect(resolveTheme('system', false)).toBe('parchment');
-    expect(resolveTheme('system', true)).toBe('material');
+  it('follows the system by default', () => {
+    expect(resolveTheme('system', false)).toBe('light');
+    expect(resolveTheme('system', true)).toBe('dark');
   });
 
-  it('keeps a picked theme whatever the system says', () => {
-    expect(resolveTheme('dracula', false)).toBe('dracula');
-    expect(resolveTheme('github-light', true)).toBe('github-light');
+  it('keeps a picked mode whatever the system says', () => {
+    expect(resolveTheme('dark', false)).toBe('dark');
+    expect(resolveTheme('light', true)).toBe('light');
   });
 
-  it('reads stored values, including older ones', () => {
+  it('reads stored values, including older named themes', () => {
     expect(parseThemeChoice(null)).toBe('system');
-    expect(parseThemeChoice('light')).toBe('parchment');
-    expect(parseThemeChoice('dark')).toBe('material');
-    expect(parseThemeChoice('matrix')).toBe('matrix');
+    expect(parseThemeChoice('light')).toBe('light');
+    expect(parseThemeChoice('dark')).toBe('dark');
+    expect(parseThemeChoice('parchment')).toBe('light');
+    expect(parseThemeChoice('matrix')).toBe('dark');
     expect(parseThemeChoice('nonsense')).toBe('system');
     expect(parseThemeChoice('constructor')).toBe('system');
   });
 
-  it('boot script knows every theme', () => {
-    for (const theme of THEMES) expect(themeBootScript).toContain(`"${theme.id}"`);
+  it('boot script knows light and dark', () => {
+    expect(themeBootScript).toContain("'light'");
+    expect(themeBootScript).toContain("'dark'");
   });
 });
